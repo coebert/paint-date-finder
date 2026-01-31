@@ -1,14 +1,112 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from 'react';
+import { useEvents, useVenues } from '@/hooks/useEvents';
+import { EventType, PaintballEvent } from '@/types/events';
+import { Header } from '@/components/Header';
+import { EventFilters } from '@/components/EventFilters';
+import { EventCalendar } from '@/components/EventCalendar';
+import { EventList } from '@/components/EventList';
+import { EventEditDialog } from '@/components/EventEditDialog';
+import { AddEventDialog } from '@/components/AddEventDialog';
+import { EventDetailDialog } from '@/components/EventDetailDialog';
+import { Skeleton } from '@/components/ui/skeleton';
+import { AlertCircle } from 'lucide-react';
 
-const Index = () => {
+export default function Index() {
+  const [view, setView] = useState<'calendar' | 'list'>('calendar');
+  const [eventType, setEventType] = useState<EventType | undefined>();
+  const [venue, setVenue] = useState('');
+  
+  const [editingEvent, setEditingEvent] = useState<PaintballEvent | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [detailEvent, setDetailEvent] = useState<PaintballEvent | null>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+
+  const { data: events, isLoading, error } = useEvents({
+    eventType,
+    venue,
+  });
+
+  const { data: venues = [] } = useVenues();
+
+  const handleEdit = (event: PaintballEvent) => {
+    setEditingEvent(event);
+    setEditDialogOpen(true);
+  };
+
+  const handleEventClick = (event: PaintballEvent) => {
+    setDetailEvent(event);
+    setDetailDialogOpen(true);
+  };
+
+  const handleClearFilters = () => {
+    setEventType(undefined);
+    setVenue('');
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-background">
+      <Header 
+        view={view} 
+        onViewChange={setView} 
+        onAddEvent={() => setAddDialogOpen(true)}
+      />
+
+      <main className="container mx-auto px-4 py-6 space-y-6">
+        <EventFilters
+          eventType={eventType}
+          venue={venue}
+          venues={venues}
+          onEventTypeChange={setEventType}
+          onVenueChange={setVenue}
+          onClearFilters={handleClearFilters}
+        />
+
+        {isLoading ? (
+          <div className="space-y-4">
+            <Skeleton className="h-[400px] w-full bg-card" />
+          </div>
+        ) : error ? (
+          <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-6 text-center">
+            <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-2" />
+            <p className="text-destructive font-medium">Failed to load events</p>
+            <p className="text-muted-foreground text-sm mt-1">Please try again later</p>
+          </div>
+        ) : (
+          <>
+            {view === 'calendar' ? (
+              <EventCalendar events={events || []} onEventClick={handleEventClick} />
+            ) : (
+              <EventList events={events || []} onEdit={handleEdit} />
+            )}
+          </>
+        )}
+
+        {/* Stats footer */}
+        {events && events.length > 0 && (
+          <div className="text-center text-muted-foreground text-sm py-4 border-t border-border/50">
+            Showing {events.length} events across {venues.length} venues
+          </div>
+        )}
+      </main>
+
+      <EventEditDialog
+        event={editingEvent}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+      />
+
+      <AddEventDialog
+        open={addDialogOpen}
+        onOpenChange={setAddDialogOpen}
+      />
+
+      <EventDetailDialog
+        event={detailEvent}
+        open={detailDialogOpen}
+        onOpenChange={setDetailDialogOpen}
+        onEdit={handleEdit}
+      />
     </div>
   );
-};
-
-export default Index;
+}
