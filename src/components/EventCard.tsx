@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, MapPin, Clock, ExternalLink, Pencil } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import { useIsAdmin } from '@/hooks/useAuth';
 
 interface EventCardProps {
   event: PaintballEvent;
@@ -12,6 +13,7 @@ interface EventCardProps {
 
 export function EventCard({ event, onEdit }: EventCardProps) {
   const eventDate = parseISO(event.event_date);
+  const { data: isAdmin } = useIsAdmin();
 
   return (
     <Card className="card-hover overflow-hidden bg-card border-border/50">
@@ -21,7 +23,8 @@ export function EventCard({ event, onEdit }: EventCardProps) {
             <EventTypeBadge type={event.event_type} className="mb-2" />
             <h3 className="font-display text-xl text-foreground truncate">{event.title}</h3>
           </div>
-          {onEdit && (
+          {/* Only show edit button to admins */}
+          {isAdmin && onEdit && (
             <Button
               variant="ghost"
               size="icon"
