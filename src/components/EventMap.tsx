@@ -19,13 +19,17 @@ const REGION_LABELS: Record<UKRegion, string> = {
   wales: 'Wales',
 };
 
-// UK geographic bounds
+// UK geographic bounds (WGS84) - precise bounds for accurate mapping
 const UK_BOUNDS = {
-  north: 59.0,
-  south: 50.0,
-  west: -7.5,
-  east: 2.0,
+  north: 58.7,  // Northern tip of mainland Scotland
+  south: 49.9,  // Southern tip of England
+  west: -8.2,   // Western Scotland
+  east: 1.8,    // Eastern England
 };
+
+// SVG dimensions - aspect ratio matches UK proportions
+const SVG_WIDTH = 180;
+const SVG_HEIGHT = 270;
 
 // Real UK venue coordinates with region
 const VENUE_COORDINATES: Record<string, { lat: number; lng: number; location: string; region: UKRegion }> = {
@@ -56,12 +60,106 @@ const VENUE_COORDINATES: Record<string, { lat: number; lng: number; location: st
   'OMG Events': { lat: 52.5, lng: -1.5, location: 'Various UK Locations', region: 'midlands' },
 };
 
-// Convert lat/lng to percentage position
+// Convert geographic coordinates to SVG coordinates
+function geoToSvg(lat: number, lng: number): { x: number; y: number } {
+  const x = ((lng - UK_BOUNDS.west) / (UK_BOUNDS.east - UK_BOUNDS.west)) * SVG_WIDTH;
+  const y = ((UK_BOUNDS.north - lat) / (UK_BOUNDS.north - UK_BOUNDS.south)) * SVG_HEIGHT;
+  return { x, y };
+}
+
+// Convert lat/lng to percentage for marker positioning
 function coordsToPercent(lat: number, lng: number): { x: number; y: number } {
   const x = ((lng - UK_BOUNDS.west) / (UK_BOUNDS.east - UK_BOUNDS.west)) * 100;
   const y = ((UK_BOUNDS.north - lat) / (UK_BOUNDS.north - UK_BOUNDS.south)) * 100;
-  return { x: Math.max(8, Math.min(92, x)), y: Math.max(8, Math.min(92, y)) };
+  return { x: Math.max(5, Math.min(95, x)), y: Math.max(5, Math.min(95, y)) };
 }
+
+// Generate SVG path from geographic coordinates
+function geoPathFromCoords(coords: [number, number][]): string {
+  return coords.map((coord, i) => {
+    const { x, y } = geoToSvg(coord[0], coord[1]);
+    return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)}`;
+  }).join(' ') + ' Z';
+}
+
+// Accurate UK coastline coordinates [lat, lng] - simplified but geographically correct
+const UK_COASTLINE = {
+  // Scotland mainland - key coastal points
+  scotland: [
+    [58.6, -3.0], [58.5, -3.5], [58.3, -4.0], [58.4, -4.5], [58.2, -5.0],
+    [57.8, -5.5], [57.5, -5.8], [57.2, -5.6], [56.9, -5.8], [56.5, -6.2],
+    [56.3, -5.8], [56.0, -5.4], [55.8, -5.0], [55.5, -4.8], [55.3, -4.9],
+    [55.0, -5.0], [54.9, -5.1], [54.8, -4.9], [54.7, -4.5], [54.8, -4.0],
+    [55.0, -3.5], [55.2, -3.0], [55.4, -2.6], [55.6, -2.2], [55.8, -1.9],
+    [55.9, -1.8], [56.0, -2.0], [56.2, -2.4], [56.4, -2.8], [56.5, -3.2],
+    [56.7, -3.5], [56.9, -3.8], [57.0, -4.0], [57.2, -4.2], [57.4, -3.8],
+    [57.6, -3.5], [57.8, -3.2], [58.0, -3.0], [58.2, -3.2], [58.4, -3.0],
+    [58.6, -3.0],
+  ] as [number, number][],
+  
+  // Scottish islands - Hebrides (simplified)
+  hebrides: [
+    [57.8, -6.8], [57.5, -7.2], [57.2, -7.4], [56.8, -7.2], [56.5, -7.0],
+    [56.3, -6.6], [56.5, -6.2], [56.8, -6.0], [57.2, -6.2], [57.5, -6.5],
+    [57.8, -6.8],
+  ] as [number, number][],
+  
+  // Orkney (simplified)
+  orkney: [
+    [59.0, -3.0], [58.9, -3.4], [58.7, -3.2], [58.8, -2.8], [59.0, -3.0],
+  ] as [number, number][],
+  
+  // Northern England
+  north: [
+    [55.4, -2.6], [55.2, -3.0], [55.0, -3.5], [54.8, -4.0], [54.7, -4.5],
+    [54.5, -4.0], [54.3, -3.5], [54.1, -3.2], [53.9, -3.0], [53.7, -3.1],
+    [53.5, -3.0], [53.3, -2.8], [53.2, -3.0], [53.1, -3.1], [53.0, -3.0],
+    [53.0, -2.0], [53.2, -1.5], [53.4, -1.2], [53.6, -1.0], [53.8, -0.8],
+    [54.0, -0.6], [54.2, -0.4], [54.4, -0.2], [54.6, -0.4], [54.8, -0.8],
+    [55.0, -1.2], [55.2, -1.5], [55.4, -1.8], [55.6, -2.2], [55.4, -2.6],
+  ] as [number, number][],
+  
+  // Wales
+  wales: [
+    [53.1, -3.1], [53.2, -3.0], [53.3, -2.8], [53.3, -3.5], [53.2, -4.0],
+    [53.0, -4.5], [52.8, -4.7], [52.5, -4.8], [52.2, -4.6], [51.9, -4.8],
+    [51.7, -5.2], [51.5, -5.0], [51.4, -4.5], [51.5, -4.0], [51.6, -3.5],
+    [51.7, -3.2], [51.8, -3.0], [51.9, -2.9], [52.0, -3.0], [52.2, -3.0],
+    [52.4, -3.0], [52.6, -3.0], [52.8, -3.0], [53.0, -3.0], [53.1, -3.1],
+  ] as [number, number][],
+  
+  // Midlands - connection between North and South
+  midlands: [
+    [53.0, -3.0], [52.8, -3.0], [52.6, -3.0], [52.4, -3.0], [52.2, -3.0],
+    [52.0, -3.0], [51.9, -2.9], [51.8, -2.6], [51.7, -2.2], [51.8, -1.8],
+    [51.9, -1.5], [52.0, -1.2], [52.2, -1.0], [52.4, -0.8], [52.6, -0.6],
+    [52.8, -0.4], [53.0, -0.2], [53.0, -0.5], [53.0, -1.0], [53.0, -1.5],
+    [53.0, -2.0], [53.0, -3.0],
+  ] as [number, number][],
+  
+  // Southern England
+  south: [
+    [51.8, -1.8], [51.7, -2.2], [51.6, -2.6], [51.5, -2.9], [51.4, -3.2],
+    [51.2, -3.5], [51.0, -3.8], [50.8, -4.0], [50.5, -4.5], [50.2, -5.0],
+    [50.0, -5.5], [49.9, -5.2], [50.0, -4.8], [50.2, -4.3], [50.4, -3.8],
+    [50.5, -3.5], [50.6, -3.0], [50.5, -2.5], [50.4, -2.0], [50.5, -1.5],
+    [50.6, -1.0], [50.7, -0.8], [50.8, -0.5], [50.7, 0.0], [50.8, 0.5],
+    [50.9, 1.0], [51.1, 1.4], [51.3, 1.4], [51.5, 1.2], [51.6, 0.8],
+    [51.7, 0.5], [51.8, 0.2], [51.9, -0.2], [52.0, -0.5], [52.2, -0.8],
+    [52.4, -0.8], [52.6, -0.6], [52.8, -0.4], [53.0, -0.2], [52.8, -0.4],
+    [52.6, -0.6], [52.4, -0.8], [52.2, -1.0], [52.0, -1.2], [51.9, -1.5],
+    [51.8, -1.8],
+  ] as [number, number][],
+  
+  // Ireland (context)
+  ireland: [
+    [55.3, -5.5], [55.0, -6.0], [54.5, -6.5], [54.0, -7.0], [53.5, -7.5],
+    [53.0, -8.0], [52.5, -7.8], [52.0, -7.5], [51.5, -8.0], [51.3, -8.5],
+    [51.5, -9.5], [52.0, -10.2], [52.5, -10.0], [53.0, -9.8], [53.5, -9.5],
+    [54.0, -8.5], [54.5, -8.0], [55.0, -7.5], [55.3, -7.0], [55.4, -6.5],
+    [55.3, -5.5],
+  ] as [number, number][],
+};
 
 interface EventMapProps {
   events: PaintballEvent[];
@@ -125,10 +223,39 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
     }
   };
 
-  const getRegionFill = (region: UKRegion) => {
-    if (selectedRegion === 'all') return '#2d5a4a';
-    return selectedRegion === region ? '#3d7a5a' : '#1a3528';
+  const getRegionStyle = (region: UKRegion) => {
+    const isActive = selectedRegion === 'all' || selectedRegion === region;
+    return {
+      fill: isActive ? '#2d6a4f' : '#1a3d2e',
+      stroke: isActive ? '#52b788' : '#2d5a4a',
+      strokeWidth: isActive ? 1.5 : 0.8,
+      opacity: isActive ? 1 : 0.4,
+    };
   };
+
+  // City reference points for context
+  const cities = [
+    { name: 'London', lat: 51.51, lng: -0.13 },
+    { name: 'Birmingham', lat: 52.49, lng: -1.89 },
+    { name: 'Manchester', lat: 53.48, lng: -2.24 },
+    { name: 'Leeds', lat: 53.80, lng: -1.55 },
+    { name: 'Edinburgh', lat: 55.95, lng: -3.19 },
+    { name: 'Glasgow', lat: 55.86, lng: -4.25 },
+    { name: 'Cardiff', lat: 51.48, lng: -3.18 },
+    { name: 'Bristol', lat: 51.45, lng: -2.58 },
+    { name: 'Liverpool', lat: 53.41, lng: -2.98 },
+    { name: 'Newcastle', lat: 54.98, lng: -1.61 },
+  ].map(city => ({ ...city, svg: geoToSvg(city.lat, city.lng) }));
+
+  // Generate paths from coordinates
+  const scotlandPath = geoPathFromCoords(UK_COASTLINE.scotland);
+  const hebridesPath = geoPathFromCoords(UK_COASTLINE.hebrides);
+  const orkneyPath = geoPathFromCoords(UK_COASTLINE.orkney);
+  const northPath = geoPathFromCoords(UK_COASTLINE.north);
+  const walesPath = geoPathFromCoords(UK_COASTLINE.wales);
+  const midlandsPath = geoPathFromCoords(UK_COASTLINE.midlands);
+  const southPath = geoPathFromCoords(UK_COASTLINE.south);
+  const irelandPath = geoPathFromCoords(UK_COASTLINE.ireland);
 
   return (
     <div className="space-y-6">
@@ -158,109 +285,117 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
 
       {/* UK Map Container */}
       <div className="bg-card rounded-xl border border-border/50 overflow-hidden">
-        <div className="relative w-full bg-[#1a3a5c]" style={{ height: '550px' }}>
-          {/* UK Map SVG - Simplified realistic outline */}
+        <div className="relative w-full bg-[#1a3a5c]" style={{ height: '600px' }}>
+          {/* UK Map SVG - Geographically accurate */}
           <svg
-            viewBox="0 0 100 140"
+            viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
             className="absolute inset-0 w-full h-full"
             preserveAspectRatio="xMidYMid meet"
           >
-            {/* Sea */}
-            <rect width="100" height="140" fill="#1a3a5c" />
+            {/* Sea background */}
+            <rect width={SVG_WIDTH} height={SVG_HEIGHT} fill="#1a3a5c" />
+            
+            {/* Grid for reference (subtle) */}
+            <defs>
+              <pattern id="grid" width="18" height="27" patternUnits="userSpaceOnUse">
+                <path d="M 18 0 L 0 0 0 27" fill="none" stroke="#ffffff" strokeWidth="0.1" opacity="0.1"/>
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
 
-            {/* Scotland mainland */}
+            {/* Ireland (context - faded) */}
             <path
-              d="M45 8 L52 6 L58 8 L62 12 L65 10 L68 14 L70 12 L72 18 L70 24 L74 30 L70 36 L66 34 L62 40 L58 38 L54 44 L50 42 L46 48 L42 46 L38 50 L36 46 L32 50 L30 44 L28 48 L26 42 L30 36 L26 30 L32 24 L28 18 L34 14 L32 10 L38 8 L42 12 L45 8Z"
-              fill={getRegionFill('scotland')}
-              stroke="#4a8a6a"
-              strokeWidth="0.8"
+              d={irelandPath}
+              fill="#1a3d2e"
+              stroke="#2d5a4a"
+              strokeWidth="0.5"
+              opacity="0.3"
+            />
+
+            {/* Scotland */}
+            <path
+              d={scotlandPath}
+              {...getRegionStyle('scotland')}
               className="transition-all duration-300"
             />
-            {/* Scottish islands */}
             <path
-              d="M22 20 L28 18 L30 24 L26 28 L20 26 L22 20Z"
-              fill={getRegionFill('scotland')}
-              stroke="#4a8a6a"
-              strokeWidth="0.5"
+              d={hebridesPath}
+              {...getRegionStyle('scotland')}
               className="transition-all duration-300"
             />
             <path
-              d="M18 32 L24 30 L26 36 L22 40 L16 38 L18 32Z"
-              fill={getRegionFill('scotland')}
-              stroke="#4a8a6a"
-              strokeWidth="0.5"
+              d={orkneyPath}
+              {...getRegionStyle('scotland')}
               className="transition-all duration-300"
             />
 
             {/* Northern England */}
             <path
-              d="M38 50 L42 46 L46 48 L50 42 L54 44 L58 38 L62 40 L66 34 L70 36 L72 42 L70 50 L74 58 L70 66 L66 62 L62 68 L58 64 L54 70 L48 66 L44 72 L38 68 L34 74 L30 70 L28 76 L32 66 L28 58 L34 52 L38 50Z"
-              fill={getRegionFill('north')}
-              stroke="#4a8a6a"
-              strokeWidth="0.8"
+              d={northPath}
+              {...getRegionStyle('north')}
               className="transition-all duration-300"
             />
 
             {/* Wales */}
             <path
-              d="M28 76 L32 72 L36 76 L34 84 L30 90 L26 94 L22 90 L20 82 L24 78 L28 76Z"
-              fill={getRegionFill('wales')}
-              stroke="#4a8a6a"
-              strokeWidth="0.8"
+              d={walesPath}
+              {...getRegionStyle('wales')}
               className="transition-all duration-300"
             />
 
             {/* Midlands */}
             <path
-              d="M34 74 L38 68 L44 72 L48 66 L54 70 L58 64 L62 68 L66 62 L70 66 L72 74 L70 82 L74 90 L68 96 L62 92 L56 98 L50 94 L44 100 L38 96 L36 88 L34 84 L36 76 L34 74Z"
-              fill={getRegionFill('midlands')}
-              stroke="#4a8a6a"
-              strokeWidth="0.8"
+              d={midlandsPath}
+              {...getRegionStyle('midlands')}
               className="transition-all duration-300"
             />
 
             {/* Southern England */}
             <path
-              d="M26 94 L30 90 L34 84 L36 88 L38 96 L44 100 L50 94 L56 98 L62 92 L68 96 L74 90 L78 96 L82 92 L86 98 L84 108 L88 116 L82 124 L74 120 L68 128 L60 122 L52 130 L44 124 L36 132 L28 126 L22 134 L16 128 L12 118 L18 108 L14 98 L20 92 L26 94Z"
-              fill={getRegionFill('south')}
-              stroke="#4a8a6a"
-              strokeWidth="0.8"
+              d={southPath}
+              {...getRegionStyle('south')}
               className="transition-all duration-300"
             />
 
-            {/* Cornwall */}
-            <path
-              d="M12 118 L16 128 L10 134 L4 130 L2 120 L8 114 L12 118Z"
-              fill={getRegionFill('south')}
-              stroke="#4a8a6a"
-              strokeWidth="0.5"
-              className="transition-all duration-300"
-            />
-
-            {/* East Anglia bulge */}
-            <path
-              d="M78 96 L82 92 L86 98 L90 94 L94 102 L92 112 L86 118 L84 108 L88 104 L84 100 L78 96Z"
-              fill={getRegionFill('south')}
-              stroke="#4a8a6a"
-              strokeWidth="0.5"
-              className="transition-all duration-300"
-            />
-
-            {/* Ireland (context) */}
-            <path
-              d="M8 52 L16 48 L22 54 L20 66 L24 76 L18 86 L10 82 L4 70 L6 58 L8 52Z"
-              fill="#1a3528"
-              stroke="#2a4538"
-              strokeWidth="0.5"
-              opacity="0.4"
-            />
+            {/* City reference points */}
+            {cities.map((city) => (
+              <g key={city.name}>
+                <circle
+                  cx={city.svg.x}
+                  cy={city.svg.y}
+                  r="1.5"
+                  fill="#ffffff"
+                  opacity="0.5"
+                />
+                <text
+                  x={city.svg.x + 3}
+                  y={city.svg.y + 1}
+                  fill="#ffffff"
+                  fontSize="5"
+                  opacity="0.6"
+                  className="pointer-events-none"
+                >
+                  {city.name}
+                </text>
+              </g>
+            ))}
 
             {/* Region labels */}
-            <text x="50" y="30" textAnchor="middle" fill="#ffffff" fontSize="5" fontWeight="600" opacity={selectedRegion === 'scotland' || selectedRegion === 'all' ? 0.9 : 0.3}>SCOTLAND</text>
-            <text x="52" y="58" textAnchor="middle" fill="#ffffff" fontSize="4" fontWeight="600" opacity={selectedRegion === 'north' || selectedRegion === 'all' ? 0.9 : 0.3}>NORTH</text>
-            <text x="26" y="86" textAnchor="middle" fill="#ffffff" fontSize="3.5" fontWeight="600" opacity={selectedRegion === 'wales' || selectedRegion === 'all' ? 0.9 : 0.3}>WALES</text>
-            <text x="54" y="84" textAnchor="middle" fill="#ffffff" fontSize="4" fontWeight="600" opacity={selectedRegion === 'midlands' || selectedRegion === 'all' ? 0.9 : 0.3}>MIDLANDS</text>
-            <text x="55" y="112" textAnchor="middle" fill="#ffffff" fontSize="4" fontWeight="600" opacity={selectedRegion === 'south' || selectedRegion === 'all' ? 0.9 : 0.3}>SOUTH</text>
+            <text x="95" y="55" textAnchor="middle" fill="#ffffff" fontSize="8" fontWeight="600" opacity={selectedRegion === 'scotland' || selectedRegion === 'all' ? 0.85 : 0.25} className="pointer-events-none">
+              SCOTLAND
+            </text>
+            <text x="115" y="115" textAnchor="middle" fill="#ffffff" fontSize="7" fontWeight="600" opacity={selectedRegion === 'north' || selectedRegion === 'all' ? 0.85 : 0.25} className="pointer-events-none">
+              NORTH
+            </text>
+            <text x="55" y="175" textAnchor="middle" fill="#ffffff" fontSize="6" fontWeight="600" opacity={selectedRegion === 'wales' || selectedRegion === 'all' ? 0.85 : 0.25} className="pointer-events-none">
+              WALES
+            </text>
+            <text x="120" y="165" textAnchor="middle" fill="#ffffff" fontSize="7" fontWeight="600" opacity={selectedRegion === 'midlands' || selectedRegion === 'all' ? 0.85 : 0.25} className="pointer-events-none">
+              MIDLANDS
+            </text>
+            <text x="130" y="215" textAnchor="middle" fill="#ffffff" fontSize="7" fontWeight="600" opacity={selectedRegion === 'south' || selectedRegion === 'all' ? 0.85 : 0.25} className="pointer-events-none">
+              SOUTH
+            </text>
           </svg>
 
           {/* Venue Markers */}
