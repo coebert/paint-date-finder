@@ -6,6 +6,8 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Calendar, Clock, ExternalLink, MapPin, Navigation, X } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useMemo, useState } from 'react';
+import { geoMercator, geoPath, type GeoProjection } from 'd3-geo';
+import ukGeoJsonRaw from '@/assets/geo/GBR.geo.json?raw';
 
 // Region definitions for filtering
 export type UKRegion = 'all' | 'scotland' | 'north' | 'midlands' | 'south' | 'wales';
@@ -19,17 +21,8 @@ const REGION_LABELS: Record<UKRegion, string> = {
   wales: 'Wales',
 };
 
-// UK geographic bounds (WGS84) - precise bounds for accurate mapping
-const UK_BOUNDS = {
-  north: 58.7,  // Northern tip of mainland Scotland
-  south: 49.9,  // Southern tip of England
-  west: -8.2,   // Western Scotland
-  east: 1.8,    // Eastern England
-};
-
-// SVG dimensions - aspect ratio matches UK proportions
-const SVG_WIDTH = 180;
-const SVG_HEIGHT = 270;
+const MAP_VIEWBOX = { width: 220, height: 340 };
+const MAP_PADDING = 12;
 
 // Real UK venue coordinates with region
 const VENUE_COORDINATES: Record<string, { lat: number; lng: number; location: string; region: UKRegion }> = {
@@ -60,106 +53,15 @@ const VENUE_COORDINATES: Record<string, { lat: number; lng: number; location: st
   'OMG Events': { lat: 52.5, lng: -1.5, location: 'Various UK Locations', region: 'midlands' },
 };
 
-// Convert geographic coordinates to SVG coordinates
-function geoToSvg(lat: number, lng: number): { x: number; y: number } {
-  const x = ((lng - UK_BOUNDS.west) / (UK_BOUNDS.east - UK_BOUNDS.west)) * SVG_WIDTH;
-  const y = ((UK_BOUNDS.north - lat) / (UK_BOUNDS.north - UK_BOUNDS.south)) * SVG_HEIGHT;
-  return { x, y };
-}
 
-// Convert lat/lng to percentage for marker positioning
-function coordsToPercent(lat: number, lng: number): { x: number; y: number } {
-  const x = ((lng - UK_BOUNDS.west) / (UK_BOUNDS.east - UK_BOUNDS.west)) * 100;
-  const y = ((UK_BOUNDS.north - lat) / (UK_BOUNDS.north - UK_BOUNDS.south)) * 100;
-  return { x: Math.max(5, Math.min(95, x)), y: Math.max(5, Math.min(95, y)) };
-}
+type GeoJSONAny = any;
 
-// Generate SVG path from geographic coordinates
-function geoPathFromCoords(coords: [number, number][]): string {
-  return coords.map((coord, i) => {
-    const { x, y } = geoToSvg(coord[0], coord[1]);
-    return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)}`;
-  }).join(' ') + ' Z';
+function projectPoint(projection: GeoProjection | null, lat: number, lng: number): [number, number] | null {
+  if (!projection) return null;
+  const p = projection([lng, lat]);
+  if (!p) return null;
+  return [p[0], p[1]];
 }
-
-// Accurate UK coastline coordinates [lat, lng] - simplified but geographically correct
-const UK_COASTLINE = {
-  // Scotland mainland - key coastal points
-  scotland: [
-    [58.6, -3.0], [58.5, -3.5], [58.3, -4.0], [58.4, -4.5], [58.2, -5.0],
-    [57.8, -5.5], [57.5, -5.8], [57.2, -5.6], [56.9, -5.8], [56.5, -6.2],
-    [56.3, -5.8], [56.0, -5.4], [55.8, -5.0], [55.5, -4.8], [55.3, -4.9],
-    [55.0, -5.0], [54.9, -5.1], [54.8, -4.9], [54.7, -4.5], [54.8, -4.0],
-    [55.0, -3.5], [55.2, -3.0], [55.4, -2.6], [55.6, -2.2], [55.8, -1.9],
-    [55.9, -1.8], [56.0, -2.0], [56.2, -2.4], [56.4, -2.8], [56.5, -3.2],
-    [56.7, -3.5], [56.9, -3.8], [57.0, -4.0], [57.2, -4.2], [57.4, -3.8],
-    [57.6, -3.5], [57.8, -3.2], [58.0, -3.0], [58.2, -3.2], [58.4, -3.0],
-    [58.6, -3.0],
-  ] as [number, number][],
-  
-  // Scottish islands - Hebrides (simplified)
-  hebrides: [
-    [57.8, -6.8], [57.5, -7.2], [57.2, -7.4], [56.8, -7.2], [56.5, -7.0],
-    [56.3, -6.6], [56.5, -6.2], [56.8, -6.0], [57.2, -6.2], [57.5, -6.5],
-    [57.8, -6.8],
-  ] as [number, number][],
-  
-  // Orkney (simplified)
-  orkney: [
-    [59.0, -3.0], [58.9, -3.4], [58.7, -3.2], [58.8, -2.8], [59.0, -3.0],
-  ] as [number, number][],
-  
-  // Northern England
-  north: [
-    [55.4, -2.6], [55.2, -3.0], [55.0, -3.5], [54.8, -4.0], [54.7, -4.5],
-    [54.5, -4.0], [54.3, -3.5], [54.1, -3.2], [53.9, -3.0], [53.7, -3.1],
-    [53.5, -3.0], [53.3, -2.8], [53.2, -3.0], [53.1, -3.1], [53.0, -3.0],
-    [53.0, -2.0], [53.2, -1.5], [53.4, -1.2], [53.6, -1.0], [53.8, -0.8],
-    [54.0, -0.6], [54.2, -0.4], [54.4, -0.2], [54.6, -0.4], [54.8, -0.8],
-    [55.0, -1.2], [55.2, -1.5], [55.4, -1.8], [55.6, -2.2], [55.4, -2.6],
-  ] as [number, number][],
-  
-  // Wales
-  wales: [
-    [53.1, -3.1], [53.2, -3.0], [53.3, -2.8], [53.3, -3.5], [53.2, -4.0],
-    [53.0, -4.5], [52.8, -4.7], [52.5, -4.8], [52.2, -4.6], [51.9, -4.8],
-    [51.7, -5.2], [51.5, -5.0], [51.4, -4.5], [51.5, -4.0], [51.6, -3.5],
-    [51.7, -3.2], [51.8, -3.0], [51.9, -2.9], [52.0, -3.0], [52.2, -3.0],
-    [52.4, -3.0], [52.6, -3.0], [52.8, -3.0], [53.0, -3.0], [53.1, -3.1],
-  ] as [number, number][],
-  
-  // Midlands - connection between North and South
-  midlands: [
-    [53.0, -3.0], [52.8, -3.0], [52.6, -3.0], [52.4, -3.0], [52.2, -3.0],
-    [52.0, -3.0], [51.9, -2.9], [51.8, -2.6], [51.7, -2.2], [51.8, -1.8],
-    [51.9, -1.5], [52.0, -1.2], [52.2, -1.0], [52.4, -0.8], [52.6, -0.6],
-    [52.8, -0.4], [53.0, -0.2], [53.0, -0.5], [53.0, -1.0], [53.0, -1.5],
-    [53.0, -2.0], [53.0, -3.0],
-  ] as [number, number][],
-  
-  // Southern England
-  south: [
-    [51.8, -1.8], [51.7, -2.2], [51.6, -2.6], [51.5, -2.9], [51.4, -3.2],
-    [51.2, -3.5], [51.0, -3.8], [50.8, -4.0], [50.5, -4.5], [50.2, -5.0],
-    [50.0, -5.5], [49.9, -5.2], [50.0, -4.8], [50.2, -4.3], [50.4, -3.8],
-    [50.5, -3.5], [50.6, -3.0], [50.5, -2.5], [50.4, -2.0], [50.5, -1.5],
-    [50.6, -1.0], [50.7, -0.8], [50.8, -0.5], [50.7, 0.0], [50.8, 0.5],
-    [50.9, 1.0], [51.1, 1.4], [51.3, 1.4], [51.5, 1.2], [51.6, 0.8],
-    [51.7, 0.5], [51.8, 0.2], [51.9, -0.2], [52.0, -0.5], [52.2, -0.8],
-    [52.4, -0.8], [52.6, -0.6], [52.8, -0.4], [53.0, -0.2], [52.8, -0.4],
-    [52.6, -0.6], [52.4, -0.8], [52.2, -1.0], [52.0, -1.2], [51.9, -1.5],
-    [51.8, -1.8],
-  ] as [number, number][],
-  
-  // Ireland (context)
-  ireland: [
-    [55.3, -5.5], [55.0, -6.0], [54.5, -6.5], [54.0, -7.0], [53.5, -7.5],
-    [53.0, -8.0], [52.5, -7.8], [52.0, -7.5], [51.5, -8.0], [51.3, -8.5],
-    [51.5, -9.5], [52.0, -10.2], [52.5, -10.0], [53.0, -9.8], [53.5, -9.5],
-    [54.0, -8.5], [54.5, -8.0], [55.0, -7.5], [55.3, -7.0], [55.4, -6.5],
-    [55.3, -5.5],
-  ] as [number, number][],
-};
 
 interface EventMapProps {
   events: PaintballEvent[];
@@ -190,25 +92,27 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
   };
 
-  const venueEntries = Object.entries(eventsByVenue);
-  
-  const mappedVenues = venueEntries.map(([name, venueEvents]) => {
-    const coords = VENUE_COORDINATES[name];
-    if (coords) {
-      return { name, events: venueEvents, coords, position: coordsToPercent(coords.lat, coords.lng) };
-    }
-    return null;
-  }).filter((v): v is NonNullable<typeof v> => {
-    if (!v) return false;
-    if (selectedRegion === 'all') return true;
-    return v.coords.region === selectedRegion;
-  });
+  const venueEntries = useMemo(() => Object.entries(eventsByVenue), [eventsByVenue]);
 
-  const filteredVenueEntries = venueEntries.filter(([name]) => {
+  const mappedVenues = useMemo(() => {
+    return venueEntries
+      .map(([name, venueEvents]) => {
+        const coords = VENUE_COORDINATES[name];
+        if (!coords) return null;
+        return { name, events: venueEvents, coords };
+      })
+      .filter((v): v is NonNullable<typeof v> => {
+        if (!v) return false;
+        if (selectedRegion === 'all') return true;
+        return v.coords.region === selectedRegion;
+      });
+  }, [venueEntries, selectedRegion]);
+
+  const filteredVenueEntries = useMemo(() => venueEntries.filter(([name]) => {
     if (selectedRegion === 'all') return true;
     const coords = VENUE_COORDINATES[name];
     return coords?.region === selectedRegion;
-  });
+  }), [venueEntries, selectedRegion]);
 
   const filteredEventCount = filteredVenueEntries.reduce((sum, [, venueEvents]) => sum + venueEvents.length, 0);
 
@@ -223,39 +127,82 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
     }
   };
 
-  const getRegionStyle = (region: UKRegion) => {
-    const isActive = selectedRegion === 'all' || selectedRegion === region;
-    return {
-      fill: isActive ? '#2d6a4f' : '#1a3d2e',
-      stroke: isActive ? '#52b788' : '#2d5a4a',
-      strokeWidth: isActive ? 1.5 : 0.8,
-      opacity: isActive ? 1 : 0.4,
-    };
-  };
+  const ukGeo = useMemo<GeoJSONAny | null>(() => {
+    try {
+      return JSON.parse(ukGeoJsonRaw) as GeoJSONAny;
+    } catch {
+      return null;
+    }
+  }, []);
 
-  // City reference points for context
-  const cities = [
-    { name: 'London', lat: 51.51, lng: -0.13 },
-    { name: 'Birmingham', lat: 52.49, lng: -1.89 },
-    { name: 'Manchester', lat: 53.48, lng: -2.24 },
-    { name: 'Leeds', lat: 53.80, lng: -1.55 },
-    { name: 'Edinburgh', lat: 55.95, lng: -3.19 },
-    { name: 'Glasgow', lat: 55.86, lng: -4.25 },
-    { name: 'Cardiff', lat: 51.48, lng: -3.18 },
-    { name: 'Bristol', lat: 51.45, lng: -2.58 },
-    { name: 'Liverpool', lat: 53.41, lng: -2.98 },
-    { name: 'Newcastle', lat: 54.98, lng: -1.61 },
-  ].map(city => ({ ...city, svg: geoToSvg(city.lat, city.lng) }));
+  const projection = useMemo<GeoProjection | null>(() => {
+    if (!ukGeo) return null;
+    const p = geoMercator();
+    p.fitExtent(
+      [
+        [MAP_PADDING, MAP_PADDING],
+        [MAP_VIEWBOX.width - MAP_PADDING, MAP_VIEWBOX.height - MAP_PADDING],
+      ],
+      ukGeo,
+    );
+    return p;
+  }, [ukGeo]);
 
-  // Generate paths from coordinates
-  const scotlandPath = geoPathFromCoords(UK_COASTLINE.scotland);
-  const hebridesPath = geoPathFromCoords(UK_COASTLINE.hebrides);
-  const orkneyPath = geoPathFromCoords(UK_COASTLINE.orkney);
-  const northPath = geoPathFromCoords(UK_COASTLINE.north);
-  const walesPath = geoPathFromCoords(UK_COASTLINE.wales);
-  const midlandsPath = geoPathFromCoords(UK_COASTLINE.midlands);
-  const southPath = geoPathFromCoords(UK_COASTLINE.south);
-  const irelandPath = geoPathFromCoords(UK_COASTLINE.ireland);
+  const ukPathD = useMemo(() => {
+    if (!ukGeo || !projection) return '';
+    const path = geoPath(projection);
+    return path(ukGeo) ?? '';
+  }, [ukGeo, projection]);
+
+  const cities = useMemo(() => {
+    if (!projection) return [] as Array<{ name: string; x: number; y: number }>;
+    const base = [
+      { name: 'London', lat: 51.5072, lng: -0.1276 },
+      { name: 'Birmingham', lat: 52.4862, lng: -1.8904 },
+      { name: 'Manchester', lat: 53.4808, lng: -2.2426 },
+      { name: 'Leeds', lat: 53.8008, lng: -1.5491 },
+      { name: 'Edinburgh', lat: 55.9533, lng: -3.1883 },
+      { name: 'Glasgow', lat: 55.8642, lng: -4.2518 },
+      { name: 'Cardiff', lat: 51.4816, lng: -3.1791 },
+      { name: 'Belfast', lat: 54.5973, lng: -5.9301 },
+    ];
+    return base
+      .map((c) => {
+        const pt = projectPoint(projection, c.lat, c.lng);
+        if (!pt) return null;
+        return { name: c.name, x: pt[0], y: pt[1] };
+      })
+      .filter((x): x is NonNullable<typeof x> => Boolean(x));
+  }, [projection]);
+
+  const regionLabels = useMemo(() => {
+    if (!projection) return [] as Array<{ region: UKRegion; label: string; x: number; y: number }>;
+    const anchors: Array<{ region: UKRegion; label: string; lat: number; lng: number }> = [
+      { region: 'scotland', label: 'SCOTLAND', lat: 56.9, lng: -4.2 },
+      { region: 'north', label: 'NORTH', lat: 54.7, lng: -2.4 },
+      { region: 'wales', label: 'WALES', lat: 52.2, lng: -3.7 },
+      { region: 'midlands', label: 'MIDLANDS', lat: 52.7, lng: -1.7 },
+      { region: 'south', label: 'SOUTH', lat: 51.2, lng: -1.6 },
+    ];
+    return anchors
+      .map((a) => {
+        const pt = projectPoint(projection, a.lat, a.lng);
+        if (!pt) return null;
+        return { region: a.region, label: a.label, x: pt[0], y: pt[1] };
+      })
+      .filter((x): x is NonNullable<typeof x> => Boolean(x));
+  }, [projection]);
+
+  const venueMarkers = useMemo(() => {
+    if (!projection) return [] as Array<{ name: string; x: number; y: number; events: PaintballEvent[] }>;
+    return mappedVenues
+      .map((v) => {
+        const pt = projectPoint(projection, v.coords.lat, v.coords.lng);
+        if (!pt) return null;
+        return { name: v.name, x: pt[0], y: pt[1], events: v.events };
+      })
+      .filter((x): x is NonNullable<typeof x> => Boolean(x));
+  }, [mappedVenues, projection]);
 
   return (
     <div className="space-y-6">
@@ -285,164 +232,116 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
 
       {/* UK Map Container */}
       <div className="bg-card rounded-xl border border-border/50 overflow-hidden">
-        <div className="relative w-full bg-[#1a3a5c]" style={{ height: '600px' }}>
-          {/* UK Map SVG - Geographically accurate */}
+        <div className="relative w-full bg-muted" style={{ height: '600px' }}>
           <svg
-            viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
+            viewBox={`0 0 ${MAP_VIEWBOX.width} ${MAP_VIEWBOX.height}`}
             className="absolute inset-0 w-full h-full"
             preserveAspectRatio="xMidYMid meet"
+            role="img"
+            aria-label="UK map with venue markers"
           >
-            {/* Sea background */}
-            <rect width={SVG_WIDTH} height={SVG_HEIGHT} fill="#1a3a5c" />
-            
-            {/* Grid for reference (subtle) */}
-            <defs>
-              <pattern id="grid" width="18" height="27" patternUnits="userSpaceOnUse">
-                <path d="M 18 0 L 0 0 0 27" fill="none" stroke="#ffffff" strokeWidth="0.1" opacity="0.1"/>
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
+            {/* Sea */}
+            <rect width={MAP_VIEWBOX.width} height={MAP_VIEWBOX.height} fill="hsl(var(--muted))" />
 
-            {/* Ireland (context - faded) */}
-            <path
-              d={irelandPath}
-              fill="#1a3d2e"
-              stroke="#2d5a4a"
-              strokeWidth="0.5"
-              opacity="0.3"
-            />
-
-            {/* Scotland */}
-            <path
-              d={scotlandPath}
-              {...getRegionStyle('scotland')}
-              className="transition-all duration-300"
-            />
-            <path
-              d={hebridesPath}
-              {...getRegionStyle('scotland')}
-              className="transition-all duration-300"
-            />
-            <path
-              d={orkneyPath}
-              {...getRegionStyle('scotland')}
-              className="transition-all duration-300"
-            />
-
-            {/* Northern England */}
-            <path
-              d={northPath}
-              {...getRegionStyle('north')}
-              className="transition-all duration-300"
-            />
-
-            {/* Wales */}
-            <path
-              d={walesPath}
-              {...getRegionStyle('wales')}
-              className="transition-all duration-300"
-            />
-
-            {/* Midlands */}
-            <path
-              d={midlandsPath}
-              {...getRegionStyle('midlands')}
-              className="transition-all duration-300"
-            />
-
-            {/* Southern England */}
-            <path
-              d={southPath}
-              {...getRegionStyle('south')}
-              className="transition-all duration-300"
-            />
+            {/* UK landmass (GeoJSON projected) */}
+            {ukPathD ? (
+              <path
+                d={ukPathD}
+                fill="hsl(var(--card))"
+                stroke="hsl(var(--border))"
+                strokeWidth={1}
+                vectorEffect="non-scaling-stroke"
+              />
+            ) : (
+              <text
+                x={MAP_VIEWBOX.width / 2}
+                y={MAP_VIEWBOX.height / 2}
+                textAnchor="middle"
+                fill="hsl(var(--muted-foreground))"
+                fontSize={12}
+              >
+                Map data failed to load
+              </text>
+            )}
 
             {/* City reference points */}
-            {cities.map((city) => (
-              <g key={city.name}>
-                <circle
-                  cx={city.svg.x}
-                  cy={city.svg.y}
-                  r="1.5"
-                  fill="#ffffff"
-                  opacity="0.5"
-                />
+            {cities.map((c) => (
+              <g key={c.name}>
+                <circle cx={c.x} cy={c.y} r={1.6} fill="hsl(var(--foreground))" opacity={0.35} />
                 <text
-                  x={city.svg.x + 3}
-                  y={city.svg.y + 1}
-                  fill="#ffffff"
-                  fontSize="5"
-                  opacity="0.6"
+                  x={c.x + 3}
+                  y={c.y + 1}
+                  fill="hsl(var(--foreground))"
+                  opacity={0.45}
+                  fontSize={6}
                   className="pointer-events-none"
                 >
-                  {city.name}
+                  {c.name}
                 </text>
               </g>
             ))}
 
-            {/* Region labels */}
-            <text x="95" y="55" textAnchor="middle" fill="#ffffff" fontSize="8" fontWeight="600" opacity={selectedRegion === 'scotland' || selectedRegion === 'all' ? 0.85 : 0.25} className="pointer-events-none">
-              SCOTLAND
-            </text>
-            <text x="115" y="115" textAnchor="middle" fill="#ffffff" fontSize="7" fontWeight="600" opacity={selectedRegion === 'north' || selectedRegion === 'all' ? 0.85 : 0.25} className="pointer-events-none">
-              NORTH
-            </text>
-            <text x="55" y="175" textAnchor="middle" fill="#ffffff" fontSize="6" fontWeight="600" opacity={selectedRegion === 'wales' || selectedRegion === 'all' ? 0.85 : 0.25} className="pointer-events-none">
-              WALES
-            </text>
-            <text x="120" y="165" textAnchor="middle" fill="#ffffff" fontSize="7" fontWeight="600" opacity={selectedRegion === 'midlands' || selectedRegion === 'all' ? 0.85 : 0.25} className="pointer-events-none">
-              MIDLANDS
-            </text>
-            <text x="130" y="215" textAnchor="middle" fill="#ffffff" fontSize="7" fontWeight="600" opacity={selectedRegion === 'south' || selectedRegion === 'all' ? 0.85 : 0.25} className="pointer-events-none">
-              SOUTH
-            </text>
-          </svg>
-
-          {/* Venue Markers */}
-          {mappedVenues.map(({ name, events: venueEvents, position }) => {
-            const isSelected = selectedVenue === name;
-            
-            return (
-              <button
-                key={name}
-                className={`absolute transform -translate-x-1/2 -translate-y-full transition-all duration-200 group ${
-                  isSelected ? 'z-30 scale-110' : 'z-20 hover:z-25 hover:scale-105'
-                }`}
-                style={{ top: `${position.y}%`, left: `${position.x}%` }}
-                onClick={() => handleMarkerClick(name)}
-                title={`${name} - ${venueEvents.length} event${venueEvents.length !== 1 ? 's' : ''}`}
+            {/* Region labels (for orientation) */}
+            {regionLabels.map((r) => (
+              <text
+                key={r.region}
+                x={r.x}
+                y={r.y}
+                textAnchor="middle"
+                fill="hsl(var(--foreground))"
+                opacity={selectedRegion === 'all' || selectedRegion === r.region ? 0.6 : 0.2}
+                fontSize={9}
+                fontWeight={600}
+                className="pointer-events-none"
               >
-                <div className="relative">
-                  <svg 
-                    width="28" 
-                    height="36" 
-                    viewBox="0 0 28 36" 
-                    className={`drop-shadow-lg transition-colors ${
-                      isSelected ? 'text-primary' : 'text-accent group-hover:text-primary'
-                    }`}
-                  >
+                {r.label}
+              </text>
+            ))}
+
+            {/* Venue markers (rendered in the same projected SVG space for maximum accuracy) */}
+            {venueMarkers.map((v) => {
+              const isSelected = selectedVenue === v.name;
+              const badgeFill = isSelected ? 'hsl(var(--primary-foreground))' : 'hsl(var(--primary))';
+              const badgeText = isSelected ? 'hsl(var(--primary))' : 'hsl(var(--primary-foreground))';
+
+              return (
+                <g
+                  key={v.name}
+                  transform={`translate(${v.x} ${v.y})`}
+                  onClick={() => handleMarkerClick(v.name)}
+                  className={`cursor-pointer transition-transform ${isSelected ? 'text-primary' : 'text-accent hover:text-primary'}`}
+                >
+                  <title>
+                    {v.name} - {v.events.length} event{v.events.length !== 1 ? 's' : ''}
+                  </title>
+
+                  {/* Pin */}
+                  <g transform="translate(-14 -36)">
                     <path
                       d="M14 0C6.268 0 0 6.268 0 14c0 7.732 14 22 14 22s14-14.268 14-22C28 6.268 21.732 0 14 0z"
                       fill="currentColor"
                     />
-                    <circle cx="14" cy="12" r="5" fill="white" />
-                  </svg>
-                  
-                  <span className={`absolute -top-1 -right-1 text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 ${
-                    isSelected ? 'bg-primary-foreground text-primary' : 'bg-primary text-primary-foreground'
-                  }`}>
-                    {venueEvents.length}
-                  </span>
-                </div>
-                
-                <div className={`absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-2 py-1 bg-card text-foreground text-xs rounded shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none border border-border ${
-                  isSelected ? 'opacity-100' : ''
-                }`}>
-                  {name}
-                </div>
-              </button>
-            );
-          })}
+                    <circle cx="14" cy="12" r="5" fill="hsl(var(--background))" />
+                  </g>
+
+                  {/* Count badge */}
+                  <g transform="translate(10 -34)">
+                    <circle r="8" fill={badgeFill} />
+                    <text
+                      x={0}
+                      y={3}
+                      textAnchor="middle"
+                      fontSize={8}
+                      fontWeight={800}
+                      fill={badgeText}
+                    >
+                      {v.events.length}
+                    </text>
+                  </g>
+                </g>
+              );
+            })}
+          </svg>
         </div>
 
         {/* Legend */}
