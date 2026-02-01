@@ -3,11 +3,12 @@ import { EventTypeBadge } from './EventTypeBadge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Calendar, Clock, ExternalLink, MapPin, Navigation, X } from 'lucide-react';
+import { Calendar, Clock, ExternalLink, Globe, MapPin, Navigation, X } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useMemo, useState } from 'react';
 import { geoMercator, geoPath, type GeoProjection } from 'd3-geo';
 import ukGeoJsonRaw from '@/assets/geo/GBR.geo.json?raw';
+import { useVenueDetails } from '@/hooks/useVenueDetails';
 
 // Region definitions for filtering
 export type UKRegion = 'all' | 'scotland' | 'north' | 'midlands' | 'south' | 'wales';
@@ -71,6 +72,11 @@ interface EventMapProps {
 export function EventMap({ events, onEventClick }: EventMapProps) {
   const [selectedVenue, setSelectedVenue] = useState<string | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<UKRegion>('all');
+  const { data: venueDetails } = useVenueDetails();
+  
+  const getVenueWebsite = (venueName: string): string | null => {
+    return venueDetails?.get(venueName)?.website ?? null;
+  };
 
   const eventsByVenue = useMemo(() => {
     return events.reduce((acc, event) => {
@@ -370,6 +376,23 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
                 </p>
               </div>
               <div className="flex gap-2">
+                {getVenueWebsite(selectedVenue) && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    asChild
+                  >
+                    <a 
+                      href={getVenueWebsite(selectedVenue)!} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                    >
+                      <Globe className="h-4 w-4 mr-2" />
+                      Visit Website
+                    </a>
+                  </Button>
+                )}
                 <Button
                   variant="default"
                   size="sm"
@@ -474,17 +497,34 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
                         <span className="truncate">{coords?.location || venueEvents[0]?.venue_location || 'UK'}</span>
                       </p>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="shrink-0 text-muted-foreground hover:text-accent"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.open(getGoogleMapsUrl(venueName, venueEvents[0]?.venue_location), '_blank');
-                      }}
-                    >
-                      <Navigation className="h-4 w-4" />
-                    </Button>
+                    <div className="flex gap-1 shrink-0">
+                      {getVenueWebsite(venueName) && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-muted-foreground hover:text-primary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(getVenueWebsite(venueName)!, '_blank');
+                          }}
+                          title="Visit website"
+                        >
+                          <Globe className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-accent"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(getGoogleMapsUrl(venueName, venueEvents[0]?.venue_location), '_blank');
+                        }}
+                        title="Get directions"
+                      >
+                        <Navigation className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
 
                   <p className="text-sm text-accent font-medium">
