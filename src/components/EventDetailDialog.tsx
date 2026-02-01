@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar, MapPin, Clock, ExternalLink, Globe, Pencil, CheckCircle, AlertCircle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useVenueDetails } from '@/hooks/useVenueDetails';
+import { useIsAdmin } from '@/hooks/useAuth';
 
 interface EventDetailDialogProps {
   event: PaintballEvent | null;
@@ -21,6 +22,7 @@ interface EventDetailDialogProps {
 
 export function EventDetailDialog({ event, open, onOpenChange, onEdit }: EventDetailDialogProps) {
   const { data: venueDetails } = useVenueDetails();
+  const { data: isAdmin } = useIsAdmin();
   
   if (!event) return null;
 
@@ -122,17 +124,20 @@ export function EventDetailDialog({ event, open, onOpenChange, onEdit }: EventDe
                 </a>
               </Button>
             )}
-            <Button
-              variant="outline"
-              onClick={() => {
-                onOpenChange(false);
-                onEdit(event);
-              }}
-              className="border-border gap-2"
-            >
-              <Pencil className="h-4 w-4" />
-              Edit
-            </Button>
+            {/* Only show edit button to admins */}
+            {isAdmin && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  onOpenChange(false);
+                  onEdit(event);
+                }}
+                className="border-border gap-2"
+              >
+                <Pencil className="h-4 w-4" />
+                Edit
+              </Button>
+            )}
           </div>
         </div>
       </DialogContent>

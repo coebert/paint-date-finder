@@ -1,7 +1,11 @@
-import { Crosshair, Calendar, List, Plus, Map, Send, Settings } from 'lucide-react';
+import { useState } from 'react';
+import { Crosshair, Calendar, List, Plus, Map, Send, Settings, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
+import { useAuth, useIsAdmin } from '@/hooks/useAuth';
+import { UserMenu } from '@/components/UserMenu';
+import { AuthDialog } from '@/components/AuthDialog';
 
 interface HeaderProps {
   view: 'calendar' | 'list' | 'map';
@@ -11,6 +15,10 @@ interface HeaderProps {
 }
 
 export function Header({ view, onViewChange, onAddEvent, onSubmitEvent }: HeaderProps) {
+  const { user, loading: authLoading } = useAuth();
+  const { data: isAdmin } = useIsAdmin();
+  const [authDialogOpen, setAuthDialogOpen] = useState(false);
+
   return (
     <header className="tactical-gradient border-b border-border/50">
       <div className="container mx-auto px-4 py-6">
@@ -84,27 +92,52 @@ export function Header({ view, onViewChange, onAddEvent, onSubmitEvent }: Header
               Submit Event
             </Button>
 
-            <Button
-              onClick={onAddEvent}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Add Event
-            </Button>
+            {/* Admin-only: Add Event button */}
+            {isAdmin && (
+              <Button
+                onClick={onAddEvent}
+                className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add Event
+              </Button>
+            )}
 
-            <Button
-              variant="ghost"
-              size="icon"
-              asChild
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <Link to="/submissions">
-                <Settings className="h-4 w-4" />
-              </Link>
-            </Button>
+            {/* Admin-only: Settings/Submissions link */}
+            {isAdmin && (
+              <Button
+                variant="ghost"
+                size="icon"
+                asChild
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <Link to="/submissions">
+                  <Settings className="h-4 w-4" />
+                </Link>
+              </Button>
+            )}
+
+            {/* Auth controls */}
+            {!authLoading && (
+              user ? (
+                <UserMenu />
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setAuthDialogOpen(true)}
+                  className="gap-2 text-muted-foreground hover:text-foreground"
+                >
+                  <LogIn className="h-4 w-4" />
+                  Admin Login
+                </Button>
+              )
+            )}
           </div>
         </div>
       </div>
+
+      <AuthDialog open={authDialogOpen} onOpenChange={setAuthDialogOpen} />
     </header>
   );
 }
