@@ -3,12 +3,14 @@ import { EventTypeBadge } from './EventTypeBadge';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Calendar, MapPin, Clock, ExternalLink, Pencil, CheckCircle, AlertCircle } from 'lucide-react';
+import { Calendar, MapPin, Clock, ExternalLink, Globe, Pencil, CheckCircle, AlertCircle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import { useVenueDetails } from '@/hooks/useVenueDetails';
 
 interface EventDetailDialogProps {
   event: PaintballEvent | null;
@@ -18,13 +20,16 @@ interface EventDetailDialogProps {
 }
 
 export function EventDetailDialog({ event, open, onOpenChange, onEdit }: EventDetailDialogProps) {
+  const { data: venueDetails } = useVenueDetails();
+  
   if (!event) return null;
 
   const eventDate = parseISO(event.event_date);
+  const venueWebsite = venueDetails?.get(event.venue_name)?.website ?? null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg bg-card border-border">
+      <DialogContent className="max-w-lg bg-card border-border" aria-describedby="event-dialog-description">
         <DialogHeader>
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -32,6 +37,9 @@ export function EventDetailDialog({ event, open, onOpenChange, onEdit }: EventDe
               <DialogTitle className="font-display text-2xl tracking-wide pr-8">
                 {event.title}
               </DialogTitle>
+              <DialogDescription id="event-dialog-description" className="sr-only">
+                Event details for {event.title} at {event.venue_name}
+              </DialogDescription>
             </div>
           </div>
         </DialogHeader>
@@ -52,12 +60,27 @@ export function EventDetailDialog({ event, open, onOpenChange, onEdit }: EventDe
             </div>
           )}
 
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <MapPin className="h-5 w-5 text-accent" />
-            <span>
-              {event.venue_name}
-              {event.venue_location && `, ${event.venue_location}`}
-            </span>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <MapPin className="h-5 w-5 text-accent" />
+              <span>
+                {event.venue_name}
+                {event.venue_location && `, ${event.venue_location}`}
+              </span>
+            </div>
+            {venueWebsite && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="shrink-0 text-primary hover:text-primary/80 gap-1"
+                asChild
+              >
+                <a href={venueWebsite} target="_blank" rel="noopener noreferrer">
+                  <Globe className="h-4 w-4" />
+                  Visit Venue
+                </a>
+              </Button>
+            )}
           </div>
 
           {event.price_info && (
