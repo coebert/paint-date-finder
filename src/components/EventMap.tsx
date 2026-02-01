@@ -36,22 +36,40 @@ const VENUE_COORDINATES: Record<string, { lat: number; lng: number; location: st
   'Mayhem Paintball': { lat: 51.67, lng: 0.08, location: 'Abridge, Essex', region: 'south' },
   'Ground Zero Paintball': { lat: 50.85, lng: -1.79, location: 'Ringwood, Hampshire', region: 'south' },
   'Red Alert Paintball': { lat: 51.72, lng: -0.54, location: 'Bovingdon, Hertfordshire', region: 'south' },
+  'Apocalypse Paintball': { lat: 51.24, lng: -0.17, location: 'Redhill, Surrey', region: 'south' },
+  'Battlezone Paintball': { lat: 51.27, lng: 0.52, location: 'Kent', region: 'south' },
+  'Combat Paintball': { lat: 51.32, lng: -0.38, location: 'Surrey', region: 'south' },
+  'Ultimate Paintball': { lat: 51.45, lng: -0.97, location: 'Reading, Berkshire', region: 'south' },
+  'Paintball Park': { lat: 51.72, lng: 0.25, location: 'Essex', region: 'south' },
+  'Paintball Centre': { lat: 51.06, lng: -1.32, location: 'Hampshire', region: 'south' },
   // Midlands
   'Delta Force Paintball Birmingham': { lat: 52.49, lng: -1.89, location: 'Birmingham', region: 'midlands' },
   'NPF Bassetts Pole': { lat: 52.58, lng: -1.75, location: 'Sutton Coldfield', region: 'midlands' },
   'Skirmish Paintball': { lat: 53.05, lng: -1.05, location: 'Nottinghamshire', region: 'midlands' },
+  'Camouflage Paintball': { lat: 52.41, lng: -1.78, location: 'Solihull, West Midlands', region: 'midlands' },
+  'Warzone Paintball': { lat: 52.82, lng: -2.12, location: 'Staffordshire', region: 'midlands' },
+  'Paintball Sports UK': { lat: 52.75, lng: -2.05, location: 'Staffordshire', region: 'midlands' },
+  'Commando Elite': { lat: 52.45, lng: -1.93, location: 'West Midlands', region: 'midlands' },
+  'Invasion Paintball': { lat: 52.63, lng: -1.13, location: 'Leicestershire', region: 'midlands' },
+  'Driver Wood Paintball': { lat: 53.12, lng: -1.18, location: 'Nottinghamshire', region: 'midlands' },
+  'OMG Events': { lat: 52.5, lng: -1.5, location: 'Various UK Locations', region: 'midlands' },
   // North
   'The Gathering Paintball': { lat: 53.65, lng: -1.78, location: 'Huddersfield', region: 'north' },
   'Delta Force Paintball Leeds': { lat: 53.80, lng: -1.55, location: 'Leeds', region: 'north' },
   'Special Ops Paintball': { lat: 53.75, lng: -1.60, location: 'Leeds', region: 'north' },
   'Bedlam Paintball - Manchester': { lat: 53.48, lng: -2.24, location: 'Manchester', region: 'north' },
+  'Halo Mill Paintball': { lat: 53.64, lng: -1.78, location: 'Huddersfield, West Yorkshire', region: 'north' },
+  'Paintball Commando': { lat: 53.37, lng: -3.07, location: 'Wirral, Merseyside', region: 'north' },
+  'Combat Zone Paintball': { lat: 53.96, lng: -1.08, location: 'Yorkshire', region: 'north' },
   // Scotland
+  'Bedlam Paintball Edinburgh': { lat: 55.95, lng: -3.19, location: 'Edinburgh', region: 'scotland' },
   'Bedlam Paintball - Edinburgh': { lat: 55.95, lng: -3.19, location: 'Edinburgh', region: 'scotland' },
   'Bedlam Paintball - Glasgow': { lat: 55.86, lng: -4.25, location: 'Glasgow', region: 'scotland' },
+  'Urban Paintball Scotland': { lat: 55.86, lng: -4.25, location: 'Glasgow', region: 'scotland' },
   // Wales
   'Delta Force Paintball Cardiff': { lat: 51.48, lng: -3.18, location: 'Cardiff', region: 'wales' },
-  // OMG Events
-  'OMG Events': { lat: 52.5, lng: -1.5, location: 'Various UK Locations', region: 'midlands' },
+  'Planet Paintball': { lat: 51.75, lng: -3.38, location: 'Wales', region: 'wales' },
+  'Wales Paintball': { lat: 51.48, lng: -3.18, location: 'Cardiff', region: 'wales' },
 };
 
 
