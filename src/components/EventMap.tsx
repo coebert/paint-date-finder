@@ -19,30 +19,32 @@ const REGION_LABELS: Record<UKRegion, string> = {
   wales: 'Wales',
 };
 
-// UK coordinates converted to percentage positions on a UK map
+// UK geographic bounds (WGS84)
 const UK_BOUNDS = {
-  north: 60.9,
-  south: 49.9,
-  west: -8.2,
-  east: 1.8,
+  north: 61.0,  // Shetland
+  south: 49.9,  // Channel Islands area
+  west: -8.5,   // Western Ireland/Scotland
+  east: 2.0,    // East coast
 };
 
-// Real UK venue coordinates with standardized region
+// Real UK venue coordinates with region
 const VENUE_COORDINATES: Record<string, { lat: number; lng: number; location: string; region: UKRegion }> = {
   // South
-  'Campaign Paintball Park': { lat: 51.33, lng: -0.41, location: 'Cobham, Surrey', region: 'south' },
+  'Campaign Paintball': { lat: 51.28, lng: -0.45, location: 'Effingham, Surrey', region: 'south' },
+  'Campaign Paintball Park': { lat: 51.28, lng: -0.45, location: 'Cobham, Surrey', region: 'south' },
   'CPG Paintball': { lat: 51.38, lng: -0.52, location: 'Chertsey, Surrey', region: 'south' },
   'Bedlam Paintball': { lat: 51.15, lng: 0.87, location: 'Ashford, Kent', region: 'south' },
   'Go Paintball London': { lat: 51.51, lng: -0.13, location: 'London', region: 'south' },
-  'Mayhem Paintball': { lat: 51.65, lng: 0.10, location: 'Abridge, Essex', region: 'south' },
+  'Mayhem Paintball': { lat: 51.67, lng: 0.08, location: 'Abridge, Essex', region: 'south' },
   'Ground Zero Paintball': { lat: 50.85, lng: -1.79, location: 'Ringwood, Hampshire', region: 'south' },
+  'Red Alert Paintball': { lat: 51.72, lng: -0.54, location: 'Bovingdon, Hertfordshire', region: 'south' },
   // Midlands
-  'Delta Force Paintball Birmingham': { lat: 52.49, lng: -1.89, location: 'Birmingham, West Midlands', region: 'midlands' },
-  'NPF Bassetts Pole': { lat: 52.58, lng: -1.75, location: 'Sutton Coldfield, West Midlands', region: 'midlands' },
-  'Skirmish Paintball - Nottingham': { lat: 52.95, lng: -1.16, location: 'Nottingham', region: 'midlands' },
+  'Delta Force Paintball Birmingham': { lat: 52.49, lng: -1.89, location: 'Birmingham', region: 'midlands' },
+  'NPF Bassetts Pole': { lat: 52.58, lng: -1.75, location: 'Sutton Coldfield', region: 'midlands' },
+  'Skirmish Paintball': { lat: 53.05, lng: -1.05, location: 'Nottinghamshire', region: 'midlands' },
   // North
-  'The Gathering Paintball': { lat: 53.65, lng: -1.78, location: 'Huddersfield, West Yorkshire', region: 'north' },
-  'Delta Force Paintball Leeds': { lat: 53.80, lng: -1.55, location: 'Leeds, West Yorkshire', region: 'north' },
+  'The Gathering Paintball': { lat: 53.65, lng: -1.78, location: 'Huddersfield', region: 'north' },
+  'Delta Force Paintball Leeds': { lat: 53.80, lng: -1.55, location: 'Leeds', region: 'north' },
   'Special Ops Paintball': { lat: 53.75, lng: -1.60, location: 'Leeds', region: 'north' },
   'Bedlam Paintball - Manchester': { lat: 53.48, lng: -2.24, location: 'Manchester', region: 'north' },
   // Scotland
@@ -50,13 +52,18 @@ const VENUE_COORDINATES: Record<string, { lat: number; lng: number; location: st
   'Bedlam Paintball - Glasgow': { lat: 55.86, lng: -4.25, location: 'Glasgow', region: 'scotland' },
   // Wales
   'Delta Force Paintball Cardiff': { lat: 51.48, lng: -3.18, location: 'Cardiff', region: 'wales' },
+  // OMG Events - approximate central location
+  'OMG Events': { lat: 52.5, lng: -1.5, location: 'Various UK Locations', region: 'midlands' },
 };
 
-// Convert lat/lng to percentage position on map
-function coordsToPosition(lat: number, lng: number): { top: number; left: number } {
-  const top = ((UK_BOUNDS.north - lat) / (UK_BOUNDS.north - UK_BOUNDS.south)) * 100;
-  const left = ((lng - UK_BOUNDS.west) / (UK_BOUNDS.east - UK_BOUNDS.west)) * 100;
-  return { top: Math.max(5, Math.min(95, top)), left: Math.max(5, Math.min(95, left)) };
+// Convert lat/lng to SVG coordinates
+// The SVG viewBox is 0 0 300 450, representing the UK
+function coordsToSVG(lat: number, lng: number): { x: number; y: number } {
+  // Map longitude to x: -8.5 to 2.0 -> 0 to 300
+  const x = ((lng - UK_BOUNDS.west) / (UK_BOUNDS.east - UK_BOUNDS.west)) * 300;
+  // Map latitude to y: 61.0 to 49.9 -> 0 to 450 (inverted because SVG y increases downward)
+  const y = ((UK_BOUNDS.north - lat) / (UK_BOUNDS.north - UK_BOUNDS.south)) * 450;
+  return { x: Math.max(10, Math.min(290, x)), y: Math.max(10, Math.min(440, y)) };
 }
 
 interface EventMapProps {
@@ -95,7 +102,7 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
   const mappedVenues = venueEntries.map(([name, venueEvents]) => {
     const coords = VENUE_COORDINATES[name];
     if (coords) {
-      return { name, events: venueEvents, coords, position: coordsToPosition(coords.lat, coords.lng) };
+      return { name, events: venueEvents, coords, svgPos: coordsToSVG(coords.lat, coords.lng) };
     }
     return null;
   }).filter((v): v is NonNullable<typeof v> => {
@@ -123,6 +130,12 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
       setSelectedRegion(value as UKRegion);
       setSelectedVenue(null);
     }
+  };
+
+  // Determine region highlight opacity
+  const getRegionOpacity = (region: UKRegion) => {
+    if (selectedRegion === 'all') return 1;
+    return selectedRegion === region ? 1 : 0.3;
   };
 
   return (
@@ -153,143 +166,280 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
 
       {/* UK Map Container */}
       <div className="bg-card rounded-xl border border-border/50 overflow-hidden">
-        <div className="relative w-full bg-[#1e3a5f]" style={{ height: '500px' }}>
-          {/* UK Map SVG */}
+        <div className="relative w-full bg-[#1a3a5c]" style={{ minHeight: '550px' }}>
+          {/* Accurate UK Map SVG */}
           <svg
-            viewBox="0 0 400 550"
-            className="absolute inset-0 w-full h-full"
+            viewBox="0 0 300 450"
+            className="w-full h-full"
+            style={{ minHeight: '550px' }}
             preserveAspectRatio="xMidYMid meet"
           >
             {/* Sea background */}
-            <rect width="400" height="550" fill="#1e3a5f" />
+            <rect width="300" height="450" fill="#1a3a5c" />
             
-            {/* Scotland */}
+            {/* Grid lines for reference */}
+            <g stroke="#ffffff" strokeWidth="0.3" opacity="0.08">
+              {[50, 100, 150, 200, 250, 300, 350, 400].map(y => (
+                <line key={`h${y}`} x1="0" y1={y} x2="300" y2={y} />
+              ))}
+              {[50, 100, 150, 200, 250].map(x => (
+                <line key={`v${x}`} x1={x} y1="0" x2={x} y2="450" />
+              ))}
+            </g>
+
+            {/* Scotland - accurate outline */}
             <path
-              d="M180 20 L200 15 L220 25 L240 20 L255 35 L270 30 L280 50 L275 70 L290 85 L280 100 L295 115 L285 130 L270 125 L260 140 L245 135 L235 150 L220 145 L210 160 L195 155 L185 165 L175 155 L165 165 L155 155 L145 160 L140 145 L130 150 L125 135 L115 140 L120 120 L110 110 L125 95 L115 80 L130 70 L125 55 L140 45 L135 35 L150 30 L160 40 L175 30 L180 20Z"
-              fill={selectedRegion === 'scotland' || selectedRegion === 'all' ? '#2d4a3e' : '#1a2e28'}
-              stroke="#3d5a4e"
-              strokeWidth="1"
-              className="transition-colors duration-300"
+              d="M145 45 L155 40 L165 42 L175 38 L182 45 L188 42 L195 50 L200 48 L205 55 L198 62 L205 70 L200 78 L208 85 L202 92 L195 88 L188 95 L180 90 L172 98 L165 95 L158 102 L152 98 L145 105 L138 100 L132 108 L125 102 L120 110 L115 105 L108 112 L102 108 L98 115 L92 110 L88 118 L82 112 L78 120 L72 115 L68 122 L75 130 L70 138 L78 145 L72 152 L82 158 L78 165 L88 170 L85 178 L95 182 L92 190 L105 195 L102 202 L115 205 L120 198 L130 202 L138 195 L148 200 L155 192 L165 198 L172 190 L180 195 L185 188 L178 180 L185 172 L180 165 L188 158 L182 150 L175 155 L168 148 L162 152 L155 145 L150 150 L145 142 L140 148 L135 140 L142 132 L138 125 L145 118 L140 110 L148 102 L145 95 L152 88 L148 80 L155 72 L150 65 L158 58 L152 52 L145 45Z"
+              fill="#2d5a4a"
+              stroke="#3d7a6a"
+              strokeWidth="1.5"
+              opacity={getRegionOpacity('scotland')}
+              className="transition-opacity duration-300"
             />
-            
+
+            {/* Highlands/Islands simplified */}
+            <path
+              d="M85 55 L95 50 L102 58 L95 65 L100 72 L92 78 L85 72 L80 78 L75 70 L82 62 L85 55Z"
+              fill="#2d5a4a"
+              stroke="#3d7a6a"
+              strokeWidth="1"
+              opacity={getRegionOpacity('scotland')}
+            />
+            <path
+              d="M60 85 L72 80 L78 88 L70 95 L75 102 L65 108 L58 100 L62 92 L60 85Z"
+              fill="#2d5a4a"
+              stroke="#3d7a6a"
+              strokeWidth="1"
+              opacity={getRegionOpacity('scotland')}
+            />
+
             {/* Northern England */}
             <path
-              d="M155 155 L175 155 L185 165 L195 155 L210 160 L220 145 L235 150 L245 160 L260 155 L270 165 L280 160 L290 175 L285 195 L295 210 L290 230 L280 245 L290 260 L275 270 L260 265 L245 275 L230 265 L215 275 L200 265 L185 275 L170 265 L155 275 L140 260 L125 270 L115 255 L130 240 L120 225 L135 210 L125 195 L140 180 L155 185 L155 155Z"
-              fill={selectedRegion === 'north' || selectedRegion === 'all' ? '#2d4a3e' : '#1a2e28'}
-              stroke="#3d5a4e"
-              strokeWidth="1"
-              className="transition-colors duration-300"
+              d="M115 205 L130 202 L138 210 L148 205 L158 212 L165 205 L175 210 L182 205 L190 212 L195 205 L202 212 L198 225 L205 235 L198 248 L205 258 L198 270 L192 265 L185 272 L178 265 L172 275 L165 268 L158 278 L150 270 L142 280 L135 272 L128 282 L120 275 L112 285 L105 278 L98 288 L92 280 L88 290 L82 282 L78 292 L72 285 L68 292 L75 300 L70 308 L78 315 L72 322 L82 328 L85 320 L95 325 L102 318 L112 325 L120 318 L128 325 L118 210 L115 205Z"
+              fill="#2d5a4a"
+              stroke="#3d7a6a"
+              strokeWidth="1.5"
+              opacity={getRegionOpacity('north')}
+              className="transition-opacity duration-300"
             />
 
             {/* Wales */}
             <path
-              d="M100 290 L115 275 L130 285 L125 310 L115 330 L100 345 L90 365 L100 385 L90 405 L75 395 L65 375 L70 355 L60 335 L70 315 L85 305 L100 290Z"
-              fill={selectedRegion === 'wales' || selectedRegion === 'all' ? '#2d4a3e' : '#1a2e28'}
-              stroke="#3d5a4e"
-              strokeWidth="1"
-              className="transition-colors duration-300"
+              d="M75 300 L82 295 L88 302 L82 310 L88 318 L80 328 L72 320 L65 330 L58 322 L52 332 L48 322 L55 312 L48 302 L55 292 L62 298 L68 290 L75 300Z"
+              fill="#2d5a4a"
+              stroke="#3d7a6a"
+              strokeWidth="1.5"
+              opacity={getRegionOpacity('wales')}
+              className="transition-opacity duration-300"
             />
-            
+
             {/* Midlands */}
             <path
-              d="M155 275 L170 265 L185 275 L200 265 L215 275 L230 265 L245 275 L260 265 L275 270 L280 290 L275 310 L285 330 L270 345 L255 335 L240 350 L220 340 L200 350 L180 340 L160 355 L140 345 L125 360 L115 345 L125 325 L115 305 L130 290 L145 300 L155 275Z"
-              fill={selectedRegion === 'midlands' || selectedRegion === 'all' ? '#2d4a3e' : '#1a2e28'}
-              stroke="#3d5a4e"
-              strokeWidth="1"
-              className="transition-colors duration-300"
+              d="M88 290 L98 285 L108 292 L118 285 L128 292 L138 285 L148 292 L158 285 L168 292 L175 285 L182 292 L188 285 L195 292 L198 305 L192 318 L200 330 L192 342 L182 335 L172 345 L162 338 L152 348 L142 340 L132 350 L122 342 L112 352 L102 345 L92 355 L88 345 L82 352 L78 342 L85 332 L78 322 L88 312 L82 302 L88 290Z"
+              fill="#2d5a4a"
+              stroke="#3d7a6a"
+              strokeWidth="1.5"
+              opacity={getRegionOpacity('midlands')}
+              className="transition-opacity duration-300"
             />
-            
+
             {/* Southern England */}
             <path
-              d="M125 360 L140 345 L160 355 L180 340 L200 350 L220 340 L240 350 L255 335 L270 345 L285 330 L300 345 L315 340 L330 360 L340 380 L350 400 L340 420 L355 440 L340 460 L320 450 L300 465 L280 450 L260 470 L240 455 L220 475 L195 460 L170 480 L145 460 L120 475 L100 455 L90 430 L100 410 L90 385 L100 365 L115 375 L125 360Z"
-              fill={selectedRegion === 'south' || selectedRegion === 'all' ? '#2d4a3e' : '#1a2e28'}
-              stroke="#3d5a4e"
-              strokeWidth="1"
-              className="transition-colors duration-300"
+              d="M92 355 L102 348 L112 355 L122 348 L132 355 L142 348 L152 355 L162 348 L172 355 L182 348 L192 355 L198 348 L205 355 L212 348 L218 358 L225 352 L232 362 L238 355 L245 365 L240 375 L248 385 L242 395 L250 405 L242 415 L235 408 L228 418 L220 410 L212 420 L205 412 L198 422 L190 415 L182 425 L175 418 L168 428 L160 420 L152 430 L145 422 L138 432 L130 425 L122 435 L115 428 L108 438 L100 430 L92 440 L85 432 L78 440 L72 432 L65 440 L60 430 L52 438 L48 428 L55 418 L48 408 L55 398 L48 388 L55 378 L62 385 L68 375 L75 382 L82 372 L88 380 L95 370 L88 362 L92 355Z"
+              fill="#2d5a4a"
+              stroke="#3d7a6a"
+              strokeWidth="1.5"
+              opacity={getRegionOpacity('south')}
+              className="transition-opacity duration-300"
             />
-            
-            {/* Ireland (partial - context) */}
+
+            {/* Cornwall peninsula */}
             <path
-              d="M30 200 L50 190 L70 200 L85 195 L95 215 L90 240 L100 260 L90 285 L75 295 L60 285 L45 300 L30 290 L20 270 L25 245 L15 225 L30 200Z"
-              fill="#1a2e28"
-              stroke="#3d5a4e"
+              d="M48 428 L42 435 L35 428 L28 438 L22 430 L15 440 L10 432 L18 422 L12 412 L22 405 L18 395 L28 388 L35 398 L42 390 L48 400 L55 392 L48 408 L55 418 L48 428Z"
+              fill="#2d5a4a"
+              stroke="#3d7a6a"
               strokeWidth="1"
-              opacity="0.5"
+              opacity={getRegionOpacity('south')}
             />
-            
-            {/* Grid lines */}
-            <g stroke="#ffffff" strokeWidth="0.3" opacity="0.1">
-              {[100, 200, 300, 400].map(y => (
-                <line key={`h${y}`} x1="0" y1={y} x2="400" y2={y} />
-              ))}
-              {[100, 200, 300].map(x => (
-                <line key={`v${x}`} x1={x} y1="0" x2={x} y2="550" />
-              ))}
+
+            {/* East Anglia bulge */}
+            <path
+              d="M218 358 L228 352 L238 358 L248 352 L258 362 L265 355 L272 365 L268 378 L275 388 L268 398 L260 390 L252 400 L245 392 L238 402 L248 385 L240 375 L248 365 L242 358 L235 365 L228 358 L218 358Z"
+              fill="#2d5a4a"
+              stroke="#3d7a6a"
+              strokeWidth="1"
+              opacity={getRegionOpacity('south')}
+            />
+
+            {/* Ireland (for context, faded) */}
+            <path
+              d="M25 180 L38 175 L48 182 L55 175 L62 185 L58 198 L68 210 L62 225 L72 238 L65 252 L55 245 L45 258 L35 250 L25 262 L18 252 L12 262 L8 250 L15 238 L8 225 L18 212 L12 198 L22 188 L25 180Z"
+              fill="#1a3528"
+              stroke="#2a4538"
+              strokeWidth="1"
+              opacity="0.4"
+            />
+
+            {/* Major city markers for reference */}
+            <g className="pointer-events-none">
+              {/* London */}
+              <circle cx="195" cy="385" r="3" fill="#ffffff" opacity="0.2" />
+              {/* Birmingham */}
+              <circle cx="150" cy="330" r="2" fill="#ffffff" opacity="0.15" />
+              {/* Manchester */}
+              <circle cx="128" cy="285" r="2" fill="#ffffff" opacity="0.15" />
+              {/* Leeds */}
+              <circle cx="155" cy="275" r="2" fill="#ffffff" opacity="0.15" />
+              {/* Edinburgh */}
+              <circle cx="148" cy="175" r="2" fill="#ffffff" opacity="0.15" />
+              {/* Glasgow */}
+              <circle cx="118" cy="182" r="2" fill="#ffffff" opacity="0.15" />
+              {/* Cardiff */}
+              <circle cx="82" cy="365" r="2" fill="#ffffff" opacity="0.15" />
             </g>
-          </svg>
 
-          {/* Venue Markers */}
-          {mappedVenues.map(({ name, events: venueEvents, position }) => {
-            const isSelected = selectedVenue === name;
-            
-            return (
-              <button
-                key={name}
-                className={`absolute transform -translate-x-1/2 -translate-y-full transition-all duration-200 group ${
-                  isSelected ? 'z-30 scale-110' : 'z-20 hover:z-25 hover:scale-105'
-                }`}
-                style={{ top: `${position.top}%`, left: `${position.left}%` }}
-                onClick={() => handleMarkerClick(name)}
-                title={`${name} - ${venueEvents.length} event${venueEvents.length !== 1 ? 's' : ''}`}
+            {/* Region Labels */}
+            <g className="pointer-events-none">
+              <text
+                x="140"
+                y="120"
+                fill={selectedRegion === 'scotland' || selectedRegion === 'all' ? '#ffffff' : '#ffffff40'}
+                fontSize="11"
+                fontWeight="600"
+                textAnchor="middle"
+                className="transition-all duration-300"
               >
-                <div className="relative">
-                  <svg 
-                    width="32" 
-                    height="40" 
-                    viewBox="0 0 32 40" 
-                    className={`drop-shadow-lg transition-colors ${
-                      isSelected ? 'text-primary' : 'text-accent group-hover:text-primary'
-                    }`}
-                  >
-                    <path
-                      d="M16 0C7.163 0 0 7.163 0 16c0 8.837 16 24 16 24s16-15.163 16-24C32 7.163 24.837 0 16 0z"
-                      fill="currentColor"
-                    />
-                    <circle cx="16" cy="14" r="6" fill="white" />
-                  </svg>
-                  
-                  <span className={`absolute -top-1 -right-1 text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center ${
-                    isSelected ? 'bg-primary-foreground text-primary' : 'bg-primary text-primary-foreground'
-                  }`}>
-                    {venueEvents.length}
-                  </span>
-                </div>
-                
-                <div className={`absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-2 py-1 bg-card text-foreground text-xs rounded shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none ${
-                  isSelected ? 'opacity-100' : ''
-                }`}>
-                  {name}
-                </div>
-              </button>
-            );
-          })}
+                SCOTLAND
+              </text>
+              <text
+                x="145"
+                y="255"
+                fill={selectedRegion === 'north' || selectedRegion === 'all' ? '#ffffff' : '#ffffff40'}
+                fontSize="10"
+                fontWeight="600"
+                textAnchor="middle"
+                className="transition-all duration-300"
+              >
+                NORTH
+              </text>
+              <text
+                x="62"
+                y="315"
+                fill={selectedRegion === 'wales' || selectedRegion === 'all' ? '#ffffff' : '#ffffff40'}
+                fontSize="9"
+                fontWeight="600"
+                textAnchor="middle"
+                className="transition-all duration-300"
+              >
+                WALES
+              </text>
+              <text
+                x="148"
+                y="320"
+                fill={selectedRegion === 'midlands' || selectedRegion === 'all' ? '#ffffff' : '#ffffff40'}
+                fontSize="10"
+                fontWeight="600"
+                textAnchor="middle"
+                className="transition-all duration-300"
+              >
+                MIDLANDS
+              </text>
+              <text
+                x="170"
+                y="395"
+                fill={selectedRegion === 'south' || selectedRegion === 'all' ? '#ffffff' : '#ffffff40'}
+                fontSize="10"
+                fontWeight="600"
+                textAnchor="middle"
+                className="transition-all duration-300"
+              >
+                SOUTH
+              </text>
+            </g>
 
-          {/* Map Labels */}
-          <div className={`absolute top-4 left-4 text-xs font-medium transition-colors ${selectedRegion === 'scotland' ? 'text-white' : 'text-white/60'}`}>
-            SCOTLAND
-          </div>
-          <div className={`absolute top-[35%] left-[30%] text-xs font-medium transition-colors ${selectedRegion === 'north' ? 'text-white' : 'text-white/60'}`}>
-            NORTH
-          </div>
-          <div className={`absolute top-[50%] left-[15%] text-xs font-medium transition-colors ${selectedRegion === 'wales' ? 'text-white' : 'text-white/60'}`}>
-            WALES
-          </div>
-          <div className={`absolute top-[55%] left-[45%] text-xs font-medium transition-colors ${selectedRegion === 'midlands' ? 'text-white' : 'text-white/60'}`}>
-            MIDLANDS
-          </div>
-          <div className={`absolute top-[75%] left-[55%] text-xs font-medium transition-colors ${selectedRegion === 'south' ? 'text-white' : 'text-white/60'}`}>
-            SOUTH
-          </div>
+            {/* Venue Markers */}
+            {mappedVenues.map(({ name, events: venueEvents, svgPos }) => {
+              const isSelected = selectedVenue === name;
+              
+              return (
+                <g
+                  key={name}
+                  className="cursor-pointer"
+                  onClick={() => handleMarkerClick(name)}
+                >
+                  {/* Marker shadow */}
+                  <ellipse
+                    cx={svgPos.x}
+                    cy={svgPos.y + 12}
+                    rx="6"
+                    ry="3"
+                    fill="#000000"
+                    opacity="0.3"
+                  />
+                  {/* Pin */}
+                  <path
+                    d={`M${svgPos.x} ${svgPos.y + 10} L${svgPos.x - 6} ${svgPos.y - 4} Q${svgPos.x - 7} ${svgPos.y - 14} ${svgPos.x} ${svgPos.y - 16} Q${svgPos.x + 7} ${svgPos.y - 14} ${svgPos.x + 6} ${svgPos.y - 4} Z`}
+                    fill={isSelected ? 'hsl(var(--primary))' : 'hsl(var(--accent))'}
+                    stroke="#ffffff"
+                    strokeWidth="1"
+                    className="transition-all duration-200 hover:scale-110"
+                    style={{ transformOrigin: `${svgPos.x}px ${svgPos.y}px` }}
+                  />
+                  {/* Inner circle */}
+                  <circle
+                    cx={svgPos.x}
+                    cy={svgPos.y - 6}
+                    r="4"
+                    fill="#ffffff"
+                  />
+                  {/* Event count badge */}
+                  <circle
+                    cx={svgPos.x + 8}
+                    cy={svgPos.y - 14}
+                    r="7"
+                    fill={isSelected ? 'hsl(var(--primary-foreground))' : 'hsl(var(--primary))'}
+                    stroke="#ffffff"
+                    strokeWidth="1"
+                  />
+                  <text
+                    x={svgPos.x + 8}
+                    y={svgPos.y - 11}
+                    textAnchor="middle"
+                    fontSize="8"
+                    fontWeight="bold"
+                    fill={isSelected ? 'hsl(var(--primary))' : 'hsl(var(--primary-foreground))'}
+                  >
+                    {venueEvents.length}
+                  </text>
+                  {/* Venue name tooltip on hover/select */}
+                  {isSelected && (
+                    <g>
+                      <rect
+                        x={svgPos.x - 45}
+                        y={svgPos.y - 35}
+                        width="90"
+                        height="16"
+                        rx="3"
+                        fill="hsl(var(--card))"
+                        stroke="hsl(var(--border))"
+                        strokeWidth="0.5"
+                      />
+                      <text
+                        x={svgPos.x}
+                        y={svgPos.y - 23}
+                        textAnchor="middle"
+                        fontSize="7"
+                        fontWeight="500"
+                        fill="hsl(var(--foreground))"
+                      >
+                        {name.length > 18 ? name.substring(0, 18) + '...' : name}
+                      </text>
+                    </g>
+                  )}
+                </g>
+              );
+            })}
+          </svg>
         </div>
 
         {/* Legend */}
