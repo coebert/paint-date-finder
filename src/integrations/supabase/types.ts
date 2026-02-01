@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      event_submissions: {
+        Row: {
+          admin_notes: string | null
+          booking_url: string | null
+          created_at: string
+          description: string | null
+          end_time: string | null
+          event_date: string
+          event_type: Database["public"]["Enums"]["event_type"]
+          id: string
+          price_info: string | null
+          reviewed_at: string | null
+          source_url: string | null
+          start_time: string | null
+          status: Database["public"]["Enums"]["submission_status"]
+          submitter_email: string
+          submitter_name: string | null
+          title: string
+          venue_location: string | null
+          venue_name: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          booking_url?: string | null
+          created_at?: string
+          description?: string | null
+          end_time?: string | null
+          event_date: string
+          event_type?: Database["public"]["Enums"]["event_type"]
+          id?: string
+          price_info?: string | null
+          reviewed_at?: string | null
+          source_url?: string | null
+          start_time?: string | null
+          status?: Database["public"]["Enums"]["submission_status"]
+          submitter_email: string
+          submitter_name?: string | null
+          title: string
+          venue_location?: string | null
+          venue_name: string
+        }
+        Update: {
+          admin_notes?: string | null
+          booking_url?: string | null
+          created_at?: string
+          description?: string | null
+          end_time?: string | null
+          event_date?: string
+          event_type?: Database["public"]["Enums"]["event_type"]
+          id?: string
+          price_info?: string | null
+          reviewed_at?: string | null
+          source_url?: string | null
+          start_time?: string | null
+          status?: Database["public"]["Enums"]["submission_status"]
+          submitter_email?: string
+          submitter_name?: string | null
+          title?: string
+          venue_location?: string | null
+          venue_name?: string
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           booking_url: string | null
@@ -111,6 +174,7 @@ export type Database = {
         | "speedball"
         | "scenario"
         | "other"
+      submission_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -247,6 +311,7 @@ export const Constants = {
         "scenario",
         "other",
       ],
+      submission_status: ["pending", "approved", "rejected"],
     },
   },
 } as const
