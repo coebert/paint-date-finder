@@ -1,10 +1,10 @@
-import { Crosshair, Calendar, List, Plus } from 'lucide-react';
+import { Crosshair, Calendar, List, Plus, Map } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 interface HeaderProps {
-  view: 'calendar' | 'list';
-  onViewChange: (view: 'calendar' | 'list') => void;
+  view: 'calendar' | 'list' | 'map';
+  onViewChange: (view: 'calendar' | 'list' | 'map') => void;
   onAddEvent: () => void;
 }
 
@@ -56,6 +56,20 @@ export function Header({ view, onViewChange, onAddEvent }: HeaderProps) {
               >
                 <List className="h-4 w-4" />
                 List
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onViewChange('map')}
+                className={cn(
+                  'gap-2 transition-colors',
+                  view === 'map'
+                    ? 'bg-accent text-accent-foreground hover:bg-accent/90'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <Map className="h-4 w-4" />
+                Map
               </Button>
             </div>
 

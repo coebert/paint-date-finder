@@ -5,6 +5,7 @@ import { Header } from '@/components/Header';
 import { EventFilters } from '@/components/EventFilters';
 import { EventCalendar } from '@/components/EventCalendar';
 import { EventList } from '@/components/EventList';
+import { EventMap } from '@/components/EventMap';
 import { EventEditDialog } from '@/components/EventEditDialog';
 import { AddEventDialog } from '@/components/AddEventDialog';
 import { EventDetailDialog } from '@/components/EventDetailDialog';
@@ -12,7 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle } from 'lucide-react';
 
 export default function Index() {
-  const [view, setView] = useState<'calendar' | 'list'>('calendar');
+  const [view, setView] = useState<'calendar' | 'list' | 'map'>('calendar');
   const [eventType, setEventType] = useState<EventType | undefined>();
   const [venue, setVenue] = useState('');
   
@@ -74,10 +75,14 @@ export default function Index() {
           </div>
         ) : (
           <>
-            {view === 'calendar' ? (
+            {view === 'calendar' && (
               <EventCalendar events={events || []} onEventClick={handleEventClick} />
-            ) : (
+            )}
+            {view === 'list' && (
               <EventList events={events || []} onEdit={handleEdit} />
+            )}
+            {view === 'map' && (
+              <EventMap events={events || []} onEventClick={handleEventClick} />
             )}
           </>
         )}
