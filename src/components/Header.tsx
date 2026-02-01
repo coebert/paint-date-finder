@@ -1,14 +1,16 @@
-import { Crosshair, Calendar, List, Plus, Map } from 'lucide-react';
+import { Crosshair, Calendar, List, Plus, Map, Send, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { Link } from 'react-router-dom';
 
 interface HeaderProps {
   view: 'calendar' | 'list' | 'map';
   onViewChange: (view: 'calendar' | 'list' | 'map') => void;
   onAddEvent: () => void;
+  onSubmitEvent: () => void;
 }
 
-export function Header({ view, onViewChange, onAddEvent }: HeaderProps) {
+export function Header({ view, onViewChange, onAddEvent, onSubmitEvent }: HeaderProps) {
   return (
     <header className="tactical-gradient border-b border-border/50">
       <div className="container mx-auto px-4 py-6">
@@ -27,7 +29,7 @@ export function Header({ view, onViewChange, onAddEvent }: HeaderProps) {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <div className="bg-secondary rounded-lg p-1 flex">
               <Button
                 variant="ghost"
@@ -74,11 +76,31 @@ export function Header({ view, onViewChange, onAddEvent }: HeaderProps) {
             </div>
 
             <Button
+              onClick={onSubmitEvent}
+              variant="outline"
+              className="gap-2"
+            >
+              <Send className="h-4 w-4" />
+              Submit Event
+            </Button>
+
+            <Button
               onClick={onAddEvent}
               className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
             >
               <Plus className="h-4 w-4" />
               Add Event
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              asChild
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <Link to="/submissions">
+                <Settings className="h-4 w-4" />
+              </Link>
             </Button>
           </div>
         </div>

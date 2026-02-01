@@ -9,6 +9,7 @@ import { EventMap } from '@/components/EventMap';
 import { EventEditDialog } from '@/components/EventEditDialog';
 import { AddEventDialog } from '@/components/AddEventDialog';
 import { EventDetailDialog } from '@/components/EventDetailDialog';
+import { SubmitEventDialog } from '@/components/SubmitEventDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle } from 'lucide-react';
 
@@ -20,6 +21,7 @@ export default function Index() {
   const [editingEvent, setEditingEvent] = useState<PaintballEvent | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
   const [detailEvent, setDetailEvent] = useState<PaintballEvent | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
 
@@ -51,6 +53,7 @@ export default function Index() {
         view={view} 
         onViewChange={setView} 
         onAddEvent={() => setAddDialogOpen(true)}
+        onSubmitEvent={() => setSubmitDialogOpen(true)}
       />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
@@ -104,6 +107,11 @@ export default function Index() {
       <AddEventDialog
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
+      />
+
+      <SubmitEventDialog
+        open={submitDialogOpen}
+        onOpenChange={setSubmitDialogOpen}
       />
 
       <EventDetailDialog
