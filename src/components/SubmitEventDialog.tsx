@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { safeOptionalUrlSchema } from '@/lib/validation';
 import {
   Dialog,
   DialogContent,
@@ -41,9 +42,9 @@ const formSchema = z.object({
   event_date: z.string().min(1, 'Event date is required'),
   start_time: z.string().optional(),
   end_time: z.string().optional(),
-  booking_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  booking_url: safeOptionalUrlSchema,
   price_info: z.string().max(100).optional(),
-  source_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  source_url: safeOptionalUrlSchema,
   submitter_email: z.string().email('Valid email required'),
   submitter_name: z.string().max(100).optional(),
 });
