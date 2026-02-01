@@ -2,12 +2,24 @@ import { PaintballEvent } from '@/types/events';
 import { EventTypeBadge } from './EventTypeBadge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Calendar, Clock, ExternalLink, MapPin, Navigation, X } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useMemo, useState } from 'react';
 
+// Region definitions for filtering
+export type UKRegion = 'all' | 'scotland' | 'north' | 'midlands' | 'south' | 'wales';
+
+const REGION_LABELS: Record<UKRegion, string> = {
+  all: 'All UK',
+  scotland: 'Scotland',
+  north: 'North',
+  midlands: 'Midlands',
+  south: 'South',
+  wales: 'Wales',
+};
+
 // UK coordinates converted to percentage positions on a UK map
-// Map bounds: roughly 49.9°N to 60.9°N latitude, -8.2°W to 1.8°E longitude
 const UK_BOUNDS = {
   north: 60.9,
   south: 49.9,
@@ -15,29 +27,29 @@ const UK_BOUNDS = {
   east: 1.8,
 };
 
-// Real UK venue coordinates (lat, lng)
-const VENUE_COORDINATES: Record<string, { lat: number; lng: number; region: string }> = {
-  // South East
-  'Campaign Paintball Park': { lat: 51.33, lng: -0.41, region: 'Cobham, Surrey' },
-  'CPG Paintball': { lat: 51.38, lng: -0.52, region: 'Chertsey, Surrey' },
-  'Bedlam Paintball': { lat: 51.15, lng: 0.87, region: 'Ashford, Kent' },
-  // London area
-  'Go Paintball London': { lat: 51.51, lng: -0.13, region: 'London' },
-  // Essex
-  'Mayhem Paintball': { lat: 51.65, lng: 0.10, region: 'Abridge, Essex' },
+// Real UK venue coordinates with standardized region
+const VENUE_COORDINATES: Record<string, { lat: number; lng: number; location: string; region: UKRegion }> = {
+  // South
+  'Campaign Paintball Park': { lat: 51.33, lng: -0.41, location: 'Cobham, Surrey', region: 'south' },
+  'CPG Paintball': { lat: 51.38, lng: -0.52, location: 'Chertsey, Surrey', region: 'south' },
+  'Bedlam Paintball': { lat: 51.15, lng: 0.87, location: 'Ashford, Kent', region: 'south' },
+  'Go Paintball London': { lat: 51.51, lng: -0.13, location: 'London', region: 'south' },
+  'Mayhem Paintball': { lat: 51.65, lng: 0.10, location: 'Abridge, Essex', region: 'south' },
+  'Ground Zero Paintball': { lat: 50.85, lng: -1.79, location: 'Ringwood, Hampshire', region: 'south' },
   // Midlands
-  'Delta Force Paintball Birmingham': { lat: 52.49, lng: -1.89, region: 'Birmingham, West Midlands' },
-  'NPF Bassetts Pole': { lat: 52.58, lng: -1.75, region: 'Sutton Coldfield, West Midlands' },
-  // Nottingham
-  'Skirmish Paintball - Nottingham': { lat: 52.95, lng: -1.16, region: 'Nottingham' },
-  // Yorkshire
-  'The Gathering Paintball': { lat: 53.65, lng: -1.78, region: 'Huddersfield, West Yorkshire' },
-  'Delta Force Paintball Leeds': { lat: 53.80, lng: -1.55, region: 'Leeds, West Yorkshire' },
-  'Special Ops Paintball': { lat: 53.75, lng: -1.60, region: 'Leeds' },
-  // Manchester
-  'Bedlam Paintball - Manchester': { lat: 53.48, lng: -2.24, region: 'Manchester' },
-  // Hampshire
-  'Ground Zero Paintball': { lat: 50.85, lng: -1.79, region: 'Ringwood, Hampshire' },
+  'Delta Force Paintball Birmingham': { lat: 52.49, lng: -1.89, location: 'Birmingham, West Midlands', region: 'midlands' },
+  'NPF Bassetts Pole': { lat: 52.58, lng: -1.75, location: 'Sutton Coldfield, West Midlands', region: 'midlands' },
+  'Skirmish Paintball - Nottingham': { lat: 52.95, lng: -1.16, location: 'Nottingham', region: 'midlands' },
+  // North
+  'The Gathering Paintball': { lat: 53.65, lng: -1.78, location: 'Huddersfield, West Yorkshire', region: 'north' },
+  'Delta Force Paintball Leeds': { lat: 53.80, lng: -1.55, location: 'Leeds, West Yorkshire', region: 'north' },
+  'Special Ops Paintball': { lat: 53.75, lng: -1.60, location: 'Leeds', region: 'north' },
+  'Bedlam Paintball - Manchester': { lat: 53.48, lng: -2.24, location: 'Manchester', region: 'north' },
+  // Scotland
+  'Bedlam Paintball - Edinburgh': { lat: 55.95, lng: -3.19, location: 'Edinburgh', region: 'scotland' },
+  'Bedlam Paintball - Glasgow': { lat: 55.86, lng: -4.25, location: 'Glasgow', region: 'scotland' },
+  // Wales
+  'Delta Force Paintball Cardiff': { lat: 51.48, lng: -3.18, location: 'Cardiff', region: 'wales' },
 };
 
 // Convert lat/lng to percentage position on map
@@ -54,6 +66,7 @@ interface EventMapProps {
 
 export function EventMap({ events, onEventClick }: EventMapProps) {
   const [selectedVenue, setSelectedVenue] = useState<string | null>(null);
+  const [selectedRegion, setSelectedRegion] = useState<UKRegion>('all');
 
   // Group events by venue
   const eventsByVenue = useMemo(() => {
@@ -78,25 +91,70 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
 
   const venueEntries = Object.entries(eventsByVenue);
   
-  // Get venues with known coordinates
-  const mappedVenues = venueEntries.map(([name, events]) => {
+  // Get venues with known coordinates, filtered by region
+  const mappedVenues = venueEntries.map(([name, venueEvents]) => {
     const coords = VENUE_COORDINATES[name];
     if (coords) {
-      return { name, events, coords, position: coordsToPosition(coords.lat, coords.lng) };
+      return { name, events: venueEvents, coords, position: coordsToPosition(coords.lat, coords.lng) };
     }
     return null;
-  }).filter(Boolean) as Array<{ name: string; events: PaintballEvent[]; coords: { lat: number; lng: number; region: string }; position: { top: number; left: number } }>;
+  }).filter((v): v is NonNullable<typeof v> => {
+    if (!v) return false;
+    if (selectedRegion === 'all') return true;
+    return v.coords.region === selectedRegion;
+  });
+
+  // Filter venue entries by region for the grid
+  const filteredVenueEntries = venueEntries.filter(([name]) => {
+    if (selectedRegion === 'all') return true;
+    const coords = VENUE_COORDINATES[name];
+    return coords?.region === selectedRegion;
+  });
+
+  // Count events in filtered venues
+  const filteredEventCount = filteredVenueEntries.reduce((sum, [, venueEvents]) => sum + venueEvents.length, 0);
 
   const handleMarkerClick = (venueName: string) => {
     setSelectedVenue(selectedVenue === venueName ? null : venueName);
   };
 
+  const handleRegionChange = (value: string) => {
+    if (value) {
+      setSelectedRegion(value as UKRegion);
+      setSelectedVenue(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Region Filter */}
+      <div className="bg-card border border-border/50 rounded-lg p-4">
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-sm font-medium text-muted-foreground">Region:</span>
+          <ToggleGroup
+            type="single"
+            value={selectedRegion}
+            onValueChange={handleRegionChange}
+            className="flex-wrap"
+          >
+            {(Object.keys(REGION_LABELS) as UKRegion[]).map((region) => (
+              <ToggleGroupItem
+                key={region}
+                value={region}
+                aria-label={`Filter by ${REGION_LABELS[region]}`}
+                className="data-[state=on]:bg-accent data-[state=on]:text-accent-foreground"
+              >
+                {REGION_LABELS[region]}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        </div>
+      </div>
+
       {/* UK Map Container */}
       <div className="bg-card rounded-xl border border-border/50 overflow-hidden">
         <div className="relative w-full bg-[#1e3a5f]" style={{ height: '500px' }}>
-          {/* UK Map SVG - Accurate outline */}
+          {/* UK Map SVG */}
           <svg
             viewBox="0 0 400 550"
             className="absolute inset-0 w-full h-full"
@@ -108,37 +166,58 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
             {/* Scotland */}
             <path
               d="M180 20 L200 15 L220 25 L240 20 L255 35 L270 30 L280 50 L275 70 L290 85 L280 100 L295 115 L285 130 L270 125 L260 140 L245 135 L235 150 L220 145 L210 160 L195 155 L185 165 L175 155 L165 165 L155 155 L145 160 L140 145 L130 150 L125 135 L115 140 L120 120 L110 110 L125 95 L115 80 L130 70 L125 55 L140 45 L135 35 L150 30 L160 40 L175 30 L180 20Z"
-              fill="#2d4a3e"
+              fill={selectedRegion === 'scotland' || selectedRegion === 'all' ? '#2d4a3e' : '#1a2e28'}
               stroke="#3d5a4e"
               strokeWidth="1"
+              className="transition-colors duration-300"
             />
             
-            {/* Northern England & Wales */}
+            {/* Northern England */}
             <path
-              d="M155 155 L175 155 L185 165 L195 155 L210 160 L220 145 L235 150 L245 160 L260 155 L270 165 L280 160 L290 175 L285 195 L295 210 L290 230 L280 245 L290 260 L285 280 L275 295 L285 310 L275 325 L265 340 L275 355 L265 375 L250 370 L240 385 L225 375 L215 390 L200 385 L190 400 L175 395 L165 410 L150 400 L140 385 L125 390 L115 375 L100 380 L95 360 L105 345 L95 325 L110 310 L100 290 L115 275 L105 255 L120 240 L110 220 L125 205 L115 185 L130 170 L145 175 L155 155Z"
-              fill="#2d4a3e"
+              d="M155 155 L175 155 L185 165 L195 155 L210 160 L220 145 L235 150 L245 160 L260 155 L270 165 L280 160 L290 175 L285 195 L295 210 L290 230 L280 245 L290 260 L275 270 L260 265 L245 275 L230 265 L215 275 L200 265 L185 275 L170 265 L155 275 L140 260 L125 270 L115 255 L130 240 L120 225 L135 210 L125 195 L140 180 L155 185 L155 155Z"
+              fill={selectedRegion === 'north' || selectedRegion === 'all' ? '#2d4a3e' : '#1a2e28'}
               stroke="#3d5a4e"
               strokeWidth="1"
+              className="transition-colors duration-300"
+            />
+
+            {/* Wales */}
+            <path
+              d="M100 290 L115 275 L130 285 L125 310 L115 330 L100 345 L90 365 L100 385 L90 405 L75 395 L65 375 L70 355 L60 335 L70 315 L85 305 L100 290Z"
+              fill={selectedRegion === 'wales' || selectedRegion === 'all' ? '#2d4a3e' : '#1a2e28'}
+              stroke="#3d5a4e"
+              strokeWidth="1"
+              className="transition-colors duration-300"
+            />
+            
+            {/* Midlands */}
+            <path
+              d="M155 275 L170 265 L185 275 L200 265 L215 275 L230 265 L245 275 L260 265 L275 270 L280 290 L275 310 L285 330 L270 345 L255 335 L240 350 L220 340 L200 350 L180 340 L160 355 L140 345 L125 360 L115 345 L125 325 L115 305 L130 290 L145 300 L155 275Z"
+              fill={selectedRegion === 'midlands' || selectedRegion === 'all' ? '#2d4a3e' : '#1a2e28'}
+              stroke="#3d5a4e"
+              strokeWidth="1"
+              className="transition-colors duration-300"
             />
             
             {/* Southern England */}
             <path
-              d="M165 410 L175 395 L190 400 L200 385 L215 390 L225 375 L240 385 L250 370 L265 375 L275 385 L290 380 L305 395 L315 390 L330 405 L340 400 L355 420 L350 440 L365 455 L355 475 L340 470 L330 485 L315 475 L300 490 L285 480 L270 495 L255 485 L240 500 L225 490 L210 505 L195 495 L180 510 L165 495 L150 505 L135 490 L120 500 L110 485 L95 490 L90 470 L100 455 L90 435 L105 420 L115 430 L130 415 L145 425 L165 410Z"
-              fill="#2d4a3e"
+              d="M125 360 L140 345 L160 355 L180 340 L200 350 L220 340 L240 350 L255 335 L270 345 L285 330 L300 345 L315 340 L330 360 L340 380 L350 400 L340 420 L355 440 L340 460 L320 450 L300 465 L280 450 L260 470 L240 455 L220 475 L195 460 L170 480 L145 460 L120 475 L100 455 L90 430 L100 410 L90 385 L100 365 L115 375 L125 360Z"
+              fill={selectedRegion === 'south' || selectedRegion === 'all' ? '#2d4a3e' : '#1a2e28'}
               stroke="#3d5a4e"
               strokeWidth="1"
+              className="transition-colors duration-300"
             />
             
-            {/* Ireland (partial - just for context) */}
+            {/* Ireland (partial - context) */}
             <path
               d="M30 200 L50 190 L70 200 L85 195 L95 215 L90 240 L100 260 L90 285 L75 295 L60 285 L45 300 L30 290 L20 270 L25 245 L15 225 L30 200Z"
-              fill="#2d4a3e"
+              fill="#1a2e28"
               stroke="#3d5a4e"
               strokeWidth="1"
               opacity="0.5"
             />
             
-            {/* Grid lines for reference */}
+            {/* Grid lines */}
             <g stroke="#ffffff" strokeWidth="0.3" opacity="0.1">
               {[100, 200, 300, 400].map(y => (
                 <line key={`h${y}`} x1="0" y1={y} x2="400" y2={y} />
@@ -163,7 +242,6 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
                 onClick={() => handleMarkerClick(name)}
                 title={`${name} - ${venueEvents.length} event${venueEvents.length !== 1 ? 's' : ''}`}
               >
-                {/* Marker pin */}
                 <div className="relative">
                   <svg 
                     width="32" 
@@ -180,7 +258,6 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
                     <circle cx="16" cy="14" r="6" fill="white" />
                   </svg>
                   
-                  {/* Event count badge */}
                   <span className={`absolute -top-1 -right-1 text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center ${
                     isSelected ? 'bg-primary-foreground text-primary' : 'bg-primary text-primary-foreground'
                   }`}>
@@ -188,7 +265,6 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
                   </span>
                 </div>
                 
-                {/* Venue name tooltip on hover */}
                 <div className={`absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-2 py-1 bg-card text-foreground text-xs rounded shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none ${
                   isSelected ? 'opacity-100' : ''
                 }`}>
@@ -199,17 +275,20 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
           })}
 
           {/* Map Labels */}
-          <div className="absolute top-4 left-4 text-white/60 text-xs font-medium">
+          <div className={`absolute top-4 left-4 text-xs font-medium transition-colors ${selectedRegion === 'scotland' ? 'text-white' : 'text-white/60'}`}>
             SCOTLAND
           </div>
-          <div className="absolute top-[35%] left-[25%] text-white/60 text-xs font-medium">
-            NORTHERN<br/>ENGLAND
+          <div className={`absolute top-[35%] left-[30%] text-xs font-medium transition-colors ${selectedRegion === 'north' ? 'text-white' : 'text-white/60'}`}>
+            NORTH
           </div>
-          <div className="absolute top-[55%] left-[15%] text-white/60 text-xs font-medium">
+          <div className={`absolute top-[50%] left-[15%] text-xs font-medium transition-colors ${selectedRegion === 'wales' ? 'text-white' : 'text-white/60'}`}>
             WALES
           </div>
-          <div className="absolute top-[65%] left-[55%] text-white/60 text-xs font-medium">
-            ENGLAND
+          <div className={`absolute top-[55%] left-[45%] text-xs font-medium transition-colors ${selectedRegion === 'midlands' ? 'text-white' : 'text-white/60'}`}>
+            MIDLANDS
+          </div>
+          <div className={`absolute top-[75%] left-[55%] text-xs font-medium transition-colors ${selectedRegion === 'south' ? 'text-white' : 'text-white/60'}`}>
+            SOUTH
           </div>
         </div>
 
@@ -220,7 +299,8 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
             Click a marker to view events at that venue
           </p>
           <p className="text-sm text-muted-foreground">
-            {mappedVenues.length} venues • {events.length} events
+            {mappedVenues.length} venues • {filteredEventCount} events
+            {selectedRegion !== 'all' && ` in ${REGION_LABELS[selectedRegion]}`}
           </p>
         </div>
       </div>
@@ -234,7 +314,7 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
                 <h3 className="font-display text-2xl text-foreground">{selectedVenue}</h3>
                 <p className="text-muted-foreground flex items-center gap-1 mt-1">
                   <MapPin className="h-4 w-4" />
-                  {VENUE_COORDINATES[selectedVenue]?.region || eventsByVenue[selectedVenue][0]?.venue_location || 'United Kingdom'}
+                  {VENUE_COORDINATES[selectedVenue]?.location || eventsByVenue[selectedVenue][0]?.venue_location || 'United Kingdom'}
                 </p>
               </div>
               <div className="flex gap-2">
@@ -318,9 +398,11 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
 
       {/* All Venues Grid */}
       <div>
-        <h3 className="font-display text-xl mb-4 text-foreground">All Venues</h3>
+        <h3 className="font-display text-xl mb-4 text-foreground">
+          {selectedRegion === 'all' ? 'All Venues' : `Venues in ${REGION_LABELS[selectedRegion]}`}
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {venueEntries.map(([venueName, venueEvents]) => {
+          {filteredVenueEntries.map(([venueName, venueEvents]) => {
             const coords = VENUE_COORDINATES[venueName];
             
             return (
@@ -337,7 +419,7 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
                       <h4 className="font-semibold text-foreground truncate">{venueName}</h4>
                       <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                         <MapPin className="h-3 w-3 shrink-0" />
-                        <span className="truncate">{coords?.region || venueEvents[0]?.venue_location || 'UK'}</span>
+                        <span className="truncate">{coords?.location || venueEvents[0]?.venue_location || 'UK'}</span>
                       </p>
                     </div>
                     <Button
@@ -377,10 +459,10 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
         </div>
       </div>
 
-      {venueEntries.length === 0 && (
+      {filteredVenueEntries.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
           <MapPin className="h-12 w-12 mx-auto mb-4 opacity-50" />
-          <p>No venues found with the current filters</p>
+          <p>No venues found {selectedRegion !== 'all' ? `in ${REGION_LABELS[selectedRegion]}` : 'with the current filters'}</p>
         </div>
       )}
     </div>
