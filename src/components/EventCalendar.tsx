@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { PaintballEvent } from '@/types/events';
 import { EventTypeBadge } from './EventTypeBadge';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Calendar, Clock } from 'lucide-react';
 import {
   format,
   startOfMonth,
@@ -26,6 +26,7 @@ interface EventCalendarProps {
 
 export function EventCalendar({ events, onEventClick }: EventCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [expandedDate, setExpandedDate] = useState<string | null>(null);
 
   const eventsByDate = useMemo(() => {
     const map = new Map<string, PaintballEvent[]>();
@@ -56,6 +57,14 @@ export function EventCalendar({ events, onEventClick }: EventCalendarProps) {
 
   const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
   const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
+
+  const handleDateClick = (dateKey: string, hasEvents: boolean) => {
+    if (hasEvents) {
+      setExpandedDate(expandedDate === dateKey ? null : dateKey);
+    }
+  };
+
+  const expandedEvents = expandedDate ? eventsByDate.get(expandedDate) || [] : [];
 
   return (
     <div className="bg-card border border-border/50 rounded-lg overflow-hidden">
@@ -101,15 +110,19 @@ export function EventCalendar({ events, onEventClick }: EventCalendarProps) {
           const dayEvents = eventsByDate.get(dateKey) || [];
           const isCurrentMonth = isSameMonth(day, currentMonth);
           const isDayToday = isToday(day);
+          const isExpanded = expandedDate === dateKey;
+          const hasEvents = dayEvents.length > 0;
 
           return (
             <div
               key={idx}
+              onClick={() => handleDateClick(dateKey, hasEvents)}
               className={cn(
-                'calendar-day',
+                'calendar-day relative',
                 !isCurrentMonth && 'opacity-40',
-                dayEvents.length > 0 && 'has-events',
-                isDayToday && 'today'
+                hasEvents && 'has-events cursor-pointer',
+                isDayToday && 'today',
+                isExpanded && 'ring-2 ring-accent ring-inset bg-accent/10 z-10'
               )}
             >
               <span
@@ -125,7 +138,10 @@ export function EventCalendar({ events, onEventClick }: EventCalendarProps) {
                 {dayEvents.slice(0, 2).map((event) => (
                   <button
                     key={event.id}
-                    onClick={() => onEventClick?.(event)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEventClick?.(event);
+                    }}
                     className="w-full text-left"
                   >
                     <div
@@ -144,8 +160,8 @@ export function EventCalendar({ events, onEventClick }: EventCalendarProps) {
                     </div>
                   </button>
                 ))}
-                {dayEvents.length > 2 && (
-                  <div className="text-xs text-accent font-medium">
+                {dayEvents.length > 2 && !isExpanded && (
+                  <div className="text-xs text-accent font-medium hover:underline">
                     +{dayEvents.length - 2} more
                   </div>
                 )}
@@ -154,6 +170,57 @@ export function EventCalendar({ events, onEventClick }: EventCalendarProps) {
           );
         })}
       </div>
+
+      {/* Expanded Date Panel */}
+      {expandedDate && expandedEvents.length > 0 && (
+        <div className="border-t border-border/50 bg-secondary/30 animate-in slide-in-from-top-2 duration-200">
+          <div className="p-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-accent" />
+                <h3 className="font-display text-lg text-foreground">
+                  {format(parseISO(expandedDate), 'EEEE, MMMM d, yyyy')}
+                </h3>
+                <span className="text-sm text-muted-foreground">
+                  ({expandedEvents.length} event{expandedEvents.length !== 1 ? 's' : ''})
+                </span>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setExpandedDate(null)}
+                className="h-8 w-8"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {expandedEvents.map((event) => (
+                <div
+                  key={event.id}
+                  onClick={() => onEventClick?.(event)}
+                  className="p-3 bg-card rounded-lg border border-border/50 cursor-pointer hover:border-accent/50 transition-colors"
+                >
+                  <EventTypeBadge type={event.event_type} className="mb-2" />
+                  <p className="font-semibold text-foreground text-sm">{event.title}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{event.venue_name}</p>
+                  {event.start_time && (
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-2">
+                      <Clock className="h-3 w-3 text-accent" />
+                      {event.start_time.slice(0, 5)}
+                      {event.end_time && ` - ${event.end_time.slice(0, 5)}`}
+                    </div>
+                  )}
+                  {event.price_info && (
+                    <p className="text-xs font-medium text-primary mt-2">{event.price_info}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
