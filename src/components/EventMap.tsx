@@ -3,13 +3,13 @@ import { EventTypeBadge } from './EventTypeBadge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Calendar, Clock, ExternalLink, Globe, MapPin, Minus, Navigation, Plus, X } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar, Clock, ExternalLink, Globe, MapPin, Minus, Navigation, Plus, X, Map } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { geoMercator, geoPath, type GeoProjection } from 'd3-geo';
 import ukGeoJsonRaw from '@/assets/geo/GBR.geo.json?raw';
 import { useVenueDetails } from '@/hooks/useVenueDetails';
-
 // Region definitions for filtering
 export type UKRegion = 'all' | 'scotland' | 'north' | 'midlands' | 'south' | 'wales';
 
@@ -104,6 +104,9 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const svgRef = useRef<SVGSVGElement>(null);
   
+  // Popover state for marker quick actions
+  const [markerPopover, setMarkerPopover] = useState<{ name: string; x: number; y: number } | null>(null);
+  
   const getVenueWebsite = (venueName: string): string | null => {
     return venueDetails?.get(venueName)?.website ?? null;
   };
@@ -152,8 +155,15 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
 
   const filteredEventCount = filteredVenueEntries.reduce((sum, [, venueEvents]) => sum + venueEvents.length, 0);
 
-  const handleMarkerClick = (venueName: string) => {
+  const handleMarkerClick = (venueName: string, screenX?: number, screenY?: number) => {
+    if (screenX !== undefined && screenY !== undefined) {
+      setMarkerPopover({ name: venueName, x: screenX, y: screenY });
+    }
     setSelectedVenue(selectedVenue === venueName ? null : venueName);
+  };
+
+  const handleClosePopover = () => {
+    setMarkerPopover(null);
   };
 
   const handleRegionChange = (value: string) => {
@@ -198,6 +208,8 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
 
   // Pan handlers
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    // Close popover when clicking on the map background
+    setMarkerPopover(null);
     if (zoom > 1) {
       setIsPanning(true);
       setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
@@ -471,7 +483,10 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
                 <g
                   key={v.name}
                   transform={`translate(${v.x} ${v.y}) scale(${markerScale})`}
-                  onClick={() => handleMarkerClick(v.name)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleMarkerClick(v.name, e.clientX, e.clientY);
+                  }}
                   className={`cursor-pointer transition-transform ${isSelected ? 'text-primary' : 'text-accent hover:text-primary'}`}
                 >
                   <title>
@@ -505,6 +520,74 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
               );
             })}
           </svg>
+
+          {/* Marker Popover - positioned at click location */}
+          {markerPopover && (
+            <div
+              className="fixed z-50 animate-in fade-in-0 zoom-in-95"
+              style={{
+                left: markerPopover.x,
+                top: markerPopover.y - 10,
+                transform: 'translate(-50%, -100%)',
+              }}
+            >
+              <div className="bg-card border border-border rounded-lg shadow-xl p-3 min-w-[200px]">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <h4 className="font-semibold text-foreground text-sm truncate flex-1">
+                    {markerPopover.name}
+                  </h4>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 shrink-0"
+                    onClick={handleClosePopover}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3 flex items-center gap-1">
+                  <MapPin className="h-3 w-3" />
+                  {VENUE_COORDINATES[markerPopover.name]?.location || 'United Kingdom'}
+                </p>
+                <div className="flex flex-col gap-2">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="w-full justify-start"
+                    asChild
+                  >
+                    <a
+                      href={getGoogleMapsUrl(markerPopover.name, VENUE_COORDINATES[markerPopover.name]?.location)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={handleClosePopover}
+                    >
+                      <Map className="h-4 w-4 mr-2" />
+                      View on Google Maps
+                    </a>
+                  </Button>
+                  {getVenueWebsite(markerPopover.name) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start"
+                      asChild
+                    >
+                      <a
+                        href={getVenueWebsite(markerPopover.name)!}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={handleClosePopover}
+                      >
+                        <Globe className="h-4 w-4 mr-2" />
+                        Visit Website
+                      </a>
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Legend */}
