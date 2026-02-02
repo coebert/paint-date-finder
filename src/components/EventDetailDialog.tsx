@@ -8,9 +8,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Calendar, MapPin, Clock, ExternalLink, Globe, Pencil, CheckCircle, AlertCircle } from 'lucide-react';
+import { Calendar, MapPin, Clock, ExternalLink, Pencil, CheckCircle, AlertCircle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { useVenueDetails } from '@/hooks/useVenueDetails';
 import { useIsAdmin } from '@/hooks/useAuth';
 
 interface EventDetailDialogProps {
@@ -21,13 +20,11 @@ interface EventDetailDialogProps {
 }
 
 export function EventDetailDialog({ event, open, onOpenChange, onEdit }: EventDetailDialogProps) {
-  const { data: venueDetails } = useVenueDetails();
   const { data: isAdmin } = useIsAdmin();
   
   if (!event) return null;
 
   const eventDate = parseISO(event.event_date);
-  const venueWebsite = venueDetails?.get(event.venue_name)?.website ?? null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -70,19 +67,21 @@ export function EventDetailDialog({ event, open, onOpenChange, onEdit }: EventDe
                 {event.venue_location && `, ${event.venue_location}`}
               </span>
             </div>
-            {venueWebsite && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="shrink-0 text-primary hover:text-primary/80 gap-1"
-                asChild
+            <Button
+              variant="ghost"
+              size="sm"
+              className="shrink-0 text-primary hover:text-primary/80 gap-1"
+              asChild
+            >
+              <a 
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.venue_name + (event.venue_location ? ', ' + event.venue_location : ''))}`} 
+                target="_blank" 
+                rel="noopener noreferrer"
               >
-                <a href={venueWebsite} target="_blank" rel="noopener noreferrer">
-                  <Globe className="h-4 w-4" />
-                  Visit Venue
-                </a>
-              </Button>
-            )}
+                <MapPin className="h-4 w-4" />
+                View on Map
+              </a>
+            </Button>
           </div>
 
           {event.price_info && (
