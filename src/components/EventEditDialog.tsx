@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { PaintballEvent, EventType, EVENT_TYPE_LABELS } from '@/types/events';
 import { useUpdateEvent } from '@/hooks/useEvents';
+import { isUrlSafe } from '@/lib/validation';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { toast } from 'sonner';
 
 interface EventEditDialogProps {
   event: PaintballEvent | null;
@@ -59,6 +61,12 @@ export function EventEditDialog({ event, open, onOpenChange }: EventEditDialogPr
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!event) return;
+
+    // Validate URL is safe (http/https only)
+    if (formData.booking_url && !isUrlSafe(formData.booking_url)) {
+      toast.error('Only http and https URLs are allowed for booking URL');
+      return;
+    }
 
     await updateEvent.mutateAsync({
       id: event.id,

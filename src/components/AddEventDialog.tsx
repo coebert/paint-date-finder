@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { EventType, EVENT_TYPE_LABELS } from '@/types/events';
 import { useCreateEvent } from '@/hooks/useEvents';
+import { isUrlSafe } from '@/lib/validation';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { toast } from 'sonner';
 
 interface AddEventDialogProps {
   open: boolean;
@@ -40,6 +42,12 @@ export function AddEventDialog({ open, onOpenChange }: AddEventDialogProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate URL is safe (http/https only)
+    if (formData.booking_url && !isUrlSafe(formData.booking_url)) {
+      toast.error('Only http and https URLs are allowed for booking URL');
+      return;
+    }
 
     await createEvent.mutateAsync({
       title: formData.title,
