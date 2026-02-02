@@ -3,9 +3,9 @@ import { EventTypeBadge } from './EventTypeBadge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Calendar, Clock, ExternalLink, Globe, MapPin, Navigation, X } from 'lucide-react';
+import { Calendar, Clock, ExternalLink, Globe, MapPin, Minus, Navigation, Plus, X } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { geoMercator, geoPath, type GeoProjection } from 'd3-geo';
 import ukGeoJsonRaw from '@/assets/geo/GBR.geo.json?raw';
 import { useVenueDetails } from '@/hooks/useVenueDetails';
@@ -24,6 +24,11 @@ const REGION_LABELS: Record<UKRegion, string> = {
 
 const MAP_VIEWBOX = { width: 220, height: 340 };
 const MAP_PADDING = 12;
+
+// Zoom configuration
+const MIN_ZOOM = 1;
+const MAX_ZOOM = 6;
+const ZOOM_STEP = 0.5;
 
 // Real UK venue coordinates with region
 const VENUE_COORDINATES: Record<string, { lat: number; lng: number; location: string; region: UKRegion }> = {
@@ -92,6 +97,13 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
   const [selectedRegion, setSelectedRegion] = useState<UKRegion>('all');
   const { data: venueDetails } = useVenueDetails();
   
+  // Zoom and pan state
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const svgRef = useRef<SVGSVGElement>(null);
+  
   const getVenueWebsite = (venueName: string): string | null => {
     return venueDetails?.get(venueName)?.website ?? null;
   };
@@ -148,8 +160,70 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
     if (value) {
       setSelectedRegion(value as UKRegion);
       setSelectedVenue(null);
+      // Reset zoom and pan when changing region
+      setZoom(1);
+      setPan({ x: 0, y: 0 });
     }
   };
+
+  // Zoom handlers
+  const handleZoomIn = useCallback(() => {
+    setZoom(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM));
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    setZoom(prev => {
+      const newZoom = Math.max(prev - ZOOM_STEP, MIN_ZOOM);
+      if (newZoom === MIN_ZOOM) {
+        setPan({ x: 0, y: 0 });
+      }
+      return newZoom;
+    });
+  }, []);
+
+  const handleResetView = useCallback(() => {
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  }, []);
+
+  // Mouse wheel zoom
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    if (e.deltaY < 0) {
+      handleZoomIn();
+    } else {
+      handleZoomOut();
+    }
+  }, [handleZoomIn, handleZoomOut]);
+
+  // Pan handlers
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (zoom > 1) {
+      setIsPanning(true);
+      setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+    }
+  }, [zoom, pan]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (isPanning && zoom > 1) {
+      const maxPan = (zoom - 1) * MAP_VIEWBOX.width / 2;
+      const maxPanY = (zoom - 1) * MAP_VIEWBOX.height / 2;
+      setPan({
+        x: Math.max(-maxPan, Math.min(maxPan, e.clientX - panStart.x)),
+        y: Math.max(-maxPanY, Math.min(maxPanY, e.clientY - panStart.y)),
+      });
+    }
+  }, [isPanning, zoom, panStart]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsPanning(false);
+  }, []);
+
+  useEffect(() => {
+    const handleGlobalMouseUp = () => setIsPanning(false);
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+  }, []);
 
   const ukGeo = useMemo<GeoJSONAny | null>(() => {
     try {
@@ -228,6 +302,20 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
       .filter((x): x is NonNullable<typeof x> => Boolean(x));
   }, [mappedVenues, projection]);
 
+  // Calculate the dynamic viewBox based on zoom and pan
+  const viewBox = useMemo(() => {
+    const w = MAP_VIEWBOX.width / zoom;
+    const h = MAP_VIEWBOX.height / zoom;
+    const centerX = MAP_VIEWBOX.width / 2;
+    const centerY = MAP_VIEWBOX.height / 2;
+    const x = centerX - w / 2 - (pan.x / zoom) * 0.15;
+    const y = centerY - h / 2 - (pan.y / zoom) * 0.15;
+    return `${x} ${y} ${w} ${h}`;
+  }, [zoom, pan]);
+
+  // Scale factor to counteract marker scaling when zoomed
+  const markerScale = 1 / zoom;
+
   return (
     <div className="space-y-6">
       {/* Region Filter */}
@@ -256,16 +344,67 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
 
       {/* UK Map Container */}
       <div className="bg-card rounded-xl border border-border/50 overflow-hidden">
-        <div className="relative w-full bg-muted" style={{ height: '600px' }}>
+        <div 
+          className="relative w-full bg-muted" 
+          style={{ height: '600px', cursor: zoom > 1 ? (isPanning ? 'grabbing' : 'grab') : 'default' }}
+        >
+          {/* Zoom Controls */}
+          <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
+            <Button
+              variant="secondary"
+              size="icon"
+              onClick={handleZoomIn}
+              disabled={zoom >= MAX_ZOOM}
+              className="bg-card/90 backdrop-blur-sm border border-border/50 shadow-md"
+              title="Zoom in"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="secondary"
+              size="icon"
+              onClick={handleZoomOut}
+              disabled={zoom <= MIN_ZOOM}
+              className="bg-card/90 backdrop-blur-sm border border-border/50 shadow-md"
+              title="Zoom out"
+            >
+              <Minus className="h-4 w-4" />
+            </Button>
+            {zoom > 1 && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleResetView}
+                className="bg-card/90 backdrop-blur-sm border border-border/50 shadow-md text-xs px-2"
+                title="Reset view"
+              >
+                Reset
+              </Button>
+            )}
+          </div>
+
+          {/* Zoom Level Indicator */}
+          {zoom > 1 && (
+            <div className="absolute top-4 left-4 z-10 bg-card/90 backdrop-blur-sm border border-border/50 rounded-md px-3 py-1 shadow-md">
+              <span className="text-sm font-medium text-foreground">{zoom.toFixed(1)}x</span>
+            </div>
+          )}
+
           <svg
-            viewBox={`0 0 ${MAP_VIEWBOX.width} ${MAP_VIEWBOX.height}`}
-            className="absolute inset-0 w-full h-full"
+            ref={svgRef}
+            viewBox={viewBox}
+            className="absolute inset-0 w-full h-full select-none"
             preserveAspectRatio="xMidYMid meet"
             role="img"
             aria-label="UK map with venue markers"
+            onWheel={handleWheel}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
           >
             {/* Sea */}
-            <rect width={MAP_VIEWBOX.width} height={MAP_VIEWBOX.height} fill="hsl(var(--muted))" />
+            <rect x={-100} y={-100} width={MAP_VIEWBOX.width + 200} height={MAP_VIEWBOX.height + 200} fill="hsl(var(--muted))" />
 
             {/* UK landmass (GeoJSON projected) */}
             {ukPathD ? (
@@ -273,7 +412,7 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
                 d={ukPathD}
                 fill="hsl(var(--card))"
                 stroke="hsl(var(--border))"
-                strokeWidth={1}
+                strokeWidth={1 * markerScale}
                 vectorEffect="non-scaling-stroke"
               />
             ) : (
@@ -282,7 +421,7 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
                 y={MAP_VIEWBOX.height / 2}
                 textAnchor="middle"
                 fill="hsl(var(--muted-foreground))"
-                fontSize={12}
+                fontSize={12 * markerScale}
               >
                 Map data failed to load
               </text>
@@ -291,13 +430,13 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
             {/* City reference points */}
             {cities.map((c) => (
               <g key={c.name}>
-                <circle cx={c.x} cy={c.y} r={1.6} fill="hsl(var(--foreground))" opacity={0.35} />
+                <circle cx={c.x} cy={c.y} r={1.6 * markerScale} fill="hsl(var(--foreground))" opacity={0.35} />
                 <text
-                  x={c.x + 3}
-                  y={c.y + 1}
+                  x={c.x + 3 * markerScale}
+                  y={c.y + 1 * markerScale}
                   fill="hsl(var(--foreground))"
                   opacity={0.45}
-                  fontSize={6}
+                  fontSize={6 * markerScale}
                   className="pointer-events-none"
                 >
                   {c.name}
@@ -314,7 +453,7 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
                 textAnchor="middle"
                 fill="hsl(var(--foreground))"
                 opacity={selectedRegion === 'all' || selectedRegion === r.region ? 0.6 : 0.2}
-                fontSize={9}
+                fontSize={9 * markerScale}
                 fontWeight={600}
                 className="pointer-events-none"
               >
@@ -322,7 +461,7 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
               </text>
             ))}
 
-            {/* Venue markers (rendered in the same projected SVG space for maximum accuracy) */}
+            {/* Venue markers - scaled inversely to zoom to maintain constant visual size */}
             {venueMarkers.map((v) => {
               const isSelected = selectedVenue === v.name;
               const badgeFill = isSelected ? 'hsl(var(--primary-foreground))' : 'hsl(var(--primary))';
@@ -331,7 +470,7 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
               return (
                 <g
                   key={v.name}
-                  transform={`translate(${v.x} ${v.y})`}
+                  transform={`translate(${v.x} ${v.y}) scale(${markerScale})`}
                   onClick={() => handleMarkerClick(v.name)}
                   className={`cursor-pointer transition-transform ${isSelected ? 'text-primary' : 'text-accent hover:text-primary'}`}
                 >
@@ -372,7 +511,7 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
         <div className="p-4 border-t border-border/50 bg-secondary/30 flex items-center justify-between flex-wrap gap-2">
           <p className="text-sm text-muted-foreground">
             <MapPin className="inline h-4 w-4 text-accent mr-1" />
-            Click a marker to view events at that venue
+            Click a marker to view events • Scroll to zoom • Drag to pan
           </p>
           <p className="text-sm text-muted-foreground">
             {mappedVenues.length} venues • {filteredEventCount} events
