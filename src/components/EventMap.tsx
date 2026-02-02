@@ -497,8 +497,8 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
                     {v.name} - {v.events.length} event{v.events.length !== 1 ? 's' : ''}
                   </title>
 
-                  {/* Pin */}
-                  <g transform="translate(-14 -36)">
+                  {/* Pin - scaled down to 30% of original size */}
+                  <g transform="translate(-4.2 -10.8) scale(0.3)">
                     <path
                       d="M14 0C6.268 0 0 6.268 0 14c0 7.732 14 22 14 22s14-14.268 14-22C28 6.268 21.732 0 14 0z"
                       fill="currentColor"
@@ -506,14 +506,14 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
                     <circle cx="14" cy="12" r="5" fill="hsl(var(--background))" />
                   </g>
 
-                  {/* Count badge */}
-                  <g transform="translate(10 -34)">
-                    <circle r="8" fill={badgeFill} />
+                  {/* Count badge - scaled down to 30% */}
+                  <g transform="translate(3 -10.2)">
+                    <circle r="2.4" fill={badgeFill} />
                     <text
                       x={0}
-                      y={3}
+                      y={0.9}
                       textAnchor="middle"
-                      fontSize={8}
+                      fontSize={2.4}
                       fontWeight={800}
                       fill={badgeText}
                     >
