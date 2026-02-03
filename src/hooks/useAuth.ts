@@ -11,9 +11,18 @@ export function useAuth() {
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setLoading(false);
+        
+        // Call ensure-admin edge function on sign in
+        if (event === 'SIGNED_IN' && session) {
+          try {
+            await supabase.functions.invoke('ensure-admin');
+          } catch (error) {
+            console.error('Error calling ensure-admin:', error);
+          }
+        }
         
         // Invalidate queries when auth state changes
         if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
