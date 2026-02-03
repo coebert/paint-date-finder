@@ -103,7 +103,7 @@ export function Header({ view, onViewChange, onAddEvent, onSubmitEvent }: Header
               </Button>
             )}
 
-            {/* Admin-only: Settings/Submissions link */}
+            {/* Admin-only: Dashboard link */}
             {isAdmin && (
               <Button
                 variant="ghost"
@@ -111,7 +111,7 @@ export function Header({ view, onViewChange, onAddEvent, onSubmitEvent }: Header
                 asChild
                 className="text-muted-foreground hover:text-foreground"
               >
-                <Link to="/submissions">
+                <Link to="/admin">
                   <Settings className="h-4 w-4" />
                 </Link>
               </Button>
