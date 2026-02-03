@@ -71,3 +71,72 @@ export function useVisitSummary() {
     },
   });
 }
+
+export function useEventTypeStats() {
+  return useQuery({
+    queryKey: ['event-type-stats'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('events')
+        .select('event_type');
+
+      if (error) throw error;
+
+      const counts: Record<string, number> = {};
+      data?.forEach(event => {
+        counts[event.event_type] = (counts[event.event_type] || 0) + 1;
+      });
+
+      return Object.entries(counts)
+        .map(([type, count]) => ({ type, count }))
+        .sort((a, b) => b.count - a.count);
+    },
+  });
+}
+
+export function useVenueStats() {
+  return useQuery({
+    queryKey: ['venue-stats'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('events')
+        .select('venue_name');
+
+      if (error) throw error;
+
+      const counts: Record<string, number> = {};
+      data?.forEach(event => {
+        counts[event.venue_name] = (counts[event.venue_name] || 0) + 1;
+      });
+
+      return Object.entries(counts)
+        .map(([venue, count]) => ({ venue, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10); // Top 10 venues
+    },
+  });
+}
+
+export function usePeakHoursStats() {
+  return useQuery({
+    queryKey: ['peak-hours-stats'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_visits')
+        .select('visited_at');
+
+      if (error) throw error;
+
+      const hourCounts: number[] = Array(24).fill(0);
+      data?.forEach(visit => {
+        const hour = new Date(visit.visited_at).getHours();
+        hourCounts[hour]++;
+      });
+
+      return hourCounts.map((count, hour) => ({
+        hour: `${hour.toString().padStart(2, '0')}:00`,
+        visits: count,
+      }));
+    },
+  });
+}
