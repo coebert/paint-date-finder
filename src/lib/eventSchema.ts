@@ -15,7 +15,7 @@ export const adminEventSchema = z.object({
     .max(2000, 'Description must be less than 2000 characters')
     .optional()
     .or(z.literal('')),
-  event_type: z.enum(['walk_on', 'big_game', 'competition', 'tournament', 'speedball', 'scenario', 'other'] as const),
+  event_type: z.enum(['walk_on', 'big_game', 'competition', 'tournament', 'speedball', 'scenario', 'mag_fed', 'other'] as const),
   venue_name: z.string()
     .trim()
     .min(1, 'Venue name is required')

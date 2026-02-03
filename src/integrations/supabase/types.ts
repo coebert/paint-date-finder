@@ -202,6 +202,7 @@ export type Database = {
         | "speedball"
         | "scenario"
         | "other"
+        | "mag_fed"
       submission_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
@@ -339,6 +340,7 @@ export const Constants = {
         "speedball",
         "scenario",
         "other",
+        "mag_fed",
       ],
       submission_status: ["pending", "approved", "rejected"],
     },

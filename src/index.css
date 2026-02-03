@@ -46,6 +46,7 @@
     --event-tournament: 280 70% 55%;
     --event-speedball: 340 80% 55%;
     --event-scenario: 45 90% 50%;
+    --event-mag-fed: 160 60% 40%;
     --event-other: 220 10% 50%;
 
     --sidebar-background: 220 15% 10%;
@@ -145,6 +146,10 @@
 
   .event-badge-scenario {
     @apply bg-[hsl(var(--event-scenario))] text-black font-semibold;
+  }
+
+  .event-badge-mag-fed {
+    @apply bg-[hsl(var(--event-mag-fed))] text-white;
   }
 
   .event-badge-other {

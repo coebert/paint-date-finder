@@ -1,4 +1,4 @@
-export type EventType = 'walk_on' | 'big_game' | 'competition' | 'tournament' | 'speedball' | 'scenario' | 'other';
+export type EventType = 'walk_on' | 'big_game' | 'competition' | 'tournament' | 'speedball' | 'scenario' | 'mag_fed' | 'other';
 
 export interface PaintballEvent {
   id: string;
@@ -26,6 +26,7 @@ export const EVENT_TYPE_LABELS: Record<EventType, string> = {
   tournament: 'Tournament',
   speedball: 'Speedball',
   scenario: 'Scenario',
+  mag_fed: 'Mag-Fed',
   other: 'Other',
 };
 
@@ -36,5 +37,6 @@ export const EVENT_TYPE_COLORS: Record<EventType, string> = {
   tournament: 'event-badge-tournament',
   speedball: 'event-badge-speedball',
   scenario: 'event-badge-scenario',
+  mag_fed: 'event-badge-mag-fed',
   other: 'event-badge-other',
 };
