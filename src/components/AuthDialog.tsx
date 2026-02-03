@@ -19,16 +19,21 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { signIn, signUp } from '@/hooks/useAuth';
+import { signIn, signUp, resetPassword } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { LogIn, UserPlus, Loader2 } from 'lucide-react';
+import { LogIn, UserPlus, Loader2, KeyRound, ArrowLeft } from 'lucide-react';
 
-const formSchema = z.object({
+const loginSchema = z.object({
   email: z.string().email('Valid email required'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
-type FormData = z.infer<typeof formSchema>;
+const resetSchema = z.object({
+  email: z.string().email('Valid email required'),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
+type ResetFormData = z.infer<typeof resetSchema>;
 
 interface AuthDialogProps {
   open: boolean;
@@ -36,30 +41,37 @@ interface AuthDialogProps {
 }
 
 export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
   const [isLoading, setIsLoading] = useState(false);
 
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
+  const loginForm = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
     defaultValues: {
       email: '',
       password: '',
     },
   });
 
-  const onSubmit = async (data: FormData) => {
+  const resetForm = useForm<ResetFormData>({
+    resolver: zodResolver(resetSchema),
+    defaultValues: {
+      email: '',
+    },
+  });
+
+  const onLoginSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     try {
       if (mode === 'login') {
         await signIn(data.email, data.password);
         toast.success('Signed in successfully');
         onOpenChange(false);
-      } else {
+      } else if (mode === 'signup') {
         await signUp(data.email, data.password);
         toast.success('Account created! Please check your email to verify your account.');
         onOpenChange(false);
       }
-      form.reset();
+      loginForm.reset();
     } catch (error: any) {
       toast.error(error.message || 'Authentication failed');
     } finally {
@@ -67,9 +79,24 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
     }
   };
 
-  const toggleMode = () => {
-    setMode(mode === 'login' ? 'signup' : 'login');
-    form.reset();
+  const onResetSubmit = async (data: ResetFormData) => {
+    setIsLoading(true);
+    try {
+      await resetPassword(data.email);
+      toast.success('Password reset email sent! Check your inbox.');
+      setMode('login');
+      resetForm.reset();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to send reset email');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const switchMode = (newMode: 'login' | 'signup' | 'forgot') => {
+    setMode(newMode);
+    loginForm.reset();
+    resetForm.reset();
   };
 
   return (
@@ -77,95 +104,156 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
       <DialogContent className="bg-card border-border max-w-md">
         <DialogHeader>
           <DialogTitle className="font-display text-2xl tracking-wide">
-            {mode === 'login' ? 'ADMIN LOGIN' : 'CREATE ACCOUNT'}
+            {mode === 'login' ? 'ADMIN LOGIN' : mode === 'signup' ? 'CREATE ACCOUNT' : 'RESET PASSWORD'}
           </DialogTitle>
           <DialogDescription>
             {mode === 'login'
               ? 'Sign in to access admin features'
-              : 'Create an account to manage events'}
+              : mode === 'signup'
+              ? 'Create an account to manage events'
+              : 'Enter your email to receive a password reset link'}
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="admin@example.com"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        {mode === 'forgot' ? (
+          <Form {...resetForm}>
+            <form onSubmit={resetForm.handleSubmit(onResetSubmit)} className="space-y-4">
+              <FormField
+                control={resetForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="admin@example.com"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="••••••••"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <Button
+                type="submit"
+                className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <KeyRound className="h-4 w-4 mr-2" />
+                )}
+                Send Reset Link
+              </Button>
 
-            <Button
-              type="submit"
-              className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : mode === 'login' ? (
-                <LogIn className="h-4 w-4 mr-2" />
-              ) : (
-                <UserPlus className="h-4 w-4 mr-2" />
-              )}
-              {mode === 'login' ? 'Sign In' : 'Create Account'}
-            </Button>
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => switchMode('login')}
+                  className="text-sm text-muted-foreground hover:text-accent inline-flex items-center gap-1"
+                >
+                  <ArrowLeft className="h-3 w-3" />
+                  Back to login
+                </button>
+              </div>
+            </form>
+          </Form>
+        ) : (
+          <Form {...loginForm}>
+            <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
+              <FormField
+                control={loginForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="admin@example.com"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <div className="text-center text-sm text-muted-foreground">
-              {mode === 'login' ? (
-                <>
-                  Don't have an account?{' '}
-                  <button
-                    type="button"
-                    onClick={toggleMode}
-                    className="text-accent hover:underline"
-                  >
-                    Sign up
-                  </button>
-                </>
-              ) : (
-                <>
-                  Already have an account?{' '}
-                  <button
-                    type="button"
-                    onClick={toggleMode}
-                    className="text-accent hover:underline"
-                  >
-                    Sign in
-                  </button>
-                </>
-              )}
-            </div>
-          </form>
-        </Form>
+              <FormField
+                control={loginForm.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-center justify-between">
+                      <FormLabel>Password</FormLabel>
+                      {mode === 'login' && (
+                        <button
+                          type="button"
+                          onClick={() => switchMode('forgot')}
+                          className="text-xs text-accent hover:underline"
+                        >
+                          Forgot password?
+                        </button>
+                      )}
+                    </div>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="••••••••"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button
+                type="submit"
+                className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : mode === 'login' ? (
+                  <LogIn className="h-4 w-4 mr-2" />
+                ) : (
+                  <UserPlus className="h-4 w-4 mr-2" />
+                )}
+                {mode === 'login' ? 'Sign In' : 'Create Account'}
+              </Button>
+
+              <div className="text-center text-sm text-muted-foreground">
+                {mode === 'login' ? (
+                  <>
+                    Don't have an account?{' '}
+                    <button
+                      type="button"
+                      onClick={() => switchMode('signup')}
+                      className="text-accent hover:underline"
+                    >
+                      Sign up
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    Already have an account?{' '}
+                    <button
+                      type="button"
+                      onClick={() => switchMode('login')}
+                      className="text-accent hover:underline"
+                    >
+                      Sign in
+                    </button>
+                  </>
+                )}
+              </div>
+            </form>
+          </Form>
+        )}
       </DialogContent>
     </Dialog>
   );
