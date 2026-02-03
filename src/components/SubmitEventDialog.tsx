@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -31,7 +31,11 @@ import {
 } from '@/components/ui/select';
 import { EventType, EVENT_TYPE_LABELS } from '@/types/events';
 import { useCreateSubmission } from '@/hooks/useSubmissions';
-import { Send, CheckCircle } from 'lucide-react';
+import { useVenues } from '@/hooks/useEvents';
+import { useVenueDetails } from '@/hooks/useVenueDetails';
+import { Send, CheckCircle, Plus } from 'lucide-react';
+
+const ADD_NEW_VENUE = '__add_new__';
 
 const formSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters').max(200),
@@ -58,7 +62,11 @@ interface SubmitEventDialogProps {
 
 export function SubmitEventDialog({ open, onOpenChange }: SubmitEventDialogProps) {
   const [submitted, setSubmitted] = useState(false);
+  const [isAddingNewVenue, setIsAddingNewVenue] = useState(false);
+  const [selectedVenue, setSelectedVenue] = useState('');
   const createSubmission = useCreateSubmission();
+  const { data: venues = [] } = useVenues();
+  const { data: venueDetails } = useVenueDetails();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -78,6 +86,16 @@ export function SubmitEventDialog({ open, onOpenChange }: SubmitEventDialogProps
       submitter_name: '',
     },
   });
+
+  // Auto-fill location when selecting an existing venue
+  useEffect(() => {
+    if (selectedVenue && selectedVenue !== ADD_NEW_VENUE && venueDetails) {
+      const venue = venueDetails.get(selectedVenue);
+      if (venue?.location) {
+        form.setValue('venue_location', venue.location);
+      }
+    }
+  }, [selectedVenue, venueDetails, form]);
 
   const onSubmit = async (data: FormData) => {
     await createSubmission.mutateAsync({
@@ -102,8 +120,22 @@ export function SubmitEventDialog({ open, onOpenChange }: SubmitEventDialogProps
     onOpenChange(false);
     setTimeout(() => {
       setSubmitted(false);
+      setIsAddingNewVenue(false);
+      setSelectedVenue('');
       form.reset();
     }, 200);
+  };
+
+  const handleVenueSelect = (value: string) => {
+    setSelectedVenue(value);
+    if (value === ADD_NEW_VENUE) {
+      setIsAddingNewVenue(true);
+      form.setValue('venue_name', '');
+      form.setValue('venue_location', '');
+    } else {
+      setIsAddingNewVenue(false);
+      form.setValue('venue_name', value);
+    }
   };
 
   if (submitted) {
@@ -198,10 +230,49 @@ export function SubmitEventDialog({ open, onOpenChange }: SubmitEventDialogProps
                 name="venue_name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Venue Name *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Delta Force Paintball" {...field} />
-                    </FormControl>
+                    <FormLabel>Venue *</FormLabel>
+                    {!isAddingNewVenue ? (
+                      <Select onValueChange={handleVenueSelect} value={selectedVenue}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a venue" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {venues.map((venue) => (
+                            <SelectItem key={venue} value={venue}>
+                              {venue}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value={ADD_NEW_VENUE} className="text-accent">
+                            <span className="flex items-center gap-2">
+                              <Plus className="h-4 w-4" />
+                              Add new venue
+                            </span>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="space-y-2">
+                        <FormControl>
+                          <Input placeholder="Enter venue name" {...field} />
+                        </FormControl>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setIsAddingNewVenue(false);
+                            setSelectedVenue('');
+                            form.setValue('venue_name', '');
+                            form.setValue('venue_location', '');
+                          }}
+                          className="text-xs text-muted-foreground"
+                        >
+                          ← Back to venue list
+                        </Button>
+                      </div>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
