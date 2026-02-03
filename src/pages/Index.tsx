@@ -10,13 +10,20 @@ import { EventEditDialog } from '@/components/EventEditDialog';
 import { AddEventDialog } from '@/components/AddEventDialog';
 import { EventDetailDialog } from '@/components/EventDetailDialog';
 import { SubmitEventDialog } from '@/components/SubmitEventDialog';
+import { AdminAnalytics } from '@/components/AdminAnalytics';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle } from 'lucide-react';
+import { useIsAdmin } from '@/hooks/useAuth';
+import { useVisitTracking } from '@/hooks/useVisitTracking';
 
 export default function Index() {
   const [view, setView] = useState<'calendar' | 'list' | 'map'>('calendar');
   const [eventType, setEventType] = useState<EventType | undefined>();
   const [venue, setVenue] = useState('');
+  const { data: isAdmin } = useIsAdmin();
+  
+  // Track page visits
+  useVisitTracking();
   
   const [editingEvent, setEditingEvent] = useState<PaintballEvent | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -94,6 +101,13 @@ export default function Index() {
         {events && events.length > 0 && (
           <div className="text-center text-muted-foreground text-sm py-4 border-t border-border/50">
             Showing {events.length} events across {venues.length} venues
+          </div>
+        )}
+
+        {/* Admin Analytics Section */}
+        {isAdmin && (
+          <div className="pt-8 border-t border-border/50">
+            <AdminAnalytics />
           </div>
         )}
       </main>

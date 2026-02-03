@@ -155,6 +155,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_visits: {
+        Row: {
+          id: string
+          page_path: string | null
+          session_id: string | null
+          user_id: string | null
+          visited_at: string
+        }
+        Insert: {
+          id?: string
+          page_path?: string | null
+          session_id?: string | null
+          user_id?: string | null
+          visited_at?: string
+        }
+        Update: {
+          id?: string
+          page_path?: string | null
+          session_id?: string | null
+          user_id?: string | null
+          visited_at?: string
+        }
+        Relationships: []
+      }
       venues: {
         Row: {
           created_at: string
@@ -184,6 +208,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_visit_stats: {
+        Args: { days_back?: number }
+        Returns: {
+          total_visits: number
+          unique_visitors: number
+          visit_date: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
