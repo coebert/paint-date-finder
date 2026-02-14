@@ -65,8 +65,14 @@ export function SubmitEventDialog({ open, onOpenChange }: SubmitEventDialogProps
   const [isAddingNewVenue, setIsAddingNewVenue] = useState(false);
   const [selectedVenue, setSelectedVenue] = useState('');
   const createSubmission = useCreateSubmission();
-  const { data: venues = [] } = useVenues();
+  const { data: eventVenues = [] } = useVenues();
   const { data: venueDetails } = useVenueDetails();
+
+  // Merge venues from events table and venues table for a complete list
+  const venues = Array.from(new Set([
+    ...eventVenues,
+    ...(venueDetails ? Array.from(venueDetails.keys()) : []),
+  ])).sort();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
