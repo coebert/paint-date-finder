@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
     if (userError || !user) {
       console.error('Error getting user:', userError);
       return new Response(
-        JSON.stringify({ error: 'Invalid token', details: userError?.message }),
+        JSON.stringify({ error: 'Authentication failed' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
     if (checkError) {
       console.error('Error checking existing role:', checkError);
       return new Response(
-        JSON.stringify({ error: 'Failed to check role', details: checkError.message }),
+        JSON.stringify({ error: 'Unable to process request' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
     if (insertError) {
       console.error('Error inserting admin role:', insertError);
       return new Response(
-        JSON.stringify({ error: 'Failed to assign admin role', details: insertError.message }),
+        JSON.stringify({ error: 'Unable to process request' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -98,9 +98,8 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('Unexpected error:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: 'Internal server error', details: message }),
+      JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
