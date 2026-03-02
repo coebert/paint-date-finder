@@ -140,3 +140,44 @@ export function usePeakHoursStats() {
     },
   });
 }
+
+export interface DataCompletenessStats {
+  total: number;
+  missingBooking: number;
+  missingPrice: number;
+  missingStartTime: number;
+  missingDescription: number;
+  unverified: number;
+}
+
+export function useDataCompleteness() {
+  return useQuery({
+    queryKey: ['data-completeness'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('events')
+        .select('booking_url, price_info, start_time, description, is_verified');
+
+      if (error) throw error;
+
+      const stats: DataCompletenessStats = {
+        total: data?.length || 0,
+        missingBooking: 0,
+        missingPrice: 0,
+        missingStartTime: 0,
+        missingDescription: 0,
+        unverified: 0,
+      };
+
+      data?.forEach(e => {
+        if (!e.booking_url) stats.missingBooking++;
+        if (!e.price_info) stats.missingPrice++;
+        if (!e.start_time) stats.missingStartTime++;
+        if (!e.description) stats.missingDescription++;
+        if (!e.is_verified) stats.unverified++;
+      });
+
+      return stats;
+    },
+  });
+}
