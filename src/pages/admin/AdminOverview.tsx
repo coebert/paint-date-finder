@@ -1,5 +1,6 @@
 import { AdminLayout } from "@/layouts/AdminLayout";
 import { AdminAnalytics } from "@/components/AdminAnalytics";
+import { DataCompletenessCard } from "@/components/DataCompletenessCard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, Calendar, ArrowRight } from "lucide-react";
@@ -52,27 +53,7 @@ export default function AdminOverview() {
           </CardContent>
         </Card>
 
-        <Card className="bg-card border-border/50 md:col-span-2 lg:col-span-1">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Quick Actions
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Button variant="outline" className="w-full justify-start" asChild>
-              <Link to="/admin/submissions">
-                <FileText className="mr-2 h-4 w-4" />
-                Review Submissions
-              </Link>
-            </Button>
-            <Button variant="outline" className="w-full justify-start" asChild>
-              <Link to="/admin/events">
-                <Calendar className="mr-2 h-4 w-4" />
-                Manage Events
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <DataCompletenessCard />
       </div>
 
       {/* Full Analytics Section */}
