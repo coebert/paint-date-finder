@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { PaintballEvent } from '@/types/events';
 import { EventTypeBadge } from './EventTypeBadge';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, X, Calendar, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Calendar, Clock, ShieldCheck, ShieldAlert } from 'lucide-react';
 import {
   format,
   startOfMonth,
@@ -146,17 +146,18 @@ export function EventCalendar({ events, onEventClick }: EventCalendarProps) {
                   >
                     <div
                       className={cn(
-                        'text-xs px-1 py-0.5 rounded truncate cursor-pointer hover:opacity-80 transition-opacity',
+                        'text-xs px-1 py-0.5 rounded truncate cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-0.5',
                         event.event_type === 'walk_on' && 'bg-event-walk-on/80 text-white',
                         event.event_type === 'big_game' && 'bg-event-big-game/80 text-black',
                         event.event_type === 'competition' && 'bg-event-competition/80 text-white',
                         event.event_type === 'tournament' && 'bg-event-tournament/80 text-white',
                         event.event_type === 'speedball' && 'bg-event-speedball/80 text-white',
                         event.event_type === 'scenario' && 'bg-event-scenario/80 text-black',
-                        event.event_type === 'other' && 'bg-event-other/80 text-white'
+                        event.event_type === 'other' && 'bg-event-other/80 text-white',
+                        !event.is_verified && 'opacity-60 border border-dashed border-current'
                       )}
                     >
-                      {event.title}
+                      <span className="truncate">{event.title}</span>
                     </div>
                   </button>
                 ))}
@@ -200,9 +201,19 @@ export function EventCalendar({ events, onEventClick }: EventCalendarProps) {
                 <div
                   key={event.id}
                   onClick={() => onEventClick?.(event)}
-                  className="p-3 bg-card rounded-lg border border-border/50 cursor-pointer hover:border-accent/50 transition-colors"
+                  className={cn(
+                    "p-3 bg-card rounded-lg border cursor-pointer hover:border-accent/50 transition-colors",
+                    event.is_verified ? "border-border/50" : "border-dashed border-muted-foreground/30"
+                  )}
                 >
-                  <EventTypeBadge type={event.event_type} className="mb-2" />
+                  <div className="flex items-center justify-between mb-2">
+                    <EventTypeBadge type={event.event_type} />
+                    {event.is_verified ? (
+                      <ShieldCheck className="h-3.5 w-3.5 text-primary shrink-0" />
+                    ) : (
+                      <ShieldAlert className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
+                    )}
+                  </div>
                   <p className="font-semibold text-foreground text-sm">{event.title}</p>
                   <p className="text-xs text-muted-foreground mt-1">{event.venue_name}</p>
                   {event.start_time && (
@@ -214,6 +225,9 @@ export function EventCalendar({ events, onEventClick }: EventCalendarProps) {
                   )}
                   {event.price_info && (
                     <p className="text-xs font-medium text-primary mt-2">{event.price_info}</p>
+                  )}
+                  {!event.is_verified && (
+                    <p className="text-[10px] text-muted-foreground/50 italic mt-1">Unverified</p>
                   )}
                 </div>
               ))}

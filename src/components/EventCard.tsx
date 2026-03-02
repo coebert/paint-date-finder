@@ -2,9 +2,10 @@ import { PaintballEvent } from '@/types/events';
 import { EventTypeBadge } from './EventTypeBadge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, MapPin, Clock, ExternalLink, Pencil } from 'lucide-react';
+import { Calendar, MapPin, Clock, ExternalLink, Pencil, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useIsAdmin } from '@/hooks/useAuth';
+import { cn } from '@/lib/utils';
 
 interface EventCardProps {
   event: PaintballEvent;
@@ -16,11 +17,25 @@ export function EventCard({ event, onEdit }: EventCardProps) {
   const { data: isAdmin } = useIsAdmin();
 
   return (
-    <Card className="card-hover overflow-hidden bg-card border-border/50">
+    <Card className={cn(
+      "card-hover overflow-hidden bg-card",
+      event.is_verified ? "border-border/50" : "border-dashed border-muted-foreground/30"
+    )}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <EventTypeBadge type={event.event_type} className="mb-2" />
+            <div className="flex items-center gap-2 mb-2">
+              <EventTypeBadge type={event.event_type} />
+              {event.is_verified ? (
+                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-primary">
+                  <ShieldCheck className="h-3 w-3" /> Verified
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground/60">
+                  <ShieldAlert className="h-3 w-3" /> Unverified
+                </span>
+              )}
+            </div>
             <h3 className="font-display text-xl text-foreground truncate">{event.title}</h3>
           </div>
           {/* Only show edit button to admins */}
@@ -82,7 +97,7 @@ export function EventCard({ event, onEdit }: EventCardProps) {
         )}
 
         {!event.is_verified && (
-          <p className="text-xs text-muted-foreground/60 italic">Unverified - dates may be approximate</p>
+          <p className="text-xs text-muted-foreground/50 italic">Dates & details may be approximate</p>
         )}
       </CardContent>
     </Card>
