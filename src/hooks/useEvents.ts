@@ -8,6 +8,7 @@ export function useEvents(filters?: {
   venue?: string;
   startDate?: string;
   endDate?: string;
+  verifiedOnly?: boolean;
 }) {
   return useQuery({
     queryKey: ['events', filters],
