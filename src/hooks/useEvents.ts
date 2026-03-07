@@ -34,6 +34,10 @@ export function useEvents(filters?: {
         query = query.lte('event_date', filters.endDate);
       }
 
+      if (filters?.verifiedOnly) {
+        query = query.eq('is_verified', true);
+      }
+
       const { data, error } = await query;
 
       if (error) throw error;
