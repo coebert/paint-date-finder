@@ -112,8 +112,20 @@ export function EventFilters({
           </Popover>
         </div>
 
-        {hasFilters && (
-          <div className="flex items-end">
+        <div className="flex items-end gap-4">
+          <div className="flex items-center gap-2 pb-2">
+            <Switch
+              id="verified-only"
+              checked={verifiedOnly}
+              onCheckedChange={onVerifiedOnlyChange}
+            />
+            <label htmlFor="verified-only" className="text-sm text-muted-foreground flex items-center gap-1 cursor-pointer whitespace-nowrap">
+              <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+              Verified only
+            </label>
+          </div>
+
+          {hasFilters && (
             <Button
               variant="outline"
               onClick={onClearFilters}
@@ -122,8 +134,8 @@ export function EventFilters({
               <X className="h-4 w-4 mr-2" />
               Clear Filters
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
