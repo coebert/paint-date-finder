@@ -9,6 +9,7 @@ export function useEvents(filters?: {
   startDate?: string;
   endDate?: string;
   verifiedOnly?: boolean;
+  regionVenues?: string[];
 }) {
   return useQuery({
     queryKey: ['events', filters],
@@ -36,6 +37,10 @@ export function useEvents(filters?: {
 
       if (filters?.verifiedOnly) {
         query = query.eq('is_verified', true);
+      }
+
+      if (filters?.regionVenues && filters.regionVenues.length > 0) {
+        query = query.in('venue_name', filters.regionVenues);
       }
 
       const { data, error } = await query;

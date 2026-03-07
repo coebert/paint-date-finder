@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useEvents, useVenues } from '@/hooks/useEvents';
+import { useRegions } from '@/hooks/useRegions';
 import { EventType, PaintballEvent } from '@/types/events';
 import { Header } from '@/components/Header';
 import { EventFilters } from '@/components/EventFilters';
@@ -18,6 +19,7 @@ export default function Index() {
   const [view, setView] = useState<'calendar' | 'list' | 'map'>('calendar');
   const [eventType, setEventType] = useState<EventType | undefined>();
   const [venue, setVenue] = useState('');
+  const [region, setRegion] = useState('');
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   
   // Track page visits
@@ -30,10 +32,14 @@ export default function Index() {
   const [detailEvent, setDetailEvent] = useState<PaintballEvent | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
 
+  const { data: regionsData } = useRegions();
+  const regionVenues = region ? regionsData?.venuesByRegion.get(region) : undefined;
+
   const { data: events, isLoading, error } = useEvents({
     eventType,
     venue,
     verifiedOnly,
+    regionVenues,
   });
 
   const { data: venues = [] } = useVenues();
@@ -51,6 +57,7 @@ export default function Index() {
   const handleClearFilters = () => {
     setEventType(undefined);
     setVenue('');
+    setRegion('');
     setVerifiedOnly(false);
   };
 
@@ -68,9 +75,12 @@ export default function Index() {
           eventType={eventType}
           venue={venue}
           venues={venues}
+          region={region}
+          regions={regionsData?.regions || []}
           verifiedOnly={verifiedOnly}
           onEventTypeChange={setEventType}
           onVenueChange={setVenue}
+          onRegionChange={setRegion}
           onVerifiedOnlyChange={setVerifiedOnly}
           onClearFilters={handleClearFilters}
         />
