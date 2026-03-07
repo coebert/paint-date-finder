@@ -33,6 +33,7 @@ export default function Index() {
   const { data: events, isLoading, error } = useEvents({
     eventType,
     venue,
+    verifiedOnly,
   });
 
   const { data: venues = [] } = useVenues();
