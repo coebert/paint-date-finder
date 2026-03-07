@@ -12,8 +12,10 @@ interface EventFiltersProps {
   eventType: EventType | undefined;
   venue: string;
   venues: string[];
+  verifiedOnly: boolean;
   onEventTypeChange: (type: EventType | undefined) => void;
   onVenueChange: (venue: string) => void;
+  onVerifiedOnlyChange: (verified: boolean) => void;
   onClearFilters: () => void;
 }
 
@@ -21,12 +23,14 @@ export function EventFilters({
   eventType,
   venue,
   venues,
+  verifiedOnly,
   onEventTypeChange,
   onVenueChange,
+  onVerifiedOnlyChange,
   onClearFilters,
 }: EventFiltersProps) {
   const [venueOpen, setVenueOpen] = useState(false);
-  const hasFilters = eventType || venue;
+  const hasFilters = eventType || venue || verifiedOnly;
 
   return (
     <div className="bg-card border border-border/50 rounded-lg p-4 space-y-4">
