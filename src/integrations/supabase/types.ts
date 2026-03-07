@@ -185,6 +185,7 @@ export type Database = {
           id: string
           location: string | null
           name: string
+          region: string | null
           website: string | null
         }
         Insert: {
@@ -192,6 +193,7 @@ export type Database = {
           id?: string
           location?: string | null
           name: string
+          region?: string | null
           website?: string | null
         }
         Update: {
@@ -199,6 +201,7 @@ export type Database = {
           id?: string
           location?: string | null
           name?: string
+          region?: string | null
           website?: string | null
         }
         Relationships: []
