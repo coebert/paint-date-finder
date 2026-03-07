@@ -75,9 +75,12 @@ export default function Index() {
           eventType={eventType}
           venue={venue}
           venues={venues}
+          region={region}
+          regions={regionsData?.regions || []}
           verifiedOnly={verifiedOnly}
           onEventTypeChange={setEventType}
           onVenueChange={setVenue}
+          onRegionChange={setRegion}
           onVerifiedOnlyChange={setVerifiedOnly}
           onClearFilters={handleClearFilters}
         />
