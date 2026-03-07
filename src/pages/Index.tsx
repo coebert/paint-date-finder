@@ -51,6 +51,7 @@ export default function Index() {
   const handleClearFilters = () => {
     setEventType(undefined);
     setVenue('');
+    setVerifiedOnly(false);
   };
 
   return (
