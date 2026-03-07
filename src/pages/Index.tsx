@@ -68,8 +68,10 @@ export default function Index() {
           eventType={eventType}
           venue={venue}
           venues={venues}
+          verifiedOnly={verifiedOnly}
           onEventTypeChange={setEventType}
           onVenueChange={setVenue}
+          onVerifiedOnlyChange={setVerifiedOnly}
           onClearFilters={handleClearFilters}
         />
 
