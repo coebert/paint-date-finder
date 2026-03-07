@@ -4,7 +4,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Check, ChevronDown, Filter, X } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Check, ChevronDown, Filter, ShieldCheck, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface EventFiltersProps {
