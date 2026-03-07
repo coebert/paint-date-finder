@@ -8,6 +8,7 @@ export function useEvents(filters?: {
   venue?: string;
   startDate?: string;
   endDate?: string;
+  verifiedOnly?: boolean;
 }) {
   return useQuery({
     queryKey: ['events', filters],
@@ -31,6 +32,10 @@ export function useEvents(filters?: {
 
       if (filters?.endDate) {
         query = query.lte('event_date', filters.endDate);
+      }
+
+      if (filters?.verifiedOnly) {
+        query = query.eq('is_verified', true);
       }
 
       const { data, error } = await query;

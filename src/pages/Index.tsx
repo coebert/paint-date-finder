@@ -18,6 +18,7 @@ export default function Index() {
   const [view, setView] = useState<'calendar' | 'list' | 'map'>('calendar');
   const [eventType, setEventType] = useState<EventType | undefined>();
   const [venue, setVenue] = useState('');
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
   
   // Track page visits
   useVisitTracking();
@@ -32,6 +33,7 @@ export default function Index() {
   const { data: events, isLoading, error } = useEvents({
     eventType,
     venue,
+    verifiedOnly,
   });
 
   const { data: venues = [] } = useVenues();
@@ -49,6 +51,7 @@ export default function Index() {
   const handleClearFilters = () => {
     setEventType(undefined);
     setVenue('');
+    setVerifiedOnly(false);
   };
 
   return (
@@ -65,8 +68,10 @@ export default function Index() {
           eventType={eventType}
           venue={venue}
           venues={venues}
+          verifiedOnly={verifiedOnly}
           onEventTypeChange={setEventType}
           onVenueChange={setVenue}
+          onVerifiedOnlyChange={setVerifiedOnly}
           onClearFilters={handleClearFilters}
         />
 

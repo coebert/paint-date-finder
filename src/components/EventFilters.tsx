@@ -4,15 +4,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Check, ChevronDown, Filter, X } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Check, ChevronDown, Filter, ShieldCheck, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface EventFiltersProps {
   eventType: EventType | undefined;
   venue: string;
   venues: string[];
+  verifiedOnly: boolean;
   onEventTypeChange: (type: EventType | undefined) => void;
   onVenueChange: (venue: string) => void;
+  onVerifiedOnlyChange: (verified: boolean) => void;
   onClearFilters: () => void;
 }
 
@@ -20,12 +23,14 @@ export function EventFilters({
   eventType,
   venue,
   venues,
+  verifiedOnly,
   onEventTypeChange,
   onVenueChange,
+  onVerifiedOnlyChange,
   onClearFilters,
 }: EventFiltersProps) {
   const [venueOpen, setVenueOpen] = useState(false);
-  const hasFilters = eventType || venue;
+  const hasFilters = eventType || venue || verifiedOnly;
 
   return (
     <div className="bg-card border border-border/50 rounded-lg p-4 space-y-4">
@@ -107,8 +112,20 @@ export function EventFilters({
           </Popover>
         </div>
 
-        {hasFilters && (
-          <div className="flex items-end">
+        <div className="flex items-end gap-4">
+          <div className="flex items-center gap-2 pb-2">
+            <Switch
+              id="verified-only"
+              checked={verifiedOnly}
+              onCheckedChange={onVerifiedOnlyChange}
+            />
+            <label htmlFor="verified-only" className="text-sm text-muted-foreground flex items-center gap-1 cursor-pointer whitespace-nowrap">
+              <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+              Verified only
+            </label>
+          </div>
+
+          {hasFilters && (
             <Button
               variant="outline"
               onClick={onClearFilters}
@@ -117,8 +134,8 @@ export function EventFilters({
               <X className="h-4 w-4 mr-2" />
               Clear Filters
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
