@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { EventType, EVENT_TYPE_LABELS } from '@/types/events';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Calendar, Filter, X } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Check, ChevronDown, Filter, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface EventFiltersProps {
   eventType: EventType | undefined;
@@ -21,6 +24,7 @@ export function EventFilters({
   onVenueChange,
   onClearFilters,
 }: EventFiltersProps) {
+  const [venueOpen, setVenueOpen] = useState(false);
   const hasFilters = eventType || venue;
 
   return (
@@ -53,22 +57,54 @@ export function EventFilters({
 
         <div>
           <label className="text-sm text-muted-foreground mb-1.5 block">Venue</label>
-          <Select
-            value={venue || 'all'}
-            onValueChange={(value) => onVenueChange(value === 'all' ? '' : value)}
-          >
-            <SelectTrigger className="bg-input border-border">
-              <SelectValue placeholder="All Venues" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Venues</SelectItem>
-              {venues.map((v) => (
-                <SelectItem key={v} value={v}>
-                  {v}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover open={venueOpen} onOpenChange={setVenueOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={venueOpen}
+                className="w-full justify-between bg-input border-border font-normal h-10"
+              >
+                <span className="truncate">
+                  {venue || 'All Venues'}
+                </span>
+                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Search venues..." />
+                <CommandList>
+                  <CommandEmpty>No venue found.</CommandEmpty>
+                  <CommandGroup>
+                    <CommandItem
+                      value="All Venues"
+                      onSelect={() => {
+                        onVenueChange('');
+                        setVenueOpen(false);
+                      }}
+                    >
+                      <Check className={cn("mr-2 h-4 w-4", !venue ? "opacity-100" : "opacity-0")} />
+                      All Venues
+                    </CommandItem>
+                    {venues.map((v) => (
+                      <CommandItem
+                        key={v}
+                        value={v}
+                        onSelect={() => {
+                          onVenueChange(v);
+                          setVenueOpen(false);
+                        }}
+                      >
+                        <Check className={cn("mr-2 h-4 w-4", venue === v ? "opacity-100" : "opacity-0")} />
+                        {v}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
 
         {hasFilters && (
