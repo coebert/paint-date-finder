@@ -18,6 +18,7 @@ export default function Index() {
   const [view, setView] = useState<'calendar' | 'list' | 'map'>('calendar');
   const [eventType, setEventType] = useState<EventType | undefined>();
   const [venue, setVenue] = useState('');
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
   
   // Track page visits
   useVisitTracking();
