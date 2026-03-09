@@ -100,9 +100,9 @@ function SubmissionCard({ submission, onApprove, onReject, onDelete }: {
             <div>
               <span className="text-muted-foreground">Time:</span>{' '}
               <span>
-                {submission.start_time && format(new Date(`2000-01-01T${submission.start_time}`), 'h:mm a')}
+                {submission.start_time && format(new Date(`2000-01-01T${submission.start_time}`), 'HH:mm')}
                 {submission.start_time && submission.end_time && ' - '}
-                {submission.end_time && format(new Date(`2000-01-01T${submission.end_time}`), 'h:mm a')}
+                {submission.end_time && format(new Date(`2000-01-01T${submission.end_time}`), 'HH:mm')}
               </span>
             </div>
           )}

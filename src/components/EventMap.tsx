@@ -779,7 +779,7 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
                     {venueEvents.slice(0, 2).map((event) => (
                       <div key={event.id} className="flex items-center gap-2 text-sm text-muted-foreground">
                         <span className="truncate">{event.title}</span>
-                        <span className="shrink-0">• {format(parseISO(event.event_date), 'MMM d')}</span>
+                        <span className="shrink-0">• {format(parseISO(event.event_date), 'd MMM')}</span>
                       </div>
                     ))}
                     {venueEvents.length > 2 && (

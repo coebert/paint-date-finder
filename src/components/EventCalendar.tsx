@@ -180,7 +180,7 @@ export function EventCalendar({ events, onEventClick }: EventCalendarProps) {
               <div className="flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-accent" />
                 <h3 className="font-display text-lg text-foreground">
-                  {format(parseISO(expandedDate), 'EEEE, MMMM d, yyyy')}
+                  {format(parseISO(expandedDate), 'EEEE, d MMMM yyyy')}
                 </h3>
                 <span className="text-sm text-muted-foreground">
                   ({expandedEvents.length} event{expandedEvents.length !== 1 ? 's' : ''})

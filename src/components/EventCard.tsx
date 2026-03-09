@@ -54,7 +54,7 @@ export function EventCard({ event, onEdit }: EventCardProps) {
       <CardContent className="space-y-3">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Calendar className="h-4 w-4 text-accent" />
-          <span>{format(eventDate, 'EEEE, MMMM d, yyyy')}</span>
+          <span>{format(eventDate, 'EEEE, d MMMM yyyy')}</span>
         </div>
 
         {event.start_time && (

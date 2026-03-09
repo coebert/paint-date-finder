@@ -245,7 +245,7 @@ export default function Submissions() {
                           </a>
                         )}
                         <span className="ml-auto">
-                          Submitted {format(parseISO(submission.created_at), 'MMM d, yyyy h:mm a')}
+                          Submitted {format(parseISO(submission.created_at), 'd MMM yyyy HH:mm')}
                         </span>
                       </div>
 
