@@ -66,7 +66,7 @@ export function AdminAnalytics() {
   const { data: peakHoursStats, isLoading: peakHoursLoading } = usePeakHoursStats();
 
   const chartData = stats?.map(s => ({
-    date: format(parseISO(s.visit_date), 'MMM d'),
+    date: format(parseISO(s.visit_date), 'd MMM'),
     visitors: s.unique_visitors,
     visits: s.total_visits,
   })) || [];

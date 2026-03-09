@@ -152,10 +152,10 @@ export default function AdminEvents() {
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          <p>{format(new Date(event.event_date), 'MMM d, yyyy')}</p>
+                          <p>{format(new Date(event.event_date), 'd MMM yyyy')}</p>
                           {event.start_time && (
                             <p className="text-muted-foreground text-xs">
-                              {format(new Date(`2000-01-01T${event.start_time}`), 'h:mm a')}
+                              {format(new Date(`2000-01-01T${event.start_time}`), 'HH:mm')}
                             </p>
                           )}
                         </div>

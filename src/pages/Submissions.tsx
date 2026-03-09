@@ -185,7 +185,7 @@ export default function Submissions() {
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Calendar className="h-4 w-4 text-accent" />
-                          {format(parseISO(submission.event_date), 'EEEE, MMMM d, yyyy')}
+                          {format(parseISO(submission.event_date), 'EEEE, d MMMM yyyy')}
                         </div>
                         
                         {submission.start_time && (
@@ -245,7 +245,7 @@ export default function Submissions() {
                           </a>
                         )}
                         <span className="ml-auto">
-                          Submitted {format(parseISO(submission.created_at), 'MMM d, yyyy h:mm a')}
+                          Submitted {format(parseISO(submission.created_at), 'd MMM yyyy HH:mm')}
                         </span>
                       </div>
 
