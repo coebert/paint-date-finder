@@ -679,7 +679,7 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
                   <div className="mt-3 space-y-1">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Calendar className="h-4 w-4 text-accent" />
-                      {format(parseISO(event.event_date), 'EEEE, MMMM d, yyyy')}
+                      {format(parseISO(event.event_date), 'EEEE, d MMMM yyyy')}
                     </div>
                     {event.start_time && (
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
