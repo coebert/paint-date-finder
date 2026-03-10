@@ -962,7 +962,46 @@ export function FieldStreetView({ obstacles, viewPoint, onViewPointChange, onSta
         {showLabels ? <Tag size={14} /> : <EyeOff size={14} />}
         {showLabels ? 'Labels' : 'Labels'}
       </button>
-      {/* Virtual joysticks & stance buttons - visible on touch devices */}
+      {/* Compass overlay */}
+      <div className="absolute top-3 right-3 z-10 w-14 h-14 md:w-16 md:h-16">
+        <div className="w-full h-full rounded-full bg-black/60 backdrop-blur-sm border border-white/10 flex items-center justify-center">
+          <div ref={compassRef} className="w-10 h-10 md:w-12 md:h-12 relative">
+            <svg viewBox="0 0 100 100" className="w-full h-full">
+              {/* Cardinal direction ticks */}
+              {[0, 90, 180, 270].map((angle) => (
+                <line
+                  key={angle}
+                  x1="50" y1="8" x2="50" y2="14"
+                  stroke="rgba(255,255,255,0.4)"
+                  strokeWidth="1.5"
+                  transform={`rotate(${angle} 50 50)`}
+                />
+              ))}
+              {/* Minor ticks */}
+              {[45, 135, 225, 315].map((angle) => (
+                <line
+                  key={angle}
+                  x1="50" y1="10" x2="50" y2="14"
+                  stroke="rgba(255,255,255,0.2)"
+                  strokeWidth="1"
+                  transform={`rotate(${angle} 50 50)`}
+                />
+              ))}
+              {/* North arrow (red) */}
+              <polygon points="50,12 44,50 50,44 56,50" fill="#cc1122" />
+              {/* South arrow (white/grey) */}
+              <polygon points="50,88 44,50 50,56 56,50" fill="rgba(255,255,255,0.35)" />
+              {/* Center dot */}
+              <circle cx="50" cy="50" r="3" fill="white" />
+              {/* Cardinal labels */}
+              <text x="50" y="7" textAnchor="middle" fill="#cc1122" fontSize="11" fontWeight="bold" fontFamily="sans-serif">N</text>
+              <text x="50" y="98" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="9" fontFamily="sans-serif">S</text>
+              <text x="95" y="53" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="9" fontFamily="sans-serif">E</text>
+              <text x="5" y="53" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="9" fontFamily="sans-serif">W</text>
+            </svg>
+          </div>
+        </div>
+      </div>
       <div className="md:hidden">
         <VirtualJoystick joystickRef={joystickRef} />
         <VirtualLookJoystick lookRef={lookRef} />
