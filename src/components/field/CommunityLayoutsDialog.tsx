@@ -57,6 +57,7 @@ export function CommunityLayoutsDialog({ onLoad }: CommunityLayoutsDialogProps) 
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const { data: layouts, isLoading } = useFieldLayouts();
+  const deleteLayout = useDeleteFieldLayout();
 
   const filtered = (layouts ?? []).filter((l) => {
     const q = search.toLowerCase();
@@ -72,6 +73,19 @@ export function CommunityLayoutsDialog({ onLoad }: CommunityLayoutsDialogProps) 
   const handleLoad = (layout: FieldLayout) => {
     onLoad(layout.obstacles);
     setOpen(false);
+  };
+
+  const handleDelete = (layout: FieldLayout) => {
+    const token = getDeleteToken(layout.id);
+    if (!token) return;
+    if (!confirm(`Delete "${layout.name}"? This cannot be undone.`)) return;
+    deleteLayout.mutate(
+      { id: layout.id, token },
+      {
+        onSuccess: () => toast.success('Layout deleted'),
+        onError: () => toast.error('Failed to delete layout'),
+      }
+    );
   };
 
   return (
