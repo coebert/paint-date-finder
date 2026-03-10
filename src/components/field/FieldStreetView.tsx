@@ -271,9 +271,12 @@ function Obstacle3D({ obstacle }: { obstacle: Obstacle }) {
   if (profile3D === 'cone') {
     const r = w / 2;
     return (
-      <mesh position={[worldX, h / 2, worldZ]} rotation={[0, rotRad, 0]} material={mat} castShadow>
-        <coneGeometry args={[r, h, 16]} />
-      </mesh>
+      <>
+        {label}
+        <mesh position={[worldX, h / 2, worldZ]} rotation={[0, rotRad, 0]} material={mat} castShadow>
+          <coneGeometry args={[r, h, 16]} />
+        </mesh>
+      </>
     );
   }
 
