@@ -783,6 +783,7 @@ interface FieldStreetViewProps {
 
 export function FieldStreetView({ obstacles, viewPoint, onViewPointChange, onStanceChange }: FieldStreetViewProps) {
   const joystickRef = useRef<JoystickInput>({ moveX: 0, moveY: 0 });
+  const [showLabels, setShowLabels] = useState(true);
   
   const viewPosition: [number, number, number] = useMemo(() => [
     (viewPoint.x / 100 - 0.5) * FIELD_WIDTH_M,
@@ -801,8 +802,17 @@ export function FieldStreetView({ obstacles, viewPoint, onViewPointChange, onSta
         camera={{ fov: 75, near: 0.1, far: 200 }}
         style={{ width: '100%', height: '100%' }}
       >
-        <Scene obstacles={obstacles} viewPosition={viewPosition} onPositionChange={handlePositionChange} onStanceChange={onStanceChange} joystickRef={joystickRef} />
+        <Scene obstacles={obstacles} viewPosition={viewPosition} onPositionChange={handlePositionChange} onStanceChange={onStanceChange} joystickRef={joystickRef} showLabels={showLabels} />
       </Canvas>
+      {/* Label toggle button */}
+      <button
+        onClick={() => setShowLabels(prev => !prev)}
+        className="absolute top-3 left-3 z-10 flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-black/60 hover:bg-black/80 text-white text-xs font-medium backdrop-blur-sm transition-colors border border-white/10"
+        title={showLabels ? 'Hide labels' : 'Show labels'}
+      >
+        {showLabels ? <TagIcon size={14} /> : <TagOffIcon size={14} />}
+        {showLabels ? 'Labels' : 'Labels'}
+      </button>
       {/* Virtual joystick - visible on touch devices */}
       <div className="md:hidden">
         <VirtualJoystick joystickRef={joystickRef} />
