@@ -282,11 +282,14 @@ function Obstacle3D({ obstacle }: { obstacle: Obstacle }) {
 
   if (profile3D === 'prism-triangle') {
     return (
-      <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-        <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, d / 2]} material={mat} castShadow>
-          <extrudeGeometry args={[triShape, { depth: d, bevelEnabled: true, bevelSize: 0.05, bevelThickness: 0.05, bevelSegments: 2 }]} />
-        </mesh>
-      </group>
+      <>
+        {label}
+        <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+          <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, d / 2]} material={mat} castShadow>
+            <extrudeGeometry args={[triShape, { depth: d, bevelEnabled: true, bevelSize: 0.05, bevelThickness: 0.05, bevelSegments: 2 }]} />
+          </mesh>
+        </group>
+      </>
     );
   }
 
