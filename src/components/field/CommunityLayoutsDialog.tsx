@@ -4,11 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { FolderOpen, Search, User, Calendar, Layers } from 'lucide-react';
-import { useFieldLayouts, FieldLayout } from '@/hooks/useFieldLayouts';
+import { FolderOpen, Search, User, Calendar, Layers, Trash2 } from 'lucide-react';
+import { useFieldLayouts, FieldLayout, useDeleteFieldLayout, getDeleteToken } from '@/hooks/useFieldLayouts';
 import { Obstacle, OBSTACLE_DEFINITIONS } from '@/types/fieldLayout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 // Lightweight 2D thumbnail of a layout
 function LayoutThumbnail({ obstacles }: { obstacles: Obstacle[] }) {
