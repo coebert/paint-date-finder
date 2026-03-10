@@ -4,11 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { FolderOpen, Search, User, Calendar, Layers } from 'lucide-react';
-import { useFieldLayouts, FieldLayout } from '@/hooks/useFieldLayouts';
+import { FolderOpen, Search, User, Calendar, Layers, Trash2 } from 'lucide-react';
+import { useFieldLayouts, FieldLayout, useDeleteFieldLayout, getDeleteToken } from '@/hooks/useFieldLayouts';
 import { Obstacle, OBSTACLE_DEFINITIONS } from '@/types/fieldLayout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 // Lightweight 2D thumbnail of a layout
 function LayoutThumbnail({ obstacles }: { obstacles: Obstacle[] }) {
@@ -56,6 +57,7 @@ export function CommunityLayoutsDialog({ onLoad }: CommunityLayoutsDialogProps) 
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const { data: layouts, isLoading } = useFieldLayouts();
+  const deleteLayout = useDeleteFieldLayout();
 
   const filtered = (layouts ?? []).filter((l) => {
     const q = search.toLowerCase();
@@ -71,6 +73,19 @@ export function CommunityLayoutsDialog({ onLoad }: CommunityLayoutsDialogProps) 
   const handleLoad = (layout: FieldLayout) => {
     onLoad(layout.obstacles);
     setOpen(false);
+  };
+
+  const handleDelete = (layout: FieldLayout) => {
+    const token = getDeleteToken(layout.id);
+    if (!token) return;
+    if (!confirm(`Delete "${layout.name}"? This cannot be undone.`)) return;
+    deleteLayout.mutate(
+      { id: layout.id, token },
+      {
+        onSuccess: () => toast.success('Layout deleted'),
+        onError: () => toast.error('Failed to delete layout'),
+      }
+    );
   };
 
   return (
@@ -140,9 +155,22 @@ export function CommunityLayoutsDialog({ onLoad }: CommunityLayoutsDialogProps) 
                       </div>
                     )}
                   </div>
-                  <Button size="sm" className="text-xs shrink-0" onClick={() => handleLoad(layout)}>
-                    Load
-                  </Button>
+                  <div className="flex flex-col gap-1 shrink-0">
+                    <Button size="sm" className="text-xs" onClick={() => handleLoad(layout)}>
+                      Load
+                    </Button>
+                    {getDeleteToken(layout.id) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs text-destructive hover:text-destructive h-7 w-full gap-1"
+                        onClick={() => handleDelete(layout)}
+                        disabled={deleteLayout.isPending}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
