@@ -16,13 +16,19 @@ export interface LookInput {
   lookY: number; // -1 to 1 (pitch)
 }
 
+export interface MobileStanceInput {
+  sprinting: boolean;
+  crouching: boolean;
+}
+
 // ---- First-person camera controller ----
-function FirstPersonCamera({ position, onPositionChange, onStanceChange, joystickRef, lookRef }: { 
+function FirstPersonCamera({ position, onPositionChange, onStanceChange, joystickRef, lookRef, mobileStanceRef }: { 
   position: [number, number, number];
   onPositionChange?: (x: number, z: number) => void;
   onStanceChange?: (stance: { sprinting: boolean; crouching: boolean; eyeHeight: number }) => void;
   joystickRef: React.RefObject<JoystickInput>;
   lookRef: React.RefObject<LookInput>;
+  mobileStanceRef: React.RefObject<MobileStanceInput>;
 }) {
   const { camera, gl } = useThree();
   const yaw = useRef(0);
