@@ -836,13 +836,14 @@ function VirtualLookJoystick({ lookRef }: { lookRef: React.MutableRefObject<Look
 }
 
 // ---- Main scene ----
-function Scene({ obstacles, viewPosition, onPositionChange, onStanceChange, joystickRef, lookRef, showLabels }: {
+function Scene({ obstacles, viewPosition, onPositionChange, onStanceChange, joystickRef, lookRef, mobileStanceRef, showLabels }: {
   obstacles: Obstacle[];
   viewPosition: [number, number, number];
   onPositionChange?: (x: number, z: number) => void;
   onStanceChange?: (stance: { sprinting: boolean; crouching: boolean; eyeHeight: number }) => void;
   joystickRef: React.MutableRefObject<JoystickInput>;
   lookRef: React.MutableRefObject<LookInput>;
+  mobileStanceRef: React.MutableRefObject<MobileStanceInput>;
   showLabels: boolean;
 }) {
   return (
