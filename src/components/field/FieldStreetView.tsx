@@ -555,15 +555,15 @@ function Obstacle3D({ obstacle }: { obstacle: Obstacle }) {
 }
 
 // ---- Main scene ----
-function Scene({ obstacles, viewPosition, onPositionChange }: {
+function Scene({ obstacles, viewPosition, onPositionChange, onStanceChange }: {
   obstacles: Obstacle[];
   viewPosition: [number, number, number];
   onPositionChange?: (x: number, z: number) => void;
+  onStanceChange?: (stance: { sprinting: boolean; crouching: boolean; eyeHeight: number }) => void;
 }) {
   return (
     <>
       <Sky sunPosition={[80, 60, 50]} turbidity={6} rayleigh={1.5} mieCoefficient={0.005} mieDirectionalG={0.8} />
-      {/* Bright outdoor tournament lighting */}
       <ambientLight intensity={0.7} />
       <directionalLight 
         position={[25, 50, 30]} 
@@ -576,11 +576,10 @@ function Scene({ obstacles, viewPosition, onPositionChange }: {
         shadow-camera-top={25}
         shadow-camera-bottom={-25}
       />
-      {/* Fill light from opposite side */}
       <directionalLight position={[-20, 30, -15]} intensity={0.4} />
       <hemisphereLight args={['#b4d7ff', '#3a8f29', 0.5]} />
 
-      <FirstPersonCamera position={viewPosition} onPositionChange={onPositionChange} />
+      <FirstPersonCamera position={viewPosition} onPositionChange={onPositionChange} onStanceChange={onStanceChange} />
       <FieldGround />
       <FieldNetting />
 
