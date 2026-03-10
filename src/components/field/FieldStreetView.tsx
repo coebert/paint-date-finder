@@ -1,13 +1,14 @@
-import { useRef, useMemo, useEffect, useCallback } from 'react';
+import { useRef, useMemo, useEffect, useCallback, useState } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { Sky, Text, Billboard } from '@react-three/drei';
 import * as THREE from 'three';
 import { Obstacle, OBSTACLE_DEFINITIONS, FIELD_WIDTH_M, FIELD_HEIGHT_M } from '@/types/fieldLayout';
 
 // ---- First-person camera controller ----
-function FirstPersonCamera({ position, onPositionChange }: { 
+function FirstPersonCamera({ position, onPositionChange, onStanceChange }: { 
   position: [number, number, number];
   onPositionChange?: (x: number, z: number) => void;
+  onStanceChange?: (stance: { sprinting: boolean; crouching: boolean; eyeHeight: number }) => void;
 }) {
   const { camera, gl } = useThree();
   const yaw = useRef(0);
@@ -94,8 +95,23 @@ function FirstPersonCamera({ position, onPositionChange }: {
     };
   }, [gl]);
 
+  const lastStance = useRef({ sprinting: false, crouching: false });
+
   useFrame((_, delta) => {
-    const speed = 5; // meters per second
+    const isSprinting = keys.current.has('shift');
+    const isCrouching = keys.current.has('c');
+    const baseSpeed = 5;
+    const speed = isSprinting ? 10 : isCrouching ? 2.5 : baseSpeed;
+    const eyeHeight = isCrouching ? 0.9 : 1.7;
+
+    // Report stance changes
+    if (onStanceChange && (lastStance.current.sprinting !== isSprinting || lastStance.current.crouching !== isCrouching)) {
+      lastStance.current = { sprinting: isSprinting, crouching: isCrouching };
+      onStanceChange({ sprinting: isSprinting, crouching: isCrouching, eyeHeight });
+    }
+
+    currentPos.current[1] = eyeHeight;
+
     const moveDir = new THREE.Vector3(0, 0, 0);
     
     if (keys.current.has('w') || keys.current.has('arrowup')) moveDir.z -= 1;
@@ -115,7 +131,6 @@ function FirstPersonCamera({ position, onPositionChange }: {
       currentPos.current[0] = Math.max(-hw + 0.5, Math.min(hw - 0.5, currentPos.current[0]));
       currentPos.current[2] = Math.max(-hh + 0.5, Math.min(hh - 0.5, currentPos.current[2]));
 
-      // Throttle: only report if moved >0.5m since last report
       if (onPositionChange) {
         const dx = currentPos.current[0] - lastReportedPos.current[0];
         const dz = currentPos.current[2] - lastReportedPos.current[1];
@@ -540,15 +555,15 @@ function Obstacle3D({ obstacle }: { obstacle: Obstacle }) {
 }
 
 // ---- Main scene ----
-function Scene({ obstacles, viewPosition, onPositionChange }: {
+function Scene({ obstacles, viewPosition, onPositionChange, onStanceChange }: {
   obstacles: Obstacle[];
   viewPosition: [number, number, number];
   onPositionChange?: (x: number, z: number) => void;
+  onStanceChange?: (stance: { sprinting: boolean; crouching: boolean; eyeHeight: number }) => void;
 }) {
   return (
     <>
       <Sky sunPosition={[80, 60, 50]} turbidity={6} rayleigh={1.5} mieCoefficient={0.005} mieDirectionalG={0.8} />
-      {/* Bright outdoor tournament lighting */}
       <ambientLight intensity={0.7} />
       <directionalLight 
         position={[25, 50, 30]} 
@@ -561,11 +576,10 @@ function Scene({ obstacles, viewPosition, onPositionChange }: {
         shadow-camera-top={25}
         shadow-camera-bottom={-25}
       />
-      {/* Fill light from opposite side */}
       <directionalLight position={[-20, 30, -15]} intensity={0.4} />
       <hemisphereLight args={['#b4d7ff', '#3a8f29', 0.5]} />
 
-      <FirstPersonCamera position={viewPosition} onPositionChange={onPositionChange} />
+      <FirstPersonCamera position={viewPosition} onPositionChange={onPositionChange} onStanceChange={onStanceChange} />
       <FieldGround />
       <FieldNetting />
 
@@ -581,9 +595,10 @@ interface FieldStreetViewProps {
   obstacles: Obstacle[];
   viewPoint: { x: number; y: number };
   onViewPointChange?: (point: { x: number; y: number }) => void;
+  onStanceChange?: (stance: { sprinting: boolean; crouching: boolean; eyeHeight: number }) => void;
 }
 
-export function FieldStreetView({ obstacles, viewPoint, onViewPointChange }: FieldStreetViewProps) {
+export function FieldStreetView({ obstacles, viewPoint, onViewPointChange, onStanceChange }: FieldStreetViewProps) {
   const viewPosition: [number, number, number] = useMemo(() => [
     (viewPoint.x / 100 - 0.5) * FIELD_WIDTH_M,
     1.7,
@@ -595,13 +610,13 @@ export function FieldStreetView({ obstacles, viewPoint, onViewPointChange }: Fie
   }, [onViewPointChange]);
 
   return (
-    <div className="w-full h-[400px] md:h-[500px] rounded-lg overflow-hidden border border-border/50 bg-black">
+    <div className="w-full h-[400px] md:h-[500px] rounded-lg overflow-hidden border border-border/50 bg-black relative">
       <Canvas
         shadows
         camera={{ fov: 75, near: 0.1, far: 200 }}
         style={{ width: '100%', height: '100%' }}
       >
-        <Scene obstacles={obstacles} viewPosition={viewPosition} onPositionChange={handlePositionChange} />
+        <Scene obstacles={obstacles} viewPosition={viewPosition} onPositionChange={handlePositionChange} onStanceChange={onStanceChange} />
       </Canvas>
     </div>
   );

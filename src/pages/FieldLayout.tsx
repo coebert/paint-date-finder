@@ -23,6 +23,7 @@ export default function FieldLayout() {
   const [streetViewPoint, setStreetViewPoint] = useState<{ x: number; y: number }>({ x: 10, y: 50 });
   const [streetViewObstacles, setStreetViewObstacles] = useState<Obstacle[]>(CPPS_FIELD_LAYOUT);
   const [streetViewSource, setStreetViewSource] = useState<'cpps' | 'custom'>('cpps');
+  const [stance, setStance] = useState<{ sprinting: boolean; crouching: boolean; eyeHeight: number }>({ sprinting: false, crouching: false, eyeHeight: 1.7 });
 
   const selectedObstacle = designObstacles.find((o) => o.id === selectedId) || null;
 
@@ -332,6 +333,7 @@ export default function FieldLayout() {
                     obstacles={streetViewObstacles}
                     viewPoint={streetViewPoint}
                     onViewPointChange={setStreetViewPoint}
+                    onStanceChange={setStance}
                   />
                 </Suspense>
 
@@ -352,7 +354,9 @@ export default function FieldLayout() {
                       <CardContent className="py-3 px-4 space-y-2">
                         <p className="text-xs font-medium text-foreground">Controls</p>
                         <ul className="text-[11px] text-muted-foreground space-y-1">
-                          <li>• <kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono">W</kbd><kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono ml-0.5">A</kbd><kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono ml-0.5">S</kbd><kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono ml-0.5">D</kbd> or Arrow keys to walk</li>
+                         <li>• <kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono">W</kbd><kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono ml-0.5">A</kbd><kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono ml-0.5">S</kbd><kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono ml-0.5">D</kbd> or Arrow keys to walk</li>
+                          <li>• Hold <kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono">Shift</kbd> to sprint</li>
+                          <li>• Hold <kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono">C</kbd> to crouch</li>
                           <li>• Click mini-map to teleport</li>
                           <li>• Drag 3D view to look around</li>
                           <li>• Touch & swipe on mobile</li>
@@ -365,7 +369,9 @@ export default function FieldLayout() {
                           Position: <span className="text-foreground font-mono">{Math.round(streetViewPoint.x)}%, {Math.round(streetViewPoint.y)}%</span>
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Eye height: <span className="text-foreground font-mono">1.7m</span>
+                          Eye height: <span className="text-foreground font-mono">{stance.eyeHeight}m</span>
+                          {stance.sprinting && <Badge className="ml-1.5 bg-accent text-accent-foreground text-[9px] px-1 py-0">SPRINT</Badge>}
+                          {stance.crouching && <Badge className="ml-1.5 bg-destructive text-destructive-foreground text-[9px] px-1 py-0">CROUCH</Badge>}
                         </p>
                       </CardContent>
                     </Card>
