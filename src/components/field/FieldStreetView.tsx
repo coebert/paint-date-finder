@@ -886,7 +886,29 @@ interface FieldStreetViewProps {
 export function FieldStreetView({ obstacles, viewPoint, onViewPointChange, onStanceChange }: FieldStreetViewProps) {
   const joystickRef = useRef<JoystickInput>({ moveX: 0, moveY: 0 });
   const lookRef = useRef<LookInput>({ lookX: 0, lookY: 0 });
+  const mobileStanceRef = useRef<MobileStanceInput>({ sprinting: false, crouching: false });
   const [showLabels, setShowLabels] = useState(true);
+  const [mobileSprinting, setMobileSprinting] = useState(false);
+  const [mobileCrouching, setMobileCrouching] = useState(false);
+
+  // Sync mobile stance buttons to ref
+  useEffect(() => {
+    mobileStanceRef.current = { sprinting: mobileSprinting, crouching: mobileCrouching };
+  }, [mobileSprinting, mobileCrouching]);
+
+  const toggleSprint = useCallback(() => {
+    setMobileSprinting(prev => {
+      if (!prev) setMobileCrouching(false); // can't sprint and crouch
+      return !prev;
+    });
+  }, []);
+
+  const toggleCrouch = useCallback(() => {
+    setMobileCrouching(prev => {
+      if (!prev) setMobileSprinting(false); // can't crouch and sprint
+      return !prev;
+    });
+  }, []);
   
   const viewPosition: [number, number, number] = useMemo(() => [
     (viewPoint.x / 100 - 0.5) * FIELD_WIDTH_M,
@@ -905,7 +927,7 @@ export function FieldStreetView({ obstacles, viewPoint, onViewPointChange, onSta
         camera={{ fov: 75, near: 0.1, far: 200 }}
         style={{ width: '100%', height: '100%' }}
       >
-        <Scene obstacles={obstacles} viewPosition={viewPosition} onPositionChange={handlePositionChange} onStanceChange={onStanceChange} joystickRef={joystickRef} lookRef={lookRef} showLabels={showLabels} />
+        <Scene obstacles={obstacles} viewPosition={viewPosition} onPositionChange={handlePositionChange} onStanceChange={onStanceChange} joystickRef={joystickRef} lookRef={lookRef} mobileStanceRef={mobileStanceRef} showLabels={showLabels} />
       </Canvas>
       {/* Label toggle button */}
       <button
@@ -916,10 +938,35 @@ export function FieldStreetView({ obstacles, viewPoint, onViewPointChange, onSta
         {showLabels ? <Tag size={14} /> : <EyeOff size={14} />}
         {showLabels ? 'Labels' : 'Labels'}
       </button>
-      {/* Virtual joysticks - visible on touch devices */}
+      {/* Virtual joysticks & stance buttons - visible on touch devices */}
       <div className="md:hidden">
         <VirtualJoystick joystickRef={joystickRef} />
         <VirtualLookJoystick lookRef={lookRef} />
+        {/* Sprint & Crouch buttons between joysticks */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex flex-col gap-2">
+          <button
+            onTouchStart={(e) => { e.preventDefault(); toggleSprint(); }}
+            className={`w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-sm border transition-colors touch-none ${
+              mobileSprinting 
+                ? 'bg-primary/70 border-primary text-primary-foreground' 
+                : 'bg-background/30 border-foreground/20 text-foreground/60'
+            }`}
+            title="Sprint"
+          >
+            <Zap size={20} />
+          </button>
+          <button
+            onTouchStart={(e) => { e.preventDefault(); toggleCrouch(); }}
+            className={`w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-sm border transition-colors touch-none ${
+              mobileCrouching 
+                ? 'bg-primary/70 border-primary text-primary-foreground' 
+                : 'bg-background/30 border-foreground/20 text-foreground/60'
+            }`}
+            title="Crouch"
+          >
+            <ArrowDownToLine size={20} />
+          </button>
+        </div>
       </div>
     </div>
   );
