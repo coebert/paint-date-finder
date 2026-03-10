@@ -1,6 +1,8 @@
 import { useState, useCallback, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Eye, PenTool, RotateCcw, RotateCw, Trash2, Download, Copy, Compass } from 'lucide-react';
+import { SaveLayoutDialog } from '@/components/field/SaveLayoutDialog';
+import { CommunityLayoutsDialog } from '@/components/field/CommunityLayoutsDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -195,7 +197,13 @@ export default function FieldLayout() {
                       <CardTitle className="font-display tracking-wider text-lg">
                         YOUR FIELD DESIGN
                       </CardTitle>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
+                        <SaveLayoutDialog obstacles={designObstacles} />
+                        <CommunityLayoutsDialog onLoad={(obs) => {
+                          setDesignObstacles(obs);
+                          setSelectedId(null);
+                          toast.success('Layout loaded!');
+                        }} />
                         <Button variant="outline" size="sm" onClick={handleLoadCPPS} className="text-xs gap-1">
                           <Download className="w-3 h-3" /> Load CPPS
                         </Button>

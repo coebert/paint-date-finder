@@ -134,6 +134,42 @@ export type Database = {
         }
         Relationships: []
       }
+      field_layouts: {
+        Row: {
+          author_name: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          obstacle_count: number
+          obstacles: Json
+          tags: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          author_name?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          obstacle_count?: number
+          obstacles: Json
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          author_name?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          obstacle_count?: number
+          obstacles?: Json
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       team_roster: {
         Row: {
           created_at: string
