@@ -416,18 +416,28 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
   }
 
   if (profile3D === 'cone') {
-    // Cone bunker: tapered cone
+    // Cone bunker: two-tone cone
     const r = w / 2;
     return (
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-          <mesh position={[0, h / 2, 0]} material={mat} castShadow>
-            <coneGeometry args={[r, h, 20]} />
+          {/* Lower cone section - primary */}
+          <mesh position={[0, h * 0.25, 0]} material={mat} castShadow>
+            <coneGeometry args={[r, h * 0.5, 20, 1, true]} />
           </mesh>
-          {/* Rounded tip */}
+          {/* Upper cone section - secondary */}
+          <mesh position={[0, h * 0.65, 0]} material={mat2} castShadow>
+            <coneGeometry args={[r * 0.45, h * 0.5, 20, 1, true]} />
+          </mesh>
+          {/* Rounded tip - primary */}
           <mesh position={[0, h * 0.95, 0]} material={mat}>
             <sphereGeometry args={[r * 0.12, 10, 8]} />
+          </mesh>
+          {/* White seam at transition */}
+          <mesh position={[0, h * 0.5, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[r * 0.5, 0.025, 6, 20]} />
+            <primitive object={seamMat} attach="material" />
           </mesh>
           {/* Base ring */}
           <mesh position={[0, 0.02, 0]} rotation={[Math.PI / 2, 0, 0]}>
