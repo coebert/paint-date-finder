@@ -84,6 +84,7 @@ export function TeamEditDialog({ team, open, onOpenChange }: TeamEditDialogProps
         .update({
           name: data.name,
           division: data.division,
+          league: data.league,
           position: data.position ? parseInt(data.position) : null,
           points: parseInt(data.points) || 0,
           captain_name: data.captain_name || null,
