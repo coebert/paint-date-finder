@@ -779,7 +779,7 @@ function Scene({ obstacles, viewPosition, onPositionChange, onStanceChange, joys
       <directionalLight position={[-20, 30, -15]} intensity={0.4} />
       <hemisphereLight args={['#b4d7ff', '#3a8f29', 0.5]} />
 
-      <FirstPersonCamera position={viewPosition} onPositionChange={onPositionChange} onStanceChange={onStanceChange} joystickRef={joystickRef} />
+      <FirstPersonCamera position={viewPosition} onPositionChange={onPositionChange} onStanceChange={onStanceChange} joystickRef={joystickRef} lookRef={lookRef} />
       <FieldGround />
       <FieldNetting />
 
