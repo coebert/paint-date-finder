@@ -155,10 +155,22 @@ export function CommunityLayoutsDialog({ onLoad }: CommunityLayoutsDialogProps) 
                       </div>
                     )}
                   </div>
-                  <Button size="sm" className="text-xs shrink-0" onClick={() => handleLoad(layout)}>
-                    Load
-                  </Button>
-                </div>
+                  <div className="flex flex-col gap-1 shrink-0">
+                    <Button size="sm" className="text-xs" onClick={() => handleLoad(layout)}>
+                      Load
+                    </Button>
+                    {getDeleteToken(layout.id) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs text-destructive hover:text-destructive h-7 w-full gap-1"
+                        onClick={() => handleDelete(layout)}
+                        disabled={deleteLayout.isPending}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    )}
+                  </div>
               </CardContent>
             </Card>
           ))}
