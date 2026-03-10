@@ -312,9 +312,10 @@ function Obstacle3D({ obstacle }: { obstacle: Obstacle }) {
 }
 
 // ---- Main scene ----
-function Scene({ obstacles, viewPosition }: {
+function Scene({ obstacles, viewPosition, onPositionChange }: {
   obstacles: Obstacle[];
   viewPosition: [number, number, number];
+  onPositionChange?: (x: number, z: number) => void;
 }) {
   return (
     <>
@@ -324,7 +325,7 @@ function Scene({ obstacles, viewPosition }: {
         shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
       <hemisphereLight args={['#87ceeb', '#2d5a1e', 0.4]} />
 
-      <FirstPersonCamera position={viewPosition} />
+      <FirstPersonCamera position={viewPosition} onPositionChange={onPositionChange} />
       <FieldGround />
       <FieldNetting />
 
@@ -339,14 +340,19 @@ function Scene({ obstacles, viewPosition }: {
 interface FieldStreetViewProps {
   obstacles: Obstacle[];
   viewPoint: { x: number; y: number };
+  onViewPointChange?: (point: { x: number; y: number }) => void;
 }
 
-export function FieldStreetView({ obstacles, viewPoint }: FieldStreetViewProps) {
+export function FieldStreetView({ obstacles, viewPoint, onViewPointChange }: FieldStreetViewProps) {
   const viewPosition: [number, number, number] = useMemo(() => [
     (viewPoint.x / 100 - 0.5) * FIELD_WIDTH_M,
     1.7,
     (viewPoint.y / 100 - 0.5) * FIELD_HEIGHT_M,
   ], [viewPoint.x, viewPoint.y]);
+
+  const handlePositionChange = useCallback((xPct: number, yPct: number) => {
+    onViewPointChange?.({ x: xPct, y: yPct });
+  }, [onViewPointChange]);
 
   return (
     <div className="w-full h-[400px] md:h-[500px] rounded-lg overflow-hidden border border-border/50 bg-black">
@@ -355,7 +361,7 @@ export function FieldStreetView({ obstacles, viewPoint }: FieldStreetViewProps) 
         camera={{ fov: 75, near: 0.1, far: 200 }}
         style={{ width: '100%', height: '100%' }}
       >
-        <Scene obstacles={obstacles} viewPosition={viewPosition} />
+        <Scene obstacles={obstacles} viewPosition={viewPosition} onPositionChange={handlePositionChange} />
       </Canvas>
     </div>
   );
