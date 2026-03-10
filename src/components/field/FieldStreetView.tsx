@@ -767,7 +767,7 @@ function Scene({ obstacles, viewPosition, onPositionChange, onStanceChange, joys
       <FieldNetting />
 
       {obstacles.map((obs) => (
-        <Obstacle3D key={obs.id} obstacle={obs} />
+        <Obstacle3D key={obs.id} obstacle={obs} showLabels={showLabels} />
       ))}
     </>
   );
