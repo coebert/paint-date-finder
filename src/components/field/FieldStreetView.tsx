@@ -356,19 +356,23 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
   const worldX = (obstacle.x / 100 - 0.5) * FIELD_WIDTH_M;
   const worldZ = (obstacle.y / 100 - 0.5) * FIELD_HEIGHT_M;
   const rotRad = (obstacle.rotation * Math.PI) / 180;
-  const { widthM: w, depthM: d, heightM: h, color, profile3D } = def;
+  const { widthM: w, depthM: d, heightM: h, color, colorSecondary, profile3D } = def;
   const labelY = h + 0.4;
 
   const label = showLabels ? <ObstacleLabel position={[worldX, labelY, worldZ]} label={def.label} color={color} /> : null;
 
-  // Shared inflatable PVC material
+  // Two-tone CPPS PVC materials
   const mat = useMemo(() => new THREE.MeshStandardMaterial({ 
     color, roughness: 0.45, metalness: 0.05 
   }), [color]);
 
+  const mat2 = useMemo(() => new THREE.MeshStandardMaterial({ 
+    color: colorSecondary, roughness: 0.45, metalness: 0.05 
+  }), [colorSecondary]);
+
   const seamMat = useMemo(() => new THREE.MeshStandardMaterial({ 
-    color, roughness: 0.35, metalness: 0.1 
-  }), [color]);
+    color: '#ffffff', roughness: 0.5, metalness: 0.05 
+  }), []);
 
   if (profile3D === 'cylinder') {
     // Cake / Can: cylinder with domed top
