@@ -26,6 +26,19 @@ export default function FieldLayout() {
   const [streetViewObstacles, setStreetViewObstacles] = useState<Obstacle[]>(CPPS_FIELD_LAYOUT);
   const [streetViewSource, setStreetViewSource] = useState<'cpps' | 'custom'>('cpps');
   const [stance, setStance] = useState<{ sprinting: boolean; crouching: boolean; eyeHeight: number }>({ sprinting: false, crouching: false, eyeHeight: 1.7 });
+  const [isFieldFullscreen, setIsFieldFullscreen] = useState(false);
+  const [is3DFullscreen, setIs3DFullscreen] = useState(false);
+  const fieldContainerRef = useRef<HTMLDivElement>(null);
+  const streetViewContainerRef = useRef<HTMLDivElement>(null);
+
+  const toggleFullscreen = useCallback((ref: React.RefObject<HTMLDivElement | null>, setFn: (v: boolean) => void) => {
+    if (!ref.current) return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen().then(() => setFn(false)).catch(() => {});
+    } else {
+      ref.current.requestFullscreen().then(() => setFn(true)).catch(() => {});
+    }
+  }, []);
 
   const selectedObstacle = designObstacles.find((o) => o.id === selectedId) || null;
 
