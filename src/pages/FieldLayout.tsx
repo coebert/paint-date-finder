@@ -249,6 +249,7 @@ export default function FieldLayout() {
                       interactive
                       selectedId={selectedId}
                       onSelect={setSelectedId}
+                      showLabels={showLabels}
                     />
                   </CardContent>
                 </Card>
