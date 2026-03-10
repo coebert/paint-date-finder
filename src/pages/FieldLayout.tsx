@@ -317,118 +317,125 @@ export default function FieldLayout() {
 
           {/* Street View */}
           <TabsContent value="streetview" className="space-y-6">
-            <Card className="bg-card border-border/50">
-              <CardHeader>
-                <CardTitle className="font-display tracking-wider flex items-center gap-3">
-                  FIELD STREET VIEW
-                  <Badge variant="outline" className="border-accent/50 text-accent">3D</Badge>
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Click anywhere on the mini-map below to place yourself on the field,
-                  then drag inside the 3D view to look around.
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Source selector */}
-                <div className="flex gap-2">
-                  <Button
-                    variant={streetViewSource === 'cpps' ? 'default' : 'outline'}
-                    size="sm"
-                    className="text-xs"
-                    onClick={() => {
-                      setStreetViewSource('cpps');
-                      setStreetViewObstacles(CPPS_FIELD_LAYOUT);
-                    }}
-                  >
-                    CPPS Layout
-                  </Button>
-                  <Button
-                    variant={streetViewSource === 'custom' ? 'default' : 'outline'}
-                    size="sm"
-                    className="text-xs"
-                    onClick={() => {
-                      setStreetViewSource('custom');
-                      setStreetViewObstacles(designObstacles);
-                    }}
-                  >
-                    Your Design ({designObstacles.length} obstacles)
-                  </Button>
-                </div>
+            <div ref={streetViewContainerRef} className="fullscreen-container">
+              <Card className="bg-card border-border/50">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="font-display tracking-wider flex items-center gap-3">
+                      FIELD STREET VIEW
+                      <Badge variant="outline" className="border-accent/50 text-accent">3D</Badge>
+                    </CardTitle>
+                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => toggleFullscreen(streetViewContainerRef, setIs3DFullscreen)}>
+                      {is3DFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Click anywhere on the mini-map below to place yourself on the field,
+                    then drag inside the 3D view to look around.
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Source selector */}
+                  <div className="flex gap-2">
+                    <Button
+                      variant={streetViewSource === 'cpps' ? 'default' : 'outline'}
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => {
+                        setStreetViewSource('cpps');
+                        setStreetViewObstacles(CPPS_FIELD_LAYOUT);
+                      }}
+                    >
+                      CPPS Layout
+                    </Button>
+                    <Button
+                      variant={streetViewSource === 'custom' ? 'default' : 'outline'}
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => {
+                        setStreetViewSource('custom');
+                        setStreetViewObstacles(designObstacles);
+                      }}
+                    >
+                      Your Design ({designObstacles.length} obstacles)
+                    </Button>
+                  </div>
 
-                {/* 3D View */}
-                <Suspense fallback={<Skeleton className="w-full h-[400px] md:h-[500px] rounded-lg" />}>
-                  <FieldStreetView
-                    obstacles={streetViewObstacles}
-                    viewPoint={streetViewPoint}
-                    onViewPointChange={setStreetViewPoint}
-                    onStanceChange={setStance}
-                  />
-                </Suspense>
-
-                {/* Mini-map for position picking */}
-                <div className="flex flex-col md:flex-row gap-4 items-start">
-                  <div className="flex-1 w-full">
-                    <p className="text-xs text-muted-foreground mb-2 font-medium">
-                      CLICK TO SET YOUR VIEWPOINT
-                    </p>
-                    <StreetViewMiniMap
+                  {/* 3D View */}
+                  <Suspense fallback={<Skeleton className="w-full h-[400px] md:h-[500px] rounded-lg" />}>
+                    <FieldStreetView
                       obstacles={streetViewObstacles}
                       viewPoint={streetViewPoint}
-                      onClick={handleStreetViewMapClick}
+                      onViewPointChange={setStreetViewPoint}
+                      onStanceChange={setStance}
                     />
-                  </div>
-                  <div className="w-full md:w-48 space-y-3">
-                    <Card className="bg-secondary/50 border-border/30">
-                      <CardContent className="py-3 px-4 space-y-2">
-                        <p className="text-xs font-medium text-foreground">Controls</p>
-                        <ul className="text-[11px] text-muted-foreground space-y-1">
-                         <li>• <kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono">W</kbd><kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono ml-0.5">A</kbd><kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono ml-0.5">S</kbd><kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono ml-0.5">D</kbd> or Arrow keys to walk</li>
-                          <li>• Hold <kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono">Shift</kbd> to sprint</li>
-                          <li>• Hold <kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono">C</kbd> to crouch</li>
-                          <li>• Click mini-map to teleport</li>
-                          <li>• Drag 3D view to look around</li>
-                          <li>• Touch & swipe on mobile</li>
-                        </ul>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-secondary/50 border-border/30">
-                      <CardContent className="py-3 px-4">
-                        <p className="text-xs text-muted-foreground">
-                          Position: <span className="text-foreground font-mono">{Math.round(streetViewPoint.x)}%, {Math.round(streetViewPoint.y)}%</span>
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Eye height: <span className="text-foreground font-mono">{stance.eyeHeight}m</span>
-                          {stance.sprinting && <Badge className="ml-1.5 bg-accent text-accent-foreground text-[9px] px-1 py-0">SPRINT</Badge>}
-                          {stance.crouching && <Badge className="ml-1.5 bg-destructive text-destructive-foreground text-[9px] px-1 py-0">CROUCH</Badge>}
-                        </p>
-                      </CardContent>
-                    </Card>
+                  </Suspense>
 
-                    {/* Quick position buttons */}
-                    <div className="grid grid-cols-3 gap-1">
-                      {[
-                        { label: 'Blue Start', x: 5, y: 50 },
-                        { label: 'Center', x: 50, y: 50 },
-                        { label: 'Red Start', x: 95, y: 50 },
-                        { label: 'Snake', x: 30, y: 20 },
-                        { label: '50 Line', x: 50, y: 30 },
-                        { label: 'Dorito', x: 70, y: 20 },
-                      ].map((pos) => (
-                        <Button
-                          key={pos.label}
-                          variant="outline"
-                          size="sm"
-                          className="text-[10px] h-7 px-1"
-                          onClick={() => setStreetViewPoint({ x: pos.x, y: pos.y })}
-                        >
-                          {pos.label}
-                        </Button>
-                      ))}
+                  {/* Mini-map for position picking */}
+                  <div className="flex flex-col md:flex-row gap-4 items-start">
+                    <div className="flex-1 w-full">
+                      <p className="text-xs text-muted-foreground mb-2 font-medium">
+                        CLICK TO SET YOUR VIEWPOINT
+                      </p>
+                      <StreetViewMiniMap
+                        obstacles={streetViewObstacles}
+                        viewPoint={streetViewPoint}
+                        onClick={handleStreetViewMapClick}
+                      />
+                    </div>
+                    <div className="w-full md:w-48 space-y-3">
+                      <Card className="bg-secondary/50 border-border/30">
+                        <CardContent className="py-3 px-4 space-y-2">
+                          <p className="text-xs font-medium text-foreground">Controls</p>
+                          <ul className="text-[11px] text-muted-foreground space-y-1">
+                            <li>• <kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono">W</kbd><kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono ml-0.5">A</kbd><kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono ml-0.5">S</kbd><kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono ml-0.5">D</kbd> or Arrow keys to walk</li>
+                            <li>• Hold <kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono">Shift</kbd> to sprint</li>
+                            <li>• Hold <kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono">C</kbd> to crouch</li>
+                            <li>• Click mini-map to teleport</li>
+                            <li>• Drag 3D view to look around</li>
+                            <li>• Touch & swipe on mobile</li>
+                          </ul>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-secondary/50 border-border/30">
+                        <CardContent className="py-3 px-4">
+                          <p className="text-xs text-muted-foreground">
+                            Position: <span className="text-foreground font-mono">{Math.round(streetViewPoint.x)}%, {Math.round(streetViewPoint.y)}%</span>
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Eye height: <span className="text-foreground font-mono">{stance.eyeHeight}m</span>
+                            {stance.sprinting && <Badge className="ml-1.5 bg-accent text-accent-foreground text-[9px] px-1 py-0">SPRINT</Badge>}
+                            {stance.crouching && <Badge className="ml-1.5 bg-destructive text-destructive-foreground text-[9px] px-1 py-0">CROUCH</Badge>}
+                          </p>
+                        </CardContent>
+                      </Card>
+
+                      {/* Quick position buttons */}
+                      <div className="grid grid-cols-3 gap-1">
+                        {[
+                          { label: 'Blue Start', x: 5, y: 50 },
+                          { label: 'Center', x: 50, y: 50 },
+                          { label: 'Red Start', x: 95, y: 50 },
+                          { label: 'Snake', x: 30, y: 20 },
+                          { label: '50 Line', x: 50, y: 30 },
+                          { label: 'Dorito', x: 70, y: 20 },
+                        ].map((pos) => (
+                          <Button
+                            key={pos.label}
+                            variant="outline"
+                            size="sm"
+                            className="text-[10px] h-7 px-1"
+                            onClick={() => setStreetViewPoint({ x: pos.x, y: pos.y })}
+                          >
+                            {pos.label}
+                          </Button>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </main>
