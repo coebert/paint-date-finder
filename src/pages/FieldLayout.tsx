@@ -333,6 +333,7 @@ export default function FieldLayout() {
                     obstacles={streetViewObstacles}
                     viewPoint={streetViewPoint}
                     onViewPointChange={setStreetViewPoint}
+                    onStanceChange={setStance}
                   />
                 </Suspense>
 
