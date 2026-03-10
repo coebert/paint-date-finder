@@ -356,39 +356,47 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
   const worldX = (obstacle.x / 100 - 0.5) * FIELD_WIDTH_M;
   const worldZ = (obstacle.y / 100 - 0.5) * FIELD_HEIGHT_M;
   const rotRad = (obstacle.rotation * Math.PI) / 180;
-  const { widthM: w, depthM: d, heightM: h, color, profile3D } = def;
+  const { widthM: w, depthM: d, heightM: h, color, colorSecondary, profile3D } = def;
   const labelY = h + 0.4;
 
   const label = showLabels ? <ObstacleLabel position={[worldX, labelY, worldZ]} label={def.label} color={color} /> : null;
 
-  // Shared inflatable PVC material
+  // Two-tone CPPS PVC materials
   const mat = useMemo(() => new THREE.MeshStandardMaterial({ 
     color, roughness: 0.45, metalness: 0.05 
   }), [color]);
 
+  const mat2 = useMemo(() => new THREE.MeshStandardMaterial({ 
+    color: colorSecondary, roughness: 0.45, metalness: 0.05 
+  }), [colorSecondary]);
+
   const seamMat = useMemo(() => new THREE.MeshStandardMaterial({ 
-    color, roughness: 0.35, metalness: 0.1 
-  }), [color]);
+    color: '#ffffff', roughness: 0.5, metalness: 0.05 
+  }), []);
 
   if (profile3D === 'cylinder') {
-    // Cake / Can: cylinder with domed top
+    // Cake / Can: cylinder with two-tone panels (top half one color, bottom half another)
     const r = w / 2;
     return (
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-          {/* Main body */}
-          <mesh position={[0, h / 2, 0]} material={mat} castShadow>
-            <cylinderGeometry args={[r * 0.97, r, h, 24]} />
+          {/* Lower body - primary color */}
+          <mesh position={[0, h * 0.25, 0]} material={mat} castShadow>
+            <cylinderGeometry args={[r * 0.98, r, h * 0.5, 24]} />
           </mesh>
-          {/* Domed top */}
+          {/* Upper body - secondary color */}
+          <mesh position={[0, h * 0.75, 0]} material={mat2} castShadow>
+            <cylinderGeometry args={[r * 0.96, r * 0.98, h * 0.5, 24]} />
+          </mesh>
+          {/* Domed top - primary */}
           <mesh position={[0, h, 0]} material={mat} castShadow>
-            <sphereGeometry args={[r * 0.97, 16, 10, 0, Math.PI * 2, 0, Math.PI / 3]} />
+            <sphereGeometry args={[r * 0.96, 16, 10, 0, Math.PI * 2, 0, Math.PI / 3]} />
           </mesh>
-          {/* Horizontal seam bands */}
-          {[0.3, 0.6].map((frac) => (
+          {/* White seam bands at color transitions */}
+          {[0.5].map((frac) => (
             <mesh key={frac} position={[0, h * frac, 0]} rotation={[Math.PI / 2, 0, 0]}>
-              <torusGeometry args={[r * (1 - frac * 0.03), 0.02, 6, 24]} />
+              <torusGeometry args={[r * 0.99, 0.025, 6, 24]} />
               <primitive object={seamMat} attach="material" />
             </mesh>
           ))}
@@ -397,24 +405,39 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
             <torusGeometry args={[r, 0.025, 6, 24]} />
             <primitive object={seamMat} attach="material" />
           </mesh>
+          {/* Top ring */}
+          <mesh position={[0, h - 0.01, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[r * 0.97, 0.02, 6, 24]} />
+            <primitive object={seamMat} attach="material" />
+          </mesh>
         </group>
       </>
     );
   }
 
   if (profile3D === 'cone') {
-    // Cone bunker: tapered cone
+    // Cone bunker: two-tone cone
     const r = w / 2;
     return (
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-          <mesh position={[0, h / 2, 0]} material={mat} castShadow>
-            <coneGeometry args={[r, h, 20]} />
+          {/* Lower cone section - primary */}
+          <mesh position={[0, h * 0.25, 0]} material={mat} castShadow>
+            <coneGeometry args={[r, h * 0.5, 20, 1, true]} />
           </mesh>
-          {/* Rounded tip */}
+          {/* Upper cone section - secondary */}
+          <mesh position={[0, h * 0.65, 0]} material={mat2} castShadow>
+            <coneGeometry args={[r * 0.45, h * 0.5, 20, 1, true]} />
+          </mesh>
+          {/* Rounded tip - primary */}
           <mesh position={[0, h * 0.95, 0]} material={mat}>
             <sphereGeometry args={[r * 0.12, 10, 8]} />
+          </mesh>
+          {/* White seam at transition */}
+          <mesh position={[0, h * 0.5, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[r * 0.5, 0.025, 6, 20]} />
+            <primitive object={seamMat} attach="material" />
           </mesh>
           {/* Base ring */}
           <mesh position={[0, 0.02, 0]} rotation={[Math.PI / 2, 0, 0]}>
@@ -463,6 +486,7 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
           {faces.map((face, fi) => {
             const [a, b, c] = face.verts;
             const n = faceNormal(a, b, c);
+            const faceMat = fi % 2 === 0 ? mat : mat2; // alternating red/blue panels
             return (
               <mesh key={fi} castShadow>
                 <bufferGeometry>
@@ -479,7 +503,7 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
                     itemSize={3}
                   />
                 </bufferGeometry>
-                <primitive object={mat} attach="material" />
+                <primitive object={faceMat} attach="material" />
               </mesh>
             );
           })}
@@ -529,35 +553,34 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
   }
 
   if (profile3D === 'half-cylinder') {
-    // Snake beam: half-cylinder (tube lying on ground, rounded top, flat bottom)
-    // The beam runs along Z (depth axis) with the curved part facing up
-    const r = h; // height IS the radius of the half-circle cross-section
-    const tubeLen = d - 2 * r; // length excluding end caps
+    // Snake beam: two-tone half-cylinder
+    const r = h;
+    const tubeLen = d - 2 * r;
     return (
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-          {/* Main half-cylinder tube - lying along Z axis, curved top */}
+          {/* Main half-cylinder tube - primary color */}
           <mesh position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
             <cylinderGeometry args={[r, r, Math.max(0.1, tubeLen), 16, 1, true, 0, Math.PI]} />
             <primitive object={mat} attach="material" />
           </mesh>
-          {/* Front end cap - half sphere */}
+          {/* Front end cap - secondary */}
           <mesh position={[0, 0, -tubeLen / 2]} rotation={[Math.PI, 0, 0]}>
             <sphereGeometry args={[r, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
-            <primitive object={mat} attach="material" />
+            <primitive object={mat2} attach="material" />
           </mesh>
-          {/* Back end cap - half sphere */}
+          {/* Back end cap - secondary */}
           <mesh position={[0, 0, tubeLen / 2]}>
             <sphereGeometry args={[r, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
-            <primitive object={mat} attach="material" />
+            <primitive object={mat2} attach="material" />
           </mesh>
           {/* Flat bottom */}
           <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
             <planeGeometry args={[r * 2, d]} />
             <primitive object={mat} attach="material" />
           </mesh>
-          {/* Top seam ridge */}
+          {/* White top seam ridge */}
           <mesh position={[0, r + 0.01, 0]}>
             <boxGeometry args={[0.025, 0.025, d * 0.9]} />
             <primitive object={seamMat} attach="material" />
@@ -568,7 +591,7 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
   }
 
   if (profile3D === 'stepped-pyramid') {
-    // Temple / Temple Maya: stacked tiers with inflatable look
+    // Temple / Temple Maya: alternating red/blue tiers
     const tiers = obstacle.type === 'temple-maya' ? 4 : 3;
     return (
       <>
@@ -579,13 +602,13 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
             const tierH = h / tiers;
             const tw = w * scale;
             const td = d * scale;
+            const tierMat = i % 2 === 0 ? mat : mat2; // alternate colors per tier
             return (
               <group key={i}>
-                {/* Main tier body */}
-                <mesh position={[0, tierH * i + tierH / 2, 0]} material={mat} castShadow>
+                <mesh position={[0, tierH * i + tierH / 2, 0]} material={tierMat} castShadow>
                   <boxGeometry args={[tw, tierH * 0.9, td]} />
                 </mesh>
-                {/* Rounded edges on top of each tier */}
+                {/* White seam edges */}
                 {[
                   { pos: [0, tierH * (i + 1) - tierH * 0.05, -td / 2] as [number, number, number], len: tw, rotY: 0 },
                   { pos: [0, tierH * (i + 1) - tierH * 0.05, td / 2] as [number, number, number], len: tw, rotY: 0 },
@@ -606,25 +629,25 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
   }
 
   if (profile3D === 'flat-panel') {
-    // Wing / Mini Race: low wide inflatable panel — rounded pill shape
+    // Wing / Mini Race: two-tone panel
     return (
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-          {/* Main body */}
+          {/* Main body - primary */}
           <mesh position={[0, h * 0.4, 0]} material={mat} castShadow>
             <boxGeometry args={[w, h * 0.7, d]} />
           </mesh>
-          {/* Rounded top - half cylinder along the width */}
-          <mesh position={[0, h * 0.75, 0]} rotation={[0, 0, Math.PI / 2]} material={mat} castShadow>
+          {/* Rounded top - secondary */}
+          <mesh position={[0, h * 0.75, 0]} rotation={[0, 0, Math.PI / 2]} material={mat2} castShadow>
             <cylinderGeometry args={[h * 0.28, h * 0.28, w, 12, 1, false, 0, Math.PI]} />
           </mesh>
-          {/* Front seam */}
+          {/* White front seam */}
           <mesh position={[0, h * 0.4, d / 2 + 0.005]}>
             <planeGeometry args={[w * 0.9, 0.02]} />
             <primitive object={seamMat} attach="material" />
           </mesh>
-          {/* Back seam */}
+          {/* White back seam */}
           <mesh position={[0, h * 0.4, -(d / 2 + 0.005)]}>
             <planeGeometry args={[w * 0.9, 0.02]} />
             <primitive object={seamMat} attach="material" />
@@ -634,15 +657,25 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
     );
   }
 
-  // Default box fallback (brick)
+  // Default box fallback (brick) - two-tone: front/back primary, sides secondary
   return (
     <>
       {label}
       <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-        <mesh position={[0, h / 2, 0]} material={mat} castShadow>
-          <boxGeometry args={[w, h, d]} />
+        {/* Lower half - primary */}
+        <mesh position={[0, h * 0.25, 0]} material={mat} castShadow>
+          <boxGeometry args={[w, h * 0.5, d]} />
         </mesh>
-        {/* Top edge seams for inflatable look */}
+        {/* Upper half - secondary */}
+        <mesh position={[0, h * 0.75, 0]} material={mat2} castShadow>
+          <boxGeometry args={[w, h * 0.5, d]} />
+        </mesh>
+        {/* White seam at transition */}
+        <mesh position={[0, h * 0.5, 0]}>
+          <boxGeometry args={[w * 1.01, 0.03, d * 1.01]} />
+          <primitive object={seamMat} attach="material" />
+        </mesh>
+        {/* White top edge */}
         <mesh position={[0, h + 0.01, 0]}>
           <boxGeometry args={[w * 0.95, 0.03, d * 0.95]} />
           <primitive object={seamMat} attach="material" />
