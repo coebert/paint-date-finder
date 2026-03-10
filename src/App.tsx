@@ -51,6 +51,14 @@ const App = () => (
               </AdminRoute>
             }
           />
+          <Route
+            path="/admin/teams"
+            element={
+              <AdminRoute>
+                <AdminTeams />
+              </AdminRoute>
+            }
+          />
           
           {/* Legacy route redirect */}
           <Route
