@@ -185,6 +185,7 @@ function FirstPersonCamera({ position, onPositionChange, onStanceChange, joystic
     camera.position.set(currentPos.current[0], currentPos.current[1], currentPos.current[2]);
     const euler = new THREE.Euler(pitch.current, yaw.current, 0, 'YXZ');
     camera.quaternion.setFromEuler(euler);
+    headingRef.current = yaw.current;
   });
 
   return null;
