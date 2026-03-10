@@ -248,18 +248,23 @@ function Obstacle3D({ obstacle }: { obstacle: Obstacle }) {
     return s;
   }, [w, h]);
 
+  const label = <ObstacleLabel position={[worldX, labelY, worldZ]} label={def.label} color={color} />;
+
   if (profile3D === 'cylinder') {
     const r = w / 2;
     return (
-      <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-        <mesh position={[0, h / 2, 0]} material={mat} castShadow>
-          <cylinderGeometry args={[r, r * 1.05, h, 20]} />
-        </mesh>
-        <mesh position={[0, h, 0]} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[r * 0.85, r * 0.08, 8, 20]} />
-          <meshStandardMaterial color={color} roughness={0.6} />
-        </mesh>
-      </group>
+      <>
+        {label}
+        <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+          <mesh position={[0, h / 2, 0]} material={mat} castShadow>
+            <cylinderGeometry args={[r, r * 1.05, h, 20]} />
+          </mesh>
+          <mesh position={[0, h, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[r * 0.85, r * 0.08, 8, 20]} />
+            <meshStandardMaterial color={color} roughness={0.6} />
+          </mesh>
+        </group>
+      </>
     );
   }
 
