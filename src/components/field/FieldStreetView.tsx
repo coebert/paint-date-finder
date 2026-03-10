@@ -11,12 +11,18 @@ export interface JoystickInput {
   moveY: number; // -1 to 1 (forward/back)
 }
 
+export interface LookInput {
+  lookX: number; // -1 to 1 (yaw)
+  lookY: number; // -1 to 1 (pitch)
+}
+
 // ---- First-person camera controller ----
-function FirstPersonCamera({ position, onPositionChange, onStanceChange, joystickRef }: { 
+function FirstPersonCamera({ position, onPositionChange, onStanceChange, joystickRef, lookRef }: { 
   position: [number, number, number];
   onPositionChange?: (x: number, z: number) => void;
   onStanceChange?: (stance: { sprinting: boolean; crouching: boolean; eyeHeight: number }) => void;
   joystickRef: React.RefObject<JoystickInput>;
+  lookRef: React.RefObject<LookInput>;
 }) {
   const { camera, gl } = useThree();
   const yaw = useRef(0);
@@ -131,6 +137,15 @@ function FirstPersonCamera({ position, onPositionChange, onStanceChange, joystic
     if (joy && (Math.abs(joy.moveX) > 0.05 || Math.abs(joy.moveY) > 0.05)) {
       moveDir.x += joy.moveX;
       moveDir.z += joy.moveY;
+    }
+
+    // Virtual look joystick input
+    const look = lookRef.current;
+    if (look && (Math.abs(look.lookX) > 0.05 || Math.abs(look.lookY) > 0.05)) {
+      const lookSpeed = 2.5;
+      yaw.current -= look.lookX * lookSpeed * delta;
+      pitch.current -= look.lookY * lookSpeed * delta;
+      pitch.current = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, pitch.current));
     }
 
     if (moveDir.lengthSq() > 0) {
@@ -728,6 +743,82 @@ function VirtualJoystick({ joystickRef }: { joystickRef: React.MutableRefObject<
         style={{ transition: 'none' }}
       />
       {/* Direction indicators */}
+      <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[9px] text-foreground/40 pointer-events-none select-none">MOVE</span>
+      <span className="absolute top-1 left-1/2 -translate-x-1/2 text-[9px] text-foreground/40 pointer-events-none select-none">▲</span>
+      <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] text-foreground/40 pointer-events-none select-none">▼</span>
+      <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[9px] text-foreground/40 pointer-events-none select-none">◀</span>
+      <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] text-foreground/40 pointer-events-none select-none">▶</span>
+    </div>
+  );
+}
+
+// ---- Virtual Look Joystick (right side) ----
+function VirtualLookJoystick({ lookRef }: { lookRef: React.MutableRefObject<LookInput> }) {
+  const padRef = useRef<HTMLDivElement>(null);
+  const knobRef = useRef<HTMLDivElement>(null);
+  const activeTouch = useRef<number | null>(null);
+  const center = useRef({ x: 0, y: 0 });
+  const RADIUS = 40;
+
+  const handleStart = useCallback((e: React.TouchEvent) => {
+    if (activeTouch.current !== null) return;
+    const touch = e.changedTouches[0];
+    activeTouch.current = touch.identifier;
+    const rect = padRef.current!.getBoundingClientRect();
+    center.current = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    updateKnob(touch.clientX, touch.clientY);
+  }, []);
+
+  const updateKnob = useCallback((cx: number, cy: number) => {
+    let dx = cx - center.current.x;
+    let dy = cy - center.current.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > RADIUS) {
+      dx = (dx / dist) * RADIUS;
+      dy = (dy / dist) * RADIUS;
+    }
+    if (knobRef.current) {
+      knobRef.current.style.transform = `translate(${dx}px, ${dy}px)`;
+    }
+    lookRef.current = { lookX: dx / RADIUS, lookY: dy / RADIUS };
+  }, [lookRef]);
+
+  const handleMove = useCallback((e: React.TouchEvent) => {
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      if (e.changedTouches[i].identifier === activeTouch.current) {
+        updateKnob(e.changedTouches[i].clientX, e.changedTouches[i].clientY);
+        break;
+      }
+    }
+  }, [updateKnob]);
+
+  const handleEnd = useCallback((e: React.TouchEvent) => {
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      if (e.changedTouches[i].identifier === activeTouch.current) {
+        activeTouch.current = null;
+        if (knobRef.current) knobRef.current.style.transform = 'translate(0px, 0px)';
+        lookRef.current = { lookX: 0, lookY: 0 };
+        break;
+      }
+    }
+  }, [lookRef]);
+
+  return (
+    <div
+      ref={padRef}
+      className="absolute bottom-4 right-4 w-[100px] h-[100px] rounded-full border-2 border-foreground/20 bg-background/30 backdrop-blur-sm flex items-center justify-center touch-none z-10"
+      onTouchStart={handleStart}
+      onTouchMove={handleMove}
+      onTouchEnd={handleEnd}
+      onTouchCancel={handleEnd}
+    >
+      <div
+        ref={knobRef}
+        className="w-10 h-10 rounded-full bg-foreground/40 border border-foreground/50 pointer-events-none"
+        style={{ transition: 'none' }}
+      />
+      {/* Look direction label */}
+      <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[9px] text-foreground/40 pointer-events-none select-none">LOOK</span>
       <span className="absolute top-1 left-1/2 -translate-x-1/2 text-[9px] text-foreground/40 pointer-events-none select-none">▲</span>
       <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] text-foreground/40 pointer-events-none select-none">▼</span>
       <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[9px] text-foreground/40 pointer-events-none select-none">◀</span>
@@ -737,12 +828,13 @@ function VirtualJoystick({ joystickRef }: { joystickRef: React.MutableRefObject<
 }
 
 // ---- Main scene ----
-function Scene({ obstacles, viewPosition, onPositionChange, onStanceChange, joystickRef, showLabels }: {
+function Scene({ obstacles, viewPosition, onPositionChange, onStanceChange, joystickRef, lookRef, showLabels }: {
   obstacles: Obstacle[];
   viewPosition: [number, number, number];
   onPositionChange?: (x: number, z: number) => void;
   onStanceChange?: (stance: { sprinting: boolean; crouching: boolean; eyeHeight: number }) => void;
   joystickRef: React.MutableRefObject<JoystickInput>;
+  lookRef: React.MutableRefObject<LookInput>;
   showLabels: boolean;
 }) {
   return (
@@ -763,7 +855,7 @@ function Scene({ obstacles, viewPosition, onPositionChange, onStanceChange, joys
       <directionalLight position={[-20, 30, -15]} intensity={0.4} />
       <hemisphereLight args={['#b4d7ff', '#3a8f29', 0.5]} />
 
-      <FirstPersonCamera position={viewPosition} onPositionChange={onPositionChange} onStanceChange={onStanceChange} joystickRef={joystickRef} />
+      <FirstPersonCamera position={viewPosition} onPositionChange={onPositionChange} onStanceChange={onStanceChange} joystickRef={joystickRef} lookRef={lookRef} />
       <FieldGround />
       <FieldNetting />
 
@@ -784,6 +876,7 @@ interface FieldStreetViewProps {
 
 export function FieldStreetView({ obstacles, viewPoint, onViewPointChange, onStanceChange }: FieldStreetViewProps) {
   const joystickRef = useRef<JoystickInput>({ moveX: 0, moveY: 0 });
+  const lookRef = useRef<LookInput>({ lookX: 0, lookY: 0 });
   const [showLabels, setShowLabels] = useState(true);
   
   const viewPosition: [number, number, number] = useMemo(() => [
@@ -803,7 +896,7 @@ export function FieldStreetView({ obstacles, viewPoint, onViewPointChange, onSta
         camera={{ fov: 75, near: 0.1, far: 200 }}
         style={{ width: '100%', height: '100%' }}
       >
-        <Scene obstacles={obstacles} viewPosition={viewPosition} onPositionChange={handlePositionChange} onStanceChange={onStanceChange} joystickRef={joystickRef} showLabels={showLabels} />
+        <Scene obstacles={obstacles} viewPosition={viewPosition} onPositionChange={handlePositionChange} onStanceChange={onStanceChange} joystickRef={joystickRef} lookRef={lookRef} showLabels={showLabels} />
       </Canvas>
       {/* Label toggle button */}
       <button
@@ -814,9 +907,10 @@ export function FieldStreetView({ obstacles, viewPoint, onViewPointChange, onSta
         {showLabels ? <Tag size={14} /> : <EyeOff size={14} />}
         {showLabels ? 'Labels' : 'Labels'}
       </button>
-      {/* Virtual joystick - visible on touch devices */}
+      {/* Virtual joysticks - visible on touch devices */}
       <div className="md:hidden">
         <VirtualJoystick joystickRef={joystickRef} />
+        <VirtualLookJoystick lookRef={lookRef} />
       </div>
     </div>
   );
