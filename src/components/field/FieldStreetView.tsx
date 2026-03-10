@@ -800,6 +800,7 @@ interface FieldStreetViewProps {
 
 export function FieldStreetView({ obstacles, viewPoint, onViewPointChange, onStanceChange }: FieldStreetViewProps) {
   const joystickRef = useRef<JoystickInput>({ moveX: 0, moveY: 0 });
+  const lookRef = useRef<LookInput>({ lookX: 0, lookY: 0 });
   const [showLabels, setShowLabels] = useState(true);
   
   const viewPosition: [number, number, number] = useMemo(() => [
@@ -819,7 +820,7 @@ export function FieldStreetView({ obstacles, viewPoint, onViewPointChange, onSta
         camera={{ fov: 75, near: 0.1, far: 200 }}
         style={{ width: '100%', height: '100%' }}
       >
-        <Scene obstacles={obstacles} viewPosition={viewPosition} onPositionChange={handlePositionChange} onStanceChange={onStanceChange} joystickRef={joystickRef} showLabels={showLabels} />
+        <Scene obstacles={obstacles} viewPosition={viewPosition} onPositionChange={handlePositionChange} onStanceChange={onStanceChange} joystickRef={joystickRef} lookRef={lookRef} showLabels={showLabels} />
       </Canvas>
       {/* Label toggle button */}
       <button
@@ -830,9 +831,10 @@ export function FieldStreetView({ obstacles, viewPoint, onViewPointChange, onSta
         {showLabels ? <Tag size={14} /> : <EyeOff size={14} />}
         {showLabels ? 'Labels' : 'Labels'}
       </button>
-      {/* Virtual joystick - visible on touch devices */}
+      {/* Virtual joysticks - visible on touch devices */}
       <div className="md:hidden">
         <VirtualJoystick joystickRef={joystickRef} />
+        <VirtualLookJoystick lookRef={lookRef} />
       </div>
     </div>
   );
