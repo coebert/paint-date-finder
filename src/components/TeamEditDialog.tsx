@@ -56,6 +56,7 @@ export function TeamEditDialog({ team, open, onOpenChange }: TeamEditDialogProps
     setForm({
       name: team.name || '',
       division: team.division || '',
+      league: team.league || 'CPPS',
       position: team.position?.toString() || '',
       points: team.points?.toString() || '0',
       captain_name: team.captain_name || '',
