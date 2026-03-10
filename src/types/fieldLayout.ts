@@ -112,10 +112,12 @@ export const OBSTACLE_DEFINITIONS: Record<ObstacleType, ObstacleDefinition> = {
   'temple-maya': {
     type: 'temple-maya',
     label: 'Temple Maya',
-    // Larger stepped: H=7ft(2.13m), W=5ft(1.52m), D=5ft(1.52m) from Airups
-    widthM: 1.52,
-    depthM: 1.52,
-    heightM: 2.13,
+    // AIRBUNKER spec: H=2.5m, W=1.5m, D=1.5m
+    // Airups NXL spec: H=7ft(2.13m), W=5ft(1.52m), D=5ft(1.52m)
+    // Using AIRBUNKER standard - taller at 2.5m
+    widthM: 1.5,
+    depthM: 1.5,
+    heightM: 2.5,
     color: '#7744aa',
     birdEye: 'stepped-rect',
     profile3D: 'stepped-pyramid',
