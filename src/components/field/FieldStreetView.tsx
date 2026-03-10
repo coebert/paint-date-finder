@@ -105,23 +105,27 @@ function FirstPersonCamera({ position, onPositionChange }: {
 
     if (moveDir.lengthSq() > 0) {
       moveDir.normalize();
-      // Rotate movement direction by yaw so W always moves forward
       moveDir.applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw.current);
       const step = speed * delta;
       currentPos.current[0] += moveDir.x * step;
       currentPos.current[2] += moveDir.z * step;
 
-      // Clamp to field bounds
       const hw = FIELD_WIDTH_M / 2;
       const hh = FIELD_HEIGHT_M / 2;
       currentPos.current[0] = Math.max(-hw + 0.5, Math.min(hw - 0.5, currentPos.current[0]));
       currentPos.current[2] = Math.max(-hh + 0.5, Math.min(hh - 0.5, currentPos.current[2]));
 
-      // Notify parent of position change
+      // Throttle: only report if moved >0.5m since last report
       if (onPositionChange) {
-        const xPct = (currentPos.current[0] / FIELD_WIDTH_M + 0.5) * 100;
-        const yPct = (currentPos.current[2] / FIELD_HEIGHT_M + 0.5) * 100;
-        onPositionChange(xPct, yPct);
+        const dx = currentPos.current[0] - lastReportedPos.current[0];
+        const dz = currentPos.current[2] - lastReportedPos.current[1];
+        if (dx * dx + dz * dz > 0.25) {
+          isWalking.current = true;
+          lastReportedPos.current = [currentPos.current[0], currentPos.current[2]];
+          const xPct = (currentPos.current[0] / FIELD_WIDTH_M + 0.5) * 100;
+          const yPct = (currentPos.current[2] / FIELD_HEIGHT_M + 0.5) * 100;
+          onPositionChange(xPct, yPct);
+        }
       }
     }
 
