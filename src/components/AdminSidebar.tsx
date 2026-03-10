@@ -21,6 +21,7 @@ const menuItems = [
   { title: "Overview", url: "/admin", icon: BarChart3 },
   { title: "Submissions", url: "/admin/submissions", icon: FileText },
   { title: "Events", url: "/admin/events", icon: Calendar },
+  { title: "Teams", url: "/admin/teams", icon: Users },
 ];
 
 export function AdminSidebar() {

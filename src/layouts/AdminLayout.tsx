@@ -23,6 +23,7 @@ const routeTitles: Record<string, string> = {
   "/admin": "Overview",
   "/admin/submissions": "Submissions",
   "/admin/events": "Events",
+  "/admin/teams": "Teams",
 };
 
 export function AdminLayout({ children, title, description }: AdminLayoutProps) {
