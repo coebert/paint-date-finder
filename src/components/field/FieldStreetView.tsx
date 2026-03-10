@@ -1,6 +1,6 @@
 import { useRef, useMemo, useEffect, useCallback } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
-import { Sky } from '@react-three/drei';
+import { Sky, Text, Billboard } from '@react-three/drei';
 import * as THREE from 'three';
 import { Obstacle, OBSTACLE_DEFINITIONS, FIELD_WIDTH_M, FIELD_HEIGHT_M } from '@/types/fieldLayout';
 
@@ -200,6 +200,33 @@ function FieldNetting() {
   );
 }
 
+// ---- Floating label ----
+function ObstacleLabel({ position, label, color }: { position: [number, number, number]; label: string; color: string }) {
+  return (
+    <Billboard position={position} follow lockX={false} lockY={false} lockZ={false}>
+      {/* Background pill */}
+      <mesh position={[0, 0, -0.01]}>
+        <planeGeometry args={[label.length * 0.12 + 0.3, 0.28]} />
+        <meshBasicMaterial color="#000000" transparent opacity={0.6} />
+      </mesh>
+      {/* Colored dot */}
+      <mesh position={[-(label.length * 0.06 + 0.05), 0, 0]}>
+        <circleGeometry args={[0.06, 12]} />
+        <meshBasicMaterial color={color} />
+      </mesh>
+      <Text
+        fontSize={0.16}
+        color="white"
+        anchorX="center"
+        anchorY="middle"
+        font={undefined}
+      >
+        {label}
+      </Text>
+    </Billboard>
+  );
+}
+
 // ---- Accurate 3D Obstacle shapes ----
 function Obstacle3D({ obstacle }: { obstacle: Obstacle }) {
   const def = OBSTACLE_DEFINITIONS[obstacle.type];
@@ -207,6 +234,7 @@ function Obstacle3D({ obstacle }: { obstacle: Obstacle }) {
   const worldZ = (obstacle.y / 100 - 0.5) * FIELD_HEIGHT_M;
   const rotRad = (obstacle.rotation * Math.PI) / 180;
   const { widthM: w, depthM: d, heightM: h, color, profile3D } = def;
+  const labelY = h + 0.4;
 
   const mat = useMemo(() => new THREE.MeshStandardMaterial({ color, roughness: 0.8 }), [color]);
 
@@ -220,105 +248,118 @@ function Obstacle3D({ obstacle }: { obstacle: Obstacle }) {
     return s;
   }, [w, h]);
 
+  const label = <ObstacleLabel position={[worldX, labelY, worldZ]} label={def.label} color={color} />;
+
   if (profile3D === 'cylinder') {
     const r = w / 2;
     return (
-      <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-        <mesh position={[0, h / 2, 0]} material={mat} castShadow>
-          <cylinderGeometry args={[r, r * 1.05, h, 20]} />
-        </mesh>
-        <mesh position={[0, h, 0]} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[r * 0.85, r * 0.08, 8, 20]} />
-          <meshStandardMaterial color={color} roughness={0.6} />
-        </mesh>
-      </group>
+      <>
+        {label}
+        <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+          <mesh position={[0, h / 2, 0]} material={mat} castShadow>
+            <cylinderGeometry args={[r, r * 1.05, h, 20]} />
+          </mesh>
+          <mesh position={[0, h, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[r * 0.85, r * 0.08, 8, 20]} />
+            <meshStandardMaterial color={color} roughness={0.6} />
+          </mesh>
+        </group>
+      </>
     );
   }
 
   if (profile3D === 'cone') {
     const r = w / 2;
     return (
-      <mesh position={[worldX, h / 2, worldZ]} rotation={[0, rotRad, 0]} material={mat} castShadow>
-        <coneGeometry args={[r, h, 16]} />
-      </mesh>
+      <>
+        {label}
+        <mesh position={[worldX, h / 2, worldZ]} rotation={[0, rotRad, 0]} material={mat} castShadow>
+          <coneGeometry args={[r, h, 16]} />
+        </mesh>
+      </>
     );
   }
 
   if (profile3D === 'prism-triangle') {
     return (
-      <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-        <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, d / 2]} material={mat} castShadow>
-          <extrudeGeometry args={[triShape, { depth: d, bevelEnabled: true, bevelSize: 0.05, bevelThickness: 0.05, bevelSegments: 2 }]} />
-        </mesh>
-      </group>
+      <>
+        {label}
+        <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+          <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, d / 2]} material={mat} castShadow>
+            <extrudeGeometry args={[triShape, { depth: d, bevelEnabled: true, bevelSize: 0.05, bevelThickness: 0.05, bevelSegments: 2 }]} />
+          </mesh>
+        </group>
+      </>
     );
   }
 
   if (profile3D === 'half-cylinder') {
-    // Snake beam — a long, low half-cylinder tube lying on the ground
     return (
-      <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-        {/* Half-cylinder: rotate a cylinder 90° and use only top half effect via positioning */}
-        <mesh position={[0, h * 0.4, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-          <cylinderGeometry args={[w / 2, w / 2, d, 12, 1, false, 0, Math.PI]} />
-          <meshStandardMaterial color={color} roughness={0.8} />
-        </mesh>
-        {/* Flat bottom */}
-        <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[w, d]} />
-          <meshStandardMaterial color={color} roughness={0.9} />
-        </mesh>
-      </group>
+      <>
+        {label}
+        <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+          <mesh position={[0, h * 0.4, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+            <cylinderGeometry args={[w / 2, w / 2, d, 12, 1, false, 0, Math.PI]} />
+            <meshStandardMaterial color={color} roughness={0.8} />
+          </mesh>
+          <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[w, d]} />
+            <meshStandardMaterial color={color} roughness={0.9} />
+          </mesh>
+        </group>
+      </>
     );
   }
 
   if (profile3D === 'stepped-pyramid') {
-    // Temple / Temple Maya — stacked tiers getting smaller, like a Mayan pyramid
     const tiers = 3;
     return (
-      <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-        {Array.from({ length: tiers }).map((_, i) => {
-          const scale = 1 - (i * 0.25);
-          const tierH = h / tiers;
-          const tw = w * scale;
-          const td = d * scale;
-          return (
-            <mesh key={i} position={[0, tierH * i + tierH / 2, 0]} castShadow>
-              <boxGeometry args={[tw, tierH * 0.95, td]} />
-              <meshStandardMaterial
-                color={color}
-                roughness={0.75}
-              />
-            </mesh>
-          );
-        })}
-      </group>
+      <>
+        {label}
+        <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+          {Array.from({ length: tiers }).map((_, i) => {
+            const scale = 1 - (i * 0.25);
+            const tierH = h / tiers;
+            const tw = w * scale;
+            const td = d * scale;
+            return (
+              <mesh key={i} position={[0, tierH * i + tierH / 2, 0]} castShadow>
+                <boxGeometry args={[tw, tierH * 0.95, td]} />
+                <meshStandardMaterial color={color} roughness={0.75} />
+              </mesh>
+            );
+          })}
+        </group>
+      </>
     );
   }
 
   if (profile3D === 'flat-panel') {
-    // Wing / Mini Race — low, wide, inflatable panel with rounded top
     return (
-      <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-        {/* Main body */}
-        <mesh position={[0, h * 0.35, 0]} castShadow>
-          <boxGeometry args={[w, h * 0.7, d]} />
-          <meshStandardMaterial color={color} roughness={0.8} />
-        </mesh>
-        {/* Rounded top edge */}
-        <mesh position={[0, h * 0.7, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
-          <cylinderGeometry args={[h * 0.3, h * 0.3, w, 12, 1, false, 0, Math.PI]} />
-          <meshStandardMaterial color={color} roughness={0.8} />
-        </mesh>
-      </group>
+      <>
+        {label}
+        <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+          <mesh position={[0, h * 0.35, 0]} castShadow>
+            <boxGeometry args={[w, h * 0.7, d]} />
+            <meshStandardMaterial color={color} roughness={0.8} />
+          </mesh>
+          <mesh position={[0, h * 0.7, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+            <cylinderGeometry args={[h * 0.3, h * 0.3, w, 12, 1, false, 0, Math.PI]} />
+            <meshStandardMaterial color={color} roughness={0.8} />
+          </mesh>
+        </group>
+      </>
     );
   }
 
   // Default box fallback
   return (
-    <mesh position={[worldX, h / 2, worldZ]} rotation={[0, rotRad, 0]} material={mat} castShadow>
-      <boxGeometry args={[w, h, d]} />
-    </mesh>
+    <>
+      {label}
+      <mesh position={[worldX, h / 2, worldZ]} rotation={[0, rotRad, 0]} material={mat} castShadow>
+        <boxGeometry args={[w, h, d]} />
+      </mesh>
+    </>
   );
 }
 
