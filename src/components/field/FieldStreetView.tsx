@@ -486,6 +486,7 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
           {faces.map((face, fi) => {
             const [a, b, c] = face.verts;
             const n = faceNormal(a, b, c);
+            const faceMat = fi % 2 === 0 ? mat : mat2; // alternating red/blue panels
             return (
               <mesh key={fi} castShadow>
                 <bufferGeometry>
@@ -502,7 +503,7 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
                     itemSize={3}
                   />
                 </bufferGeometry>
-                <primitive object={mat} attach="material" />
+                <primitive object={faceMat} attach="material" />
               </mesh>
             );
           })}
