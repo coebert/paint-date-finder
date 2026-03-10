@@ -327,7 +327,7 @@ function ObstacleLabel({ position, label, color }: { position: [number, number, 
 }
 
 // ---- Accurate 3D Obstacle shapes ----
-function Obstacle3D({ obstacle }: { obstacle: Obstacle }) {
+function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showLabels?: boolean }) {
   const def = OBSTACLE_DEFINITIONS[obstacle.type];
   const worldX = (obstacle.x / 100 - 0.5) * FIELD_WIDTH_M;
   const worldZ = (obstacle.y / 100 - 0.5) * FIELD_HEIGHT_M;
@@ -335,7 +335,7 @@ function Obstacle3D({ obstacle }: { obstacle: Obstacle }) {
   const { widthM: w, depthM: d, heightM: h, color, profile3D } = def;
   const labelY = h + 0.4;
 
-  const label = <ObstacleLabel position={[worldX, labelY, worldZ]} label={def.label} color={color} />;
+  const label = showLabels ? <ObstacleLabel position={[worldX, labelY, worldZ]} label={def.label} color={color} /> : null;
 
   // Shared inflatable PVC material
   const mat = useMemo(() => new THREE.MeshStandardMaterial({ 
