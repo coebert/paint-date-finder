@@ -200,6 +200,33 @@ function FieldNetting() {
   );
 }
 
+// ---- Floating label ----
+function ObstacleLabel({ position, label, color }: { position: [number, number, number]; label: string; color: string }) {
+  return (
+    <Billboard position={position} follow lockX={false} lockY={false} lockZ={false}>
+      {/* Background pill */}
+      <mesh position={[0, 0, -0.01]}>
+        <planeGeometry args={[label.length * 0.12 + 0.3, 0.28]} />
+        <meshBasicMaterial color="#000000" transparent opacity={0.6} />
+      </mesh>
+      {/* Colored dot */}
+      <mesh position={[-(label.length * 0.06 + 0.05), 0, 0]}>
+        <circleGeometry args={[0.06, 12]} />
+        <meshBasicMaterial color={color} />
+      </mesh>
+      <Text
+        fontSize={0.16}
+        color="white"
+        anchorX="center"
+        anchorY="middle"
+        font={undefined}
+      >
+        {label}
+      </Text>
+    </Billboard>
+  );
+}
+
 // ---- Accurate 3D Obstacle shapes ----
 function Obstacle3D({ obstacle }: { obstacle: Obstacle }) {
   const def = OBSTACLE_DEFINITIONS[obstacle.type];
@@ -207,6 +234,7 @@ function Obstacle3D({ obstacle }: { obstacle: Obstacle }) {
   const worldZ = (obstacle.y / 100 - 0.5) * FIELD_HEIGHT_M;
   const rotRad = (obstacle.rotation * Math.PI) / 180;
   const { widthM: w, depthM: d, heightM: h, color, profile3D } = def;
+  const labelY = h + 0.4;
 
   const mat = useMemo(() => new THREE.MeshStandardMaterial({ color, roughness: 0.8 }), [color]);
 
