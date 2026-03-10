@@ -251,59 +251,35 @@ function Obstacle3D({ obstacle }: { obstacle: Obstacle }) {
   const label = <ObstacleLabel position={[worldX, labelY, worldZ]} label={def.label} color={color} />;
 
   if (profile3D === 'cylinder') {
+    // Cake bunker: cylinder with domed/pillowed top (real inflatables have rounded tops)
     const r = w / 2;
     return (
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-          <mesh position={[0, h / 2, 0]} material={mat} castShadow>
-            <cylinderGeometry args={[r, r * 1.05, h, 20]} />
+          {/* Main cylinder body - slightly tapered (wider at base like real inflatables) */}
+          <mesh position={[0, h / 2, 0]} castShadow>
+            <cylinderGeometry args={[r * 0.95, r * 1.02, h, 24]} />
+            <meshStandardMaterial color={color} roughness={0.85} />
           </mesh>
-          <mesh position={[0, h, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[r * 0.85, r * 0.08, 8, 20]} />
-            <meshStandardMaterial color={color} roughness={0.6} />
-          </mesh>
-        </group>
-      </>
-    );
-  }
-
-  if (profile3D === 'cone') {
-    const r = w / 2;
-    return (
-      <>
-        {label}
-        <mesh position={[worldX, h / 2, worldZ]} rotation={[0, rotRad, 0]} material={mat} castShadow>
-          <coneGeometry args={[r, h, 16]} />
-        </mesh>
-      </>
-    );
-  }
-
-  if (profile3D === 'prism-triangle') {
-    return (
-      <>
-        {label}
-        <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-          <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, d / 2]} material={mat} castShadow>
-            <extrudeGeometry args={[triShape, { depth: d, bevelEnabled: true, bevelSize: 0.05, bevelThickness: 0.05, bevelSegments: 2 }]} />
-          </mesh>
-        </group>
-      </>
-    );
-  }
-
-  if (profile3D === 'half-cylinder') {
-    return (
-      <>
-        {label}
-        <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-          <mesh position={[0, h * 0.4, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-            <cylinderGeometry args={[w / 2, w / 2, d, 12, 1, false, 0, Math.PI]} />
+          {/* Domed top - sphere cap for inflatable pillow effect */}
+          <mesh position={[0, h, 0]} castShadow>
+            <sphereGeometry args={[r * 0.95, 16, 8, 0, Math.PI * 2, 0, Math.PI / 3]} />
             <meshStandardMaterial color={color} roughness={0.8} />
           </mesh>
-          <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[w, d]} />
+          {/* Inflatable seam ring at top */}
+          <mesh position={[0, h * 0.98, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[r * 0.85, r * 0.06, 8, 24]} />
+            <meshStandardMaterial color={color} roughness={0.6} metalness={0.05} />
+          </mesh>
+          {/* Inflatable seam ring at mid-height */}
+          <mesh position={[0, h * 0.5, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[r * 0.98, r * 0.04, 6, 24]} />
+            <meshStandardMaterial color={color} roughness={0.7} metalness={0.05} />
+          </mesh>
+          {/* Base ring for grounding */}
+          <mesh position={[0, 0.02, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[r * 1.02, r * 0.04, 6, 24]} />
             <meshStandardMaterial color={color} roughness={0.9} />
           </mesh>
         </group>
@@ -311,22 +287,136 @@ function Obstacle3D({ obstacle }: { obstacle: Obstacle }) {
     );
   }
 
+  if (profile3D === 'cone') {
+    // Cone bunker: tapered cone with rounded inflatable tip
+    const r = w / 2;
+    return (
+      <>
+        {label}
+        <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+          {/* Main cone body */}
+          <mesh position={[0, h * 0.45, 0]} castShadow>
+            <coneGeometry args={[r, h * 0.9, 20]} />
+            <meshStandardMaterial color={color} roughness={0.85} />
+          </mesh>
+          {/* Rounded tip */}
+          <mesh position={[0, h * 0.88, 0]}>
+            <sphereGeometry args={[r * 0.15, 12, 8]} />
+            <meshStandardMaterial color={color} roughness={0.8} />
+          </mesh>
+          {/* Base ring */}
+          <mesh position={[0, 0.02, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[r, r * 0.05, 6, 20]} />
+            <meshStandardMaterial color={color} roughness={0.9} />
+          </mesh>
+        </group>
+      </>
+    );
+  }
+
+  if (profile3D === 'prism-triangle') {
+    // Dorito: inflatable A-frame with rounded edges and puffy profile
+    return (
+      <>
+        {label}
+        <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+          {/* Main triangular prism with bevel for inflatable look */}
+          <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, d / 2]} castShadow>
+            <extrudeGeometry args={[triShape, { 
+              depth: d, 
+              bevelEnabled: true, 
+              bevelSize: 0.12, 
+              bevelThickness: 0.1, 
+              bevelSegments: 4 
+            }]} />
+            <meshStandardMaterial color={color} roughness={0.85} />
+          </mesh>
+          {/* Vertical seam line on each face */}
+          {[0, (2 * Math.PI) / 3, (4 * Math.PI) / 3].map((angle, i) => (
+            <mesh key={i} position={[
+              Math.sin(angle) * w * 0.25, 
+              h * 0.4, 
+              0
+            ]} rotation={[0, angle, 0]}>
+              <boxGeometry args={[0.03, h * 0.6, d * 0.8]} />
+              <meshStandardMaterial color={color} roughness={0.7} metalness={0.05} />
+            </mesh>
+          ))}
+        </group>
+      </>
+    );
+  }
+
+  if (profile3D === 'half-cylinder') {
+    // Snake beam: long tube lying on ground with rounded end caps
+    const r = w / 2;
+    return (
+      <>
+        {label}
+        <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+          {/* Main tube body - half cylinder */}
+          <mesh position={[0, r, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+            <cylinderGeometry args={[r, r, d - w, 16, 1, false, 0, Math.PI]} />
+            <meshStandardMaterial color={color} roughness={0.85} />
+          </mesh>
+          {/* Front end cap - half sphere */}
+          <mesh position={[0, r, -(d - w) / 2]} rotation={[Math.PI, 0, 0]}>
+            <sphereGeometry args={[r, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <meshStandardMaterial color={color} roughness={0.85} />
+          </mesh>
+          {/* Back end cap - half sphere */}
+          <mesh position={[0, r, (d - w) / 2]}>
+            <sphereGeometry args={[r, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <meshStandardMaterial color={color} roughness={0.85} />
+          </mesh>
+          {/* Flat bottom */}
+          <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[w, d]} />
+            <meshStandardMaterial color={color} roughness={0.9} />
+          </mesh>
+          {/* Longitudinal seam on top */}
+          <mesh position={[0, w / 2 + 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[0.03, d * 0.9]} />
+            <meshStandardMaterial color={color} roughness={0.6} metalness={0.1} />
+          </mesh>
+        </group>
+      </>
+    );
+  }
+
   if (profile3D === 'stepped-pyramid') {
-    const tiers = 3;
+    // Temple / Temple Maya: stacked inflatable tiers, each tier has rounded edges
+    const tiers = 4;
     return (
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
           {Array.from({ length: tiers }).map((_, i) => {
-            const scale = 1 - (i * 0.25);
+            const scale = 1 - (i * 0.2);
             const tierH = h / tiers;
             const tw = w * scale;
             const td = d * scale;
+            const tierR = Math.min(tw, td) * 0.08; // rounded edge radius
             return (
-              <mesh key={i} position={[0, tierH * i + tierH / 2, 0]} castShadow>
-                <boxGeometry args={[tw, tierH * 0.95, td]} />
-                <meshStandardMaterial color={color} roughness={0.75} />
-              </mesh>
+              <group key={i}>
+                {/* Main tier body */}
+                <mesh position={[0, tierH * i + tierH / 2, 0]} castShadow>
+                  <boxGeometry args={[tw, tierH * 0.92, td]} />
+                  <meshStandardMaterial color={color} roughness={0.8} />
+                </mesh>
+                {/* Rounded top edges (cylinders along each edge) */}
+                {[
+                  [0, tierH * (i + 1) * 0.98, -td / 2, tw, 0],
+                  [0, tierH * (i + 1) * 0.98, td / 2, tw, 0],
+                  [-tw / 2, tierH * (i + 1) * 0.98, 0, td, Math.PI / 2],
+                  [tw / 2, tierH * (i + 1) * 0.98, 0, td, Math.PI / 2],
+                ].map(([x, y, z, len, rot], j) => (
+                  <mesh key={j} position={[x as number, y as number, z as number]} rotation={[0, rot as number, Math.PI / 2]}>
+                    <cylinderGeometry args={[tierR, tierR, len as number, 8]} />
+                    <meshStandardMaterial color={color} roughness={0.75} />
+                  </mesh>
+                ))}
+              </group>
             );
           })}
         </group>
@@ -335,30 +425,44 @@ function Obstacle3D({ obstacle }: { obstacle: Obstacle }) {
   }
 
   if (profile3D === 'flat-panel') {
+    // Wing / Mini Race: low wide inflatable panel with rounded pillow top
     return (
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+          {/* Main body with slight taper */}
           <mesh position={[0, h * 0.35, 0]} castShadow>
-            <boxGeometry args={[w, h * 0.7, d]} />
-            <meshStandardMaterial color={color} roughness={0.8} />
+            <boxGeometry args={[w, h * 0.65, d]} />
+            <meshStandardMaterial color={color} roughness={0.85} />
           </mesh>
-          <mesh position={[0, h * 0.7, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
-            <cylinderGeometry args={[h * 0.3, h * 0.3, w, 12, 1, false, 0, Math.PI]} />
-            <meshStandardMaterial color={color} roughness={0.8} />
+          {/* Rounded top - elongated half-cylinder along width */}
+          <mesh position={[0, h * 0.67, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+            <cylinderGeometry args={[h * 0.33, h * 0.33, w, 12, 1, false, 0, Math.PI]} />
+            <meshStandardMaterial color={color} roughness={0.85} />
+          </mesh>
+          {/* Horizontal seam */}
+          <mesh position={[0, h * 0.5, d / 2 + 0.01]}>
+            <planeGeometry args={[w * 0.9, 0.02]} />
+            <meshStandardMaterial color={color} roughness={0.6} metalness={0.1} />
+          </mesh>
+          <mesh position={[0, h * 0.5, -(d / 2 + 0.01)]}>
+            <planeGeometry args={[w * 0.9, 0.02]} />
+            <meshStandardMaterial color={color} roughness={0.6} metalness={0.1} />
           </mesh>
         </group>
       </>
     );
   }
 
-  // Default box fallback
+  // Default box fallback with rounded edges
   return (
     <>
       {label}
-      <mesh position={[worldX, h / 2, worldZ]} rotation={[0, rotRad, 0]} material={mat} castShadow>
-        <boxGeometry args={[w, h, d]} />
-      </mesh>
+      <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+        <mesh position={[0, h / 2, 0]} material={mat} castShadow>
+          <boxGeometry args={[w, h, d]} />
+        </mesh>
+      </group>
     </>
   );
 }

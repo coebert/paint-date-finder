@@ -88,11 +88,12 @@ export const OBSTACLE_DEFINITIONS: Record<ObstacleType, ObstacleDefinition> = {
   'snake': {
     type: 'snake',
     label: 'Snake Beam',
-    // Long low half-cylinder: L=3.05m, W=0.51m, H=0.71m
-    // From Airups: H=28in, W=10ft, D=20in
-    widthM: 0.51,
-    depthM: 3.05,
-    heightM: 0.71,
+    // AIRBUNKER spec: H=0.75m, W=0.5m, L=3.0m
+    // Airups PSP spec: H=28in(0.71m), W=10ft(3.05m), D=20in(0.51m)
+    // Using AIRBUNKER standard dimensions
+    widthM: 0.5,
+    depthM: 3.0,
+    heightM: 0.75,
     color: '#3d8a3d',
     birdEye: 'capsule',
     profile3D: 'half-cylinder',
@@ -111,10 +112,12 @@ export const OBSTACLE_DEFINITIONS: Record<ObstacleType, ObstacleDefinition> = {
   'temple-maya': {
     type: 'temple-maya',
     label: 'Temple Maya',
-    // Larger stepped: H=7ft(2.13m), W=5ft(1.52m), D=5ft(1.52m) from Airups
-    widthM: 1.52,
-    depthM: 1.52,
-    heightM: 2.13,
+    // AIRBUNKER spec: H=2.5m, W=1.5m, D=1.5m
+    // Airups NXL spec: H=7ft(2.13m), W=5ft(1.52m), D=5ft(1.52m)
+    // Using AIRBUNKER standard - taller at 2.5m
+    widthM: 1.5,
+    depthM: 1.5,
+    heightM: 2.5,
     color: '#7744aa',
     birdEye: 'stepped-rect',
     profile3D: 'stepped-pyramid',
