@@ -13,6 +13,7 @@ import AdminOverview from "./pages/admin/AdminOverview";
 import AdminSubmissions from "./pages/admin/AdminSubmissions";
 import AdminEvents from "./pages/admin/AdminEvents";
 import AdminTeams from "./pages/admin/AdminTeams";
+import FieldLayout from "./pages/FieldLayout";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/teams" element={<Teams />} />
           <Route path="/teams/:id" element={<TeamDetail />} />
+          <Route path="/field-layout" element={<FieldLayout />} />
           
           {/* Admin Routes */}
           <Route
