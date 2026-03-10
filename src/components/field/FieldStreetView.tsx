@@ -427,135 +427,102 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
   }
 
   if (profile3D === 'prism-triangle') {
-    // Dorito: A-frame inflatable bunker
-    // Real doritos are like a tent/A-frame: triangular cross-section, extruded along depth
-    // The triangle face points up (peak at top), and the bunker extends along the Z-axis (depth)
+    // Dorito: triangular-based pyramid (tetrahedron-like)
+    // Real Sup'Air doritos have an equilateral triangle base on the ground
+    // with all three faces rising to a single apex point at the top
     const halfW = w / 2;
+    const thirdD = d / 3;
+    
+    // Base vertices of equilateral triangle (centered at origin, lying on ground y=0)
+    const v0: [number, number, number] = [0, 0, -thirdD * 2];       // front point
+    const v1: [number, number, number] = [-halfW, 0, thirdD];       // back-left
+    const v2: [number, number, number] = [halfW, 0, thirdD];        // back-right
+    const apex: [number, number, number] = [0, h, 0];               // top apex
+
+    // Helper to compute face normal from 3 vertices
+    const faceNormal = (a: [number,number,number], b: [number,number,number], c: [number,number,number]): [number,number,number] => {
+      const ux = b[0]-a[0], uy = b[1]-a[1], uz = b[2]-a[2];
+      const vx = c[0]-a[0], vy = c[1]-a[1], vz = c[2]-a[2];
+      const nx = uy*vz - uz*vy, ny = uz*vx - ux*vz, nz = ux*vy - uy*vx;
+      const len = Math.sqrt(nx*nx + ny*ny + nz*nz) || 1;
+      return [nx/len, ny/len, nz/len];
+    };
+
+    // Three sloped faces + bottom face
+    const faces: { verts: [number,number,number][]; }[] = [
+      { verts: [v0, v1, apex] },   // left face
+      { verts: [v1, v2, apex] },   // back face  
+      { verts: [v2, v0, apex] },   // right face
+    ];
+
     return (
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-          {/* Build from individual faces for proper orientation */}
-          {/* Left face */}
-          <mesh castShadow>
-            <bufferGeometry>
-              <bufferAttribute
-                attach="attributes-position"
-                array={new Float32Array([
-                  // Triangle 1
-                  -halfW, 0, -d/2,   0, h, -d/2,   -halfW, 0, d/2,
-                  // Triangle 2
-                  0, h, -d/2,   0, h, d/2,   -halfW, 0, d/2,
-                ])}
-                count={6}
-                itemSize={3}
-              />
-              <bufferAttribute
-                attach="attributes-normal"
-                array={(() => {
-                  const nx = -h, ny = halfW, len = Math.sqrt(nx*nx + ny*ny);
-                  const n = new Float32Array(18);
-                  for (let i = 0; i < 6; i++) { n[i*3] = nx/len; n[i*3+1] = ny/len; n[i*3+2] = 0; }
-                  return n;
-                })()}
-                count={6}
-                itemSize={3}
-              />
-            </bufferGeometry>
-            <primitive object={mat} attach="material" />
-          </mesh>
-          {/* Right face */}
-          <mesh castShadow>
-            <bufferGeometry>
-              <bufferAttribute
-                attach="attributes-position"
-                array={new Float32Array([
-                  halfW, 0, -d/2,   halfW, 0, d/2,   0, h, -d/2,
-                  0, h, -d/2,   halfW, 0, d/2,   0, h, d/2,
-                ])}
-                count={6}
-                itemSize={3}
-              />
-              <bufferAttribute
-                attach="attributes-normal"
-                array={(() => {
-                  const nx = h, ny = halfW, len = Math.sqrt(nx*nx + ny*ny);
-                  const n = new Float32Array(18);
-                  for (let i = 0; i < 6; i++) { n[i*3] = nx/len; n[i*3+1] = ny/len; n[i*3+2] = 0; }
-                  return n;
-                })()}
-                count={6}
-                itemSize={3}
-              />
-            </bufferGeometry>
-            <primitive object={mat} attach="material" />
-          </mesh>
-          {/* Front triangular end cap */}
-          <mesh castShadow>
-            <bufferGeometry>
-              <bufferAttribute
-                attach="attributes-position"
-                array={new Float32Array([
-                  -halfW, 0, -d/2,   halfW, 0, -d/2,   0, h, -d/2,
-                ])}
-                count={3}
-                itemSize={3}
-              />
-              <bufferAttribute
-                attach="attributes-normal"
-                array={new Float32Array([0,0,-1, 0,0,-1, 0,0,-1])}
-                count={3}
-                itemSize={3}
-              />
-            </bufferGeometry>
-            <primitive object={mat} attach="material" />
-          </mesh>
-          {/* Back triangular end cap */}
-          <mesh castShadow>
-            <bufferGeometry>
-              <bufferAttribute
-                attach="attributes-position"
-                array={new Float32Array([
-                  -halfW, 0, d/2,   0, h, d/2,   halfW, 0, d/2,
-                ])}
-                count={3}
-                itemSize={3}
-              />
-              <bufferAttribute
-                attach="attributes-normal"
-                array={new Float32Array([0,0,1, 0,0,1, 0,0,1])}
-                count={3}
-                itemSize={3}
-              />
-            </bufferGeometry>
-            <primitive object={mat} attach="material" />
-          </mesh>
-          {/* Bottom face */}
+          {/* Sloped pyramid faces */}
+          {faces.map((face, fi) => {
+            const [a, b, c] = face.verts;
+            const n = faceNormal(a, b, c);
+            return (
+              <mesh key={fi} castShadow>
+                <bufferGeometry>
+                  <bufferAttribute
+                    attach="attributes-position"
+                    array={new Float32Array([...a, ...b, ...c])}
+                    count={3}
+                    itemSize={3}
+                  />
+                  <bufferAttribute
+                    attach="attributes-normal"
+                    array={new Float32Array([...n, ...n, ...n])}
+                    count={3}
+                    itemSize={3}
+                  />
+                </bufferGeometry>
+                <primitive object={mat} attach="material" />
+              </mesh>
+            );
+          })}
+          {/* Bottom face (triangle on ground) */}
           <mesh>
             <bufferGeometry>
               <bufferAttribute
                 attach="attributes-position"
-                array={new Float32Array([
-                  -halfW, 0, -d/2,   -halfW, 0, d/2,   halfW, 0, -d/2,
-                  halfW, 0, -d/2,   -halfW, 0, d/2,   halfW, 0, d/2,
-                ])}
-                count={6}
+                array={new Float32Array([...v0, ...v2, ...v1])}
+                count={3}
                 itemSize={3}
               />
               <bufferAttribute
                 attach="attributes-normal"
-                array={new Float32Array([0,-1,0, 0,-1,0, 0,-1,0, 0,-1,0, 0,-1,0, 0,-1,0])}
-                count={6}
+                array={new Float32Array([0,-1,0, 0,-1,0, 0,-1,0])}
+                count={3}
                 itemSize={3}
               />
             </bufferGeometry>
             <primitive object={mat} attach="material" />
           </mesh>
-          {/* Top ridge seam */}
-          <mesh position={[0, h + 0.01, 0]}>
-            <boxGeometry args={[0.04, 0.04, d * 0.95]} />
-            <primitive object={seamMat} attach="material" />
-          </mesh>
+          {/* Edge seam lines for inflatable look */}
+          {[[v0,apex],[v1,apex],[v2,apex]].map(([from, to], i) => {
+            const mx = (from[0]+to[0])/2, my = (from[1]+to[1])/2, mz = (from[2]+to[2])/2;
+            const dx = to[0]-from[0], dy = to[1]-from[1], dz = to[2]-from[2];
+            const len = Math.sqrt(dx*dx + dy*dy + dz*dz);
+            return (
+              <mesh key={`seam-${i}`} position={[mx, my, mz]}>
+                <boxGeometry args={[0.03, 0.03, 0.03]} />
+                <primitive object={seamMat} attach="material" />
+              </mesh>
+            );
+          })}
+          {/* Base edge seams */}
+          {[[v0,v1],[v1,v2],[v2,v0]].map(([from, to], i) => {
+            const mx = (from[0]+to[0])/2, my = 0.02, mz = (from[2]+to[2])/2;
+            return (
+              <mesh key={`base-seam-${i}`} position={[mx, my, mz]}>
+                <boxGeometry args={[0.03, 0.03, 0.03]} />
+                <primitive object={seamMat} attach="material" />
+              </mesh>
+            );
+          })}
         </group>
       </>
     );
