@@ -88,11 +88,12 @@ export const OBSTACLE_DEFINITIONS: Record<ObstacleType, ObstacleDefinition> = {
   'snake': {
     type: 'snake',
     label: 'Snake Beam',
-    // Long low half-cylinder: L=3.05m, W=0.51m, H=0.71m
-    // From Airups: H=28in, W=10ft, D=20in
-    widthM: 0.51,
-    depthM: 3.05,
-    heightM: 0.71,
+    // AIRBUNKER spec: H=0.75m, W=0.5m, L=3.0m
+    // Airups PSP spec: H=28in(0.71m), W=10ft(3.05m), D=20in(0.51m)
+    // Using AIRBUNKER standard dimensions
+    widthM: 0.5,
+    depthM: 3.0,
+    heightM: 0.75,
     color: '#3d8a3d',
     birdEye: 'capsule',
     profile3D: 'half-cylinder',
