@@ -212,6 +212,15 @@ export function TeamEditDialog({ team, open, onOpenChange }: TeamEditDialogProps
               <Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} required />
             </div>
             <div className="space-y-2">
+              <Label>League</Label>
+              <Select value={form.league} onValueChange={v => setForm(p => ({ ...p, league: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {LEAGUES.map(l => <SelectItem key={l} value={l}>{l === 'Other' ? 'Other / Independent' : l}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label>Division</Label>
               <Select value={form.division} onValueChange={v => setForm(p => ({ ...p, division: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
