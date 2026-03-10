@@ -895,9 +895,25 @@ export function FieldStreetView({ obstacles, viewPoint, onViewPointChange, onSta
   const joystickRef = useRef<JoystickInput>({ moveX: 0, moveY: 0 });
   const lookRef = useRef<LookInput>({ lookX: 0, lookY: 0 });
   const mobileStanceRef = useRef<MobileStanceInput>({ sprinting: false, crouching: false });
+  const headingRef = useRef<number>(0);
+  const compassRef = useRef<HTMLDivElement>(null);
   const [showLabels, setShowLabels] = useState(true);
   const [mobileSprinting, setMobileSprinting] = useState(false);
   const [mobileCrouching, setMobileCrouching] = useState(false);
+
+  // Animate compass from headingRef
+  useEffect(() => {
+    let raf: number;
+    const update = () => {
+      if (compassRef.current) {
+        const deg = (headingRef.current * 180) / Math.PI;
+        compassRef.current.style.transform = `rotate(${deg}deg)`;
+      }
+      raf = requestAnimationFrame(update);
+    };
+    raf = requestAnimationFrame(update);
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
   // Sync mobile stance buttons to ref
   useEffect(() => {
@@ -906,14 +922,14 @@ export function FieldStreetView({ obstacles, viewPoint, onViewPointChange, onSta
 
   const toggleSprint = useCallback(() => {
     setMobileSprinting(prev => {
-      if (!prev) setMobileCrouching(false); // can't sprint and crouch
+      if (!prev) setMobileCrouching(false);
       return !prev;
     });
   }, []);
 
   const toggleCrouch = useCallback(() => {
     setMobileCrouching(prev => {
-      if (!prev) setMobileSprinting(false); // can't crouch and sprint
+      if (!prev) setMobileSprinting(false);
       return !prev;
     });
   }, []);
@@ -935,7 +951,7 @@ export function FieldStreetView({ obstacles, viewPoint, onViewPointChange, onSta
         camera={{ fov: 75, near: 0.1, far: 200 }}
         style={{ width: '100%', height: '100%' }}
       >
-        <Scene obstacles={obstacles} viewPosition={viewPosition} onPositionChange={handlePositionChange} onStanceChange={onStanceChange} joystickRef={joystickRef} lookRef={lookRef} mobileStanceRef={mobileStanceRef} showLabels={showLabels} />
+        <Scene obstacles={obstacles} viewPosition={viewPosition} onPositionChange={handlePositionChange} onStanceChange={onStanceChange} joystickRef={joystickRef} lookRef={lookRef} mobileStanceRef={mobileStanceRef} headingRef={headingRef} showLabels={showLabels} />
       </Canvas>
       {/* Label toggle button */}
       <button
