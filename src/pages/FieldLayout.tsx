@@ -153,21 +153,28 @@ export default function FieldLayout() {
 
           {/* Current CPPS Layout */}
           <TabsContent value="current" className="space-y-6">
-            <Card className="bg-card border-border/50">
-              <CardHeader>
-                <CardTitle className="font-display tracking-wider flex items-center gap-3">
-                  CPPS COMPETITION FIELD
-                  <Badge className="bg-accent text-accent-foreground">2025 Season</Badge>
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Standard Sup'Air inflatable field layout used in CPPS tournament play.
-                  The field is symmetrical with a center-line dividing two mirror-image halves.
-                </p>
-              </CardHeader>
-              <CardContent>
-                <FieldCanvas obstacles={CPPS_FIELD_LAYOUT} />
-              </CardContent>
-            </Card>
+            <div ref={fieldContainerRef} className="fullscreen-container">
+              <Card className="bg-card border-border/50">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="font-display tracking-wider flex items-center gap-3">
+                      CPPS COMPETITION FIELD
+                      <Badge className="bg-accent text-accent-foreground">2025 Season</Badge>
+                    </CardTitle>
+                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => toggleFullscreen(fieldContainerRef, setIsFieldFullscreen)}>
+                      {isFieldFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Standard Sup'Air inflatable field layout used in CPPS tournament play.
+                    The field is symmetrical with a center-line dividing two mirror-image halves.
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <FieldCanvas obstacles={CPPS_FIELD_LAYOUT} />
+                </CardContent>
+              </Card>
+            </div>
 
             {/* Legend */}
             <Card className="bg-card border-border/50">
