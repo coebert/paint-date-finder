@@ -139,6 +139,15 @@ function FirstPersonCamera({ position, onPositionChange, onStanceChange, joystic
       moveDir.z += joy.moveY;
     }
 
+    // Virtual look joystick input
+    const look = lookRef.current;
+    if (look && (Math.abs(look.lookX) > 0.05 || Math.abs(look.lookY) > 0.05)) {
+      const lookSpeed = 2.5;
+      yaw.current -= look.lookX * lookSpeed * delta;
+      pitch.current -= look.lookY * lookSpeed * delta;
+      pitch.current = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, pitch.current));
+    }
+
     if (moveDir.lengthSq() > 0) {
       moveDir.normalize();
       moveDir.applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw.current);
