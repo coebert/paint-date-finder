@@ -375,30 +375,39 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
   }), []);
 
   if (profile3D === 'cylinder') {
-    // Cake / Can: cylinder with domed top
+    // Cake / Can: cylinder with two-tone panels (top half one color, bottom half another)
     const r = w / 2;
     return (
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-          {/* Main body */}
-          <mesh position={[0, h / 2, 0]} material={mat} castShadow>
-            <cylinderGeometry args={[r * 0.97, r, h, 24]} />
+          {/* Lower body - primary color */}
+          <mesh position={[0, h * 0.25, 0]} material={mat} castShadow>
+            <cylinderGeometry args={[r * 0.98, r, h * 0.5, 24]} />
           </mesh>
-          {/* Domed top */}
+          {/* Upper body - secondary color */}
+          <mesh position={[0, h * 0.75, 0]} material={mat2} castShadow>
+            <cylinderGeometry args={[r * 0.96, r * 0.98, h * 0.5, 24]} />
+          </mesh>
+          {/* Domed top - primary */}
           <mesh position={[0, h, 0]} material={mat} castShadow>
-            <sphereGeometry args={[r * 0.97, 16, 10, 0, Math.PI * 2, 0, Math.PI / 3]} />
+            <sphereGeometry args={[r * 0.96, 16, 10, 0, Math.PI * 2, 0, Math.PI / 3]} />
           </mesh>
-          {/* Horizontal seam bands */}
-          {[0.3, 0.6].map((frac) => (
+          {/* White seam bands at color transitions */}
+          {[0.5].map((frac) => (
             <mesh key={frac} position={[0, h * frac, 0]} rotation={[Math.PI / 2, 0, 0]}>
-              <torusGeometry args={[r * (1 - frac * 0.03), 0.02, 6, 24]} />
+              <torusGeometry args={[r * 0.99, 0.025, 6, 24]} />
               <primitive object={seamMat} attach="material" />
             </mesh>
           ))}
           {/* Base ring */}
           <mesh position={[0, 0.01, 0]} rotation={[Math.PI / 2, 0, 0]}>
             <torusGeometry args={[r, 0.025, 6, 24]} />
+            <primitive object={seamMat} attach="material" />
+          </mesh>
+          {/* Top ring */}
+          <mesh position={[0, h - 0.01, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[r * 0.97, 0.02, 6, 24]} />
             <primitive object={seamMat} attach="material" />
           </mesh>
         </group>
