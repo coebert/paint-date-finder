@@ -183,12 +183,24 @@ export function EventCalendar({ events, onEventClick }: EventCalendarProps) {
           <span className="border border-dashed border-muted-foreground/30 rounded px-1.5 py-0.5 opacity-60">Unverified</span>
         </div>
         <span className="hidden sm:inline text-border">|</span>
-        {(Object.entries(EVENT_TYPE_LABELS) as [EventType, string][]).map(([type, label]) => (
-          <div key={type} className="flex items-center gap-1.5">
-            <span className={`w-2.5 h-2.5 rounded-sm bg-event-${type.replace('_', '-')}`} />
-            <span>{label}</span>
-          </div>
-        ))}
+        {(Object.entries(EVENT_TYPE_LABELS) as [EventType, string][]).map(([type, label]) => {
+          const colorMap: Record<EventType, string> = {
+            walk_on: 'bg-event-walk-on',
+            big_game: 'bg-event-big-game',
+            competition: 'bg-event-competition',
+            tournament: 'bg-event-tournament',
+            speedball: 'bg-event-speedball',
+            scenario: 'bg-event-scenario',
+            mag_fed: 'bg-event-mag-fed',
+            other: 'bg-event-other',
+          };
+          return (
+            <div key={type} className="flex items-center gap-1.5">
+              <span className={`w-2.5 h-2.5 rounded-sm ${colorMap[type]}`} />
+              <span>{label}</span>
+            </div>
+          );
+        })}
       </div>
 
       {/* Expanded Date Panel */}
