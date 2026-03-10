@@ -11,7 +11,7 @@ interface FieldCanvasProps {
   showLabels?: boolean;
 }
 
-const CALLOUT_PREFIX: Record<string, string> = {
+export const CALLOUT_PREFIX: Record<string, string> = {
   'tall-cake': 'TC',
   'small-cake': 'SC',
   'dorito-big': 'D',
