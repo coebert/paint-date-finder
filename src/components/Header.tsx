@@ -83,14 +83,17 @@ export function Header({ view, onViewChange, onAddEvent, onSubmitEvent }: Header
               </Button>
             </div>
 
-            <Button
-              variant="outline"
-              className="gap-2"
-              asChild
-            >
+            <Button variant="outline" className="gap-2" asChild>
               <Link to="/teams">
                 <Users className="h-4 w-4" />
-                Find a Team
+                Teams
+              </Link>
+            </Button>
+
+            <Button variant="outline" className="gap-2" asChild>
+              <Link to="/field-layout">
+                <LayoutGrid className="h-4 w-4" />
+                Field Layout
               </Link>
             </Button>
 

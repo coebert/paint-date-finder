@@ -28,6 +28,7 @@ const App = () => (
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/teams" element={<Teams />} />
           <Route path="/teams/:id" element={<TeamDetail />} />
+          <Route path="/field-layout" element={<FieldLayout />} />
           
           {/* Admin Routes */}
           <Route
