@@ -183,6 +183,7 @@ export type Database = {
           home_venue: string | null
           id: string
           is_active: boolean | null
+          league: string
           logo_url: string | null
           name: string
           points: number | null
@@ -202,6 +203,7 @@ export type Database = {
           home_venue?: string | null
           id?: string
           is_active?: boolean | null
+          league?: string
           logo_url?: string | null
           name: string
           points?: number | null
@@ -221,6 +223,7 @@ export type Database = {
           home_venue?: string | null
           id?: string
           is_active?: boolean | null
+          league?: string
           logo_url?: string | null
           name?: string
           points?: number | null
