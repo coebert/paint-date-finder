@@ -331,6 +331,7 @@ export default function FieldLayout() {
                   <FieldStreetView
                     obstacles={streetViewObstacles}
                     viewPoint={streetViewPoint}
+                    onViewPointChange={setStreetViewPoint}
                   />
                 </Suspense>
 
