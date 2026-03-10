@@ -171,6 +171,7 @@ export function CommunityLayoutsDialog({ onLoad }: CommunityLayoutsDialogProps) 
                       </Button>
                     )}
                   </div>
+                </div>
               </CardContent>
             </Card>
           ))}
