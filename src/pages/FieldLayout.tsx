@@ -197,7 +197,13 @@ export default function FieldLayout() {
                       <CardTitle className="font-display tracking-wider text-lg">
                         YOUR FIELD DESIGN
                       </CardTitle>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
+                        <SaveLayoutDialog obstacles={designObstacles} />
+                        <CommunityLayoutsDialog onLoad={(obs) => {
+                          setDesignObstacles(obs);
+                          setSelectedId(null);
+                          toast.success('Layout loaded!');
+                        }} />
                         <Button variant="outline" size="sm" onClick={handleLoadCPPS} className="text-xs gap-1">
                           <Download className="w-3 h-3" /> Load CPPS
                         </Button>
