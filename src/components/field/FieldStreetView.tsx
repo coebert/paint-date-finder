@@ -354,9 +354,12 @@ function Obstacle3D({ obstacle }: { obstacle: Obstacle }) {
 
   // Default box fallback
   return (
-    <mesh position={[worldX, h / 2, worldZ]} rotation={[0, rotRad, 0]} material={mat} castShadow>
-      <boxGeometry args={[w, h, d]} />
-    </mesh>
+    <>
+      {label}
+      <mesh position={[worldX, h / 2, worldZ]} rotation={[0, rotRad, 0]} material={mat} castShadow>
+        <boxGeometry args={[w, h, d]} />
+      </mesh>
+    </>
   );
 }
 
