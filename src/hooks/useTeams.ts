@@ -22,7 +22,7 @@ export interface Team {
   updated_at: string;
 }
 
-export function useTeams(filters?: { division?: string; search?: string }) {
+export function useTeams(filters?: { division?: string; search?: string; league?: string }) {
   return useQuery({
     queryKey: ['teams', filters],
     queryFn: async () => {
@@ -32,6 +32,10 @@ export function useTeams(filters?: { division?: string; search?: string }) {
         .eq('is_active', true)
         .order('division')
         .order('position', { ascending: true, nullsFirst: false });
+
+      if (filters?.league) {
+        query = query.eq('league', filters.league);
+      }
 
       if (filters?.division) {
         query = query.eq('division', filters.division);
