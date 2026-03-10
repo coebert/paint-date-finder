@@ -751,6 +751,81 @@ function VirtualJoystick({ joystickRef }: { joystickRef: React.MutableRefObject<
   );
 }
 
+// ---- Virtual Look Joystick (right side) ----
+function VirtualLookJoystick({ lookRef }: { lookRef: React.MutableRefObject<LookInput> }) {
+  const padRef = useRef<HTMLDivElement>(null);
+  const knobRef = useRef<HTMLDivElement>(null);
+  const activeTouch = useRef<number | null>(null);
+  const center = useRef({ x: 0, y: 0 });
+  const RADIUS = 40;
+
+  const handleStart = useCallback((e: React.TouchEvent) => {
+    if (activeTouch.current !== null) return;
+    const touch = e.changedTouches[0];
+    activeTouch.current = touch.identifier;
+    const rect = padRef.current!.getBoundingClientRect();
+    center.current = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    updateKnob(touch.clientX, touch.clientY);
+  }, []);
+
+  const updateKnob = useCallback((cx: number, cy: number) => {
+    let dx = cx - center.current.x;
+    let dy = cy - center.current.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > RADIUS) {
+      dx = (dx / dist) * RADIUS;
+      dy = (dy / dist) * RADIUS;
+    }
+    if (knobRef.current) {
+      knobRef.current.style.transform = `translate(${dx}px, ${dy}px)`;
+    }
+    lookRef.current = { lookX: dx / RADIUS, lookY: dy / RADIUS };
+  }, [lookRef]);
+
+  const handleMove = useCallback((e: React.TouchEvent) => {
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      if (e.changedTouches[i].identifier === activeTouch.current) {
+        updateKnob(e.changedTouches[i].clientX, e.changedTouches[i].clientY);
+        break;
+      }
+    }
+  }, [updateKnob]);
+
+  const handleEnd = useCallback((e: React.TouchEvent) => {
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      if (e.changedTouches[i].identifier === activeTouch.current) {
+        activeTouch.current = null;
+        if (knobRef.current) knobRef.current.style.transform = 'translate(0px, 0px)';
+        lookRef.current = { lookX: 0, lookY: 0 };
+        break;
+      }
+    }
+  }, [lookRef]);
+
+  return (
+    <div
+      ref={padRef}
+      className="absolute bottom-4 right-4 w-[100px] h-[100px] rounded-full border-2 border-foreground/20 bg-background/30 backdrop-blur-sm flex items-center justify-center touch-none z-10"
+      onTouchStart={handleStart}
+      onTouchMove={handleMove}
+      onTouchEnd={handleEnd}
+      onTouchCancel={handleEnd}
+    >
+      <div
+        ref={knobRef}
+        className="w-10 h-10 rounded-full bg-foreground/40 border border-foreground/50 pointer-events-none"
+        style={{ transition: 'none' }}
+      />
+      {/* Look direction label */}
+      <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[9px] text-foreground/40 pointer-events-none select-none">LOOK</span>
+      <span className="absolute top-1 left-1/2 -translate-x-1/2 text-[9px] text-foreground/40 pointer-events-none select-none">▲</span>
+      <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] text-foreground/40 pointer-events-none select-none">▼</span>
+      <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[9px] text-foreground/40 pointer-events-none select-none">◀</span>
+      <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] text-foreground/40 pointer-events-none select-none">▶</span>
+    </div>
+  );
+}
+
 // ---- Main scene ----
 function Scene({ obstacles, viewPosition, onPositionChange, onStanceChange, joystickRef, lookRef, showLabels }: {
   obstacles: Obstacle[];
