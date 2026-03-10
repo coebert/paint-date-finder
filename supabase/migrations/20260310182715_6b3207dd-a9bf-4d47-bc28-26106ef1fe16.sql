@@ -1,0 +1,2 @@
+UPDATE teams SET logo_url = 'https://jsibyruejumcpldutyqg.supabase.co/storage/v1/object/public/team-logos/trash-pandas.jpeg' WHERE LOWER(name) LIKE '%trash panda%';
+UPDATE teams SET logo_url = 'https://jsibyruejumcpldutyqg.supabase.co/storage/v1/object/public/team-logos/lucky-15s-mustangs.jpeg' WHERE LOWER(name) LIKE '%lucky 15%';
