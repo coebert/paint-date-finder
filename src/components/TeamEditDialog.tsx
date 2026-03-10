@@ -34,6 +34,7 @@ export function TeamEditDialog({ team, open, onOpenChange }: TeamEditDialogProps
   const [form, setForm] = useState({
     name: '',
     division: '',
+    league: 'CPPS',
     position: '',
     points: '',
     captain_name: '',
