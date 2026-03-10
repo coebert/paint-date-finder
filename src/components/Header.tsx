@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Crosshair, Calendar, List, Plus, Map, Send, Settings, LogIn } from 'lucide-react';
+import { Crosshair, Calendar, List, Plus, Map, Send, Settings, LogIn, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
@@ -82,6 +82,17 @@ export function Header({ view, onViewChange, onAddEvent, onSubmitEvent }: Header
                 Map
               </Button>
             </div>
+
+            <Button
+              variant="outline"
+              className="gap-2"
+              asChild
+            >
+              <Link to="/teams">
+                <Users className="h-4 w-4" />
+                Find a Team
+              </Link>
+            </Button>
 
             <Button
               onClick={onSubmitEvent}
