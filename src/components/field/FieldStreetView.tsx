@@ -546,11 +546,23 @@ function Scene({ obstacles, viewPosition, onPositionChange }: {
 }) {
   return (
     <>
-      <Sky sunPosition={[100, 50, 100]} turbidity={8} rayleigh={2} />
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[30, 40, 20]} intensity={1.3} castShadow
-        shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
-      <hemisphereLight args={['#87ceeb', '#2d5a1e', 0.4]} />
+      <Sky sunPosition={[80, 60, 50]} turbidity={6} rayleigh={1.5} mieCoefficient={0.005} mieDirectionalG={0.8} />
+      {/* Bright outdoor tournament lighting */}
+      <ambientLight intensity={0.7} />
+      <directionalLight 
+        position={[25, 50, 30]} 
+        intensity={1.8} 
+        castShadow
+        shadow-mapSize-width={2048} 
+        shadow-mapSize-height={2048}
+        shadow-camera-left={-30}
+        shadow-camera-right={30}
+        shadow-camera-top={25}
+        shadow-camera-bottom={-25}
+      />
+      {/* Fill light from opposite side */}
+      <directionalLight position={[-20, 30, -15]} intensity={0.4} />
+      <hemisphereLight args={['#b4d7ff', '#3a8f29', 0.5]} />
 
       <FirstPersonCamera position={viewPosition} onPositionChange={onPositionChange} />
       <FieldGround />
