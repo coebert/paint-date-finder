@@ -166,8 +166,8 @@ export default function FieldLayout() {
                         className="w-5 h-5 flex-shrink-0"
                         style={{
                           backgroundColor: def.color,
-                          borderRadius: def.shape === 'circle' ? '50%' : def.shape === 'triangle' ? '2px' : '3px',
-                          clipPath: def.shape === 'triangle' ? 'polygon(50% 0%, 100% 100%, 0% 100%)' : undefined,
+                        borderRadius: def.birdEye === 'circle' ? '50%' : def.birdEye === 'triangle' ? '2px' : '3px',
+                        clipPath: def.birdEye === 'triangle' ? 'polygon(50% 0%, 100% 100%, 0% 100%)' : undefined,
                         }}
                       />
                       <div>
