@@ -743,6 +743,7 @@ function VirtualJoystick({ joystickRef }: { joystickRef: React.MutableRefObject<
         style={{ transition: 'none' }}
       />
       {/* Direction indicators */}
+      <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[9px] text-foreground/40 pointer-events-none select-none">MOVE</span>
       <span className="absolute top-1 left-1/2 -translate-x-1/2 text-[9px] text-foreground/40 pointer-events-none select-none">▲</span>
       <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] text-foreground/40 pointer-events-none select-none">▼</span>
       <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[9px] text-foreground/40 pointer-events-none select-none">◀</span>
