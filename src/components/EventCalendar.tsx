@@ -172,6 +172,18 @@ export function EventCalendar({ events, onEventClick }: EventCalendarProps) {
         })}
       </div>
 
+      {/* Legend */}
+      <div className="flex items-center gap-6 px-4 py-2.5 border-t border-border/50 bg-secondary/20 text-xs text-muted-foreground">
+        <div className="flex items-center gap-1.5">
+          <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+          <span className="border border-border/50 rounded px-1.5 py-0.5">Verified</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <ShieldAlert className="h-3.5 w-3.5 text-muted-foreground/50" />
+          <span className="border border-dashed border-muted-foreground/30 rounded px-1.5 py-0.5 opacity-60">Unverified</span>
+        </div>
+      </div>
+
       {/* Expanded Date Panel */}
       {expandedDate && expandedEvents.length > 0 && (
         <div className="border-t border-border/50 bg-secondary/30 animate-in slide-in-from-top-2 duration-200">
