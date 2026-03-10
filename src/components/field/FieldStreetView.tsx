@@ -294,20 +294,20 @@ function Obstacle3D({ obstacle }: { obstacle: Obstacle }) {
   }
 
   if (profile3D === 'half-cylinder') {
-    // Snake beam — a long, low half-cylinder tube lying on the ground
     return (
-      <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-        {/* Half-cylinder: rotate a cylinder 90° and use only top half effect via positioning */}
-        <mesh position={[0, h * 0.4, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-          <cylinderGeometry args={[w / 2, w / 2, d, 12, 1, false, 0, Math.PI]} />
-          <meshStandardMaterial color={color} roughness={0.8} />
-        </mesh>
-        {/* Flat bottom */}
-        <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[w, d]} />
-          <meshStandardMaterial color={color} roughness={0.9} />
-        </mesh>
-      </group>
+      <>
+        {label}
+        <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+          <mesh position={[0, h * 0.4, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+            <cylinderGeometry args={[w / 2, w / 2, d, 12, 1, false, 0, Math.PI]} />
+            <meshStandardMaterial color={color} roughness={0.8} />
+          </mesh>
+          <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[w, d]} />
+            <meshStandardMaterial color={color} roughness={0.9} />
+          </mesh>
+        </group>
+      </>
     );
   }
 
