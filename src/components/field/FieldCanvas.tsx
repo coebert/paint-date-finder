@@ -8,6 +8,33 @@ interface FieldCanvasProps {
   interactive?: boolean;
   selectedId?: string | null;
   onSelect?: (id: string | null) => void;
+  showLabels?: boolean;
+}
+
+const CALLOUT_PREFIX: Record<string, string> = {
+  'tall-cake': 'TC',
+  'small-cake': 'SC',
+  'dorito-big': 'D',
+  'dorito-small': 'd',
+  'snake': 'S',
+  'temple': 'T',
+  'temple-maya': 'TM',
+  'brick': 'B',
+  'wing': 'W',
+  'mini-race': 'MR',
+  'can': 'C',
+  'cone': 'K',
+};
+
+function generateCalloutLabels(obstacles: Obstacle[]): Record<string, string> {
+  const counters: Record<string, number> = {};
+  const labels: Record<string, string> = {};
+  obstacles.forEach((obs) => {
+    const prefix = CALLOUT_PREFIX[obs.type] || '?';
+    counters[obs.type] = (counters[obs.type] || 0) + 1;
+    labels[obs.id] = `${prefix}${counters[obs.type]}`;
+  });
+  return labels;
 }
 
 // Field aspect ratio: 45m wide × 36m deep = 1.25:1
