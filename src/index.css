@@ -187,3 +187,9 @@
     50% { opacity: 0.8; }
   }
 }
+
+.fullscreen-container:fullscreen {
+  background: hsl(var(--background));
+  padding: 1rem;
+  overflow-y: auto;
+}
