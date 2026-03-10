@@ -261,6 +261,20 @@ function FieldGround() {
         <planeGeometry args={[3, 6]} />
         <meshBasicMaterial color="#cc2222" transparent opacity={0.2} />
       </mesh>
+
+      {/* Floating base labels */}
+      <Billboard position={[-hw + 1.5, 3.5, 0]} follow lockX={false} lockY={false} lockZ={false}>
+        <Text fontSize={1.2} color="#4488ff" anchorX="center" anchorY="middle" fontWeight={700}
+          outlineWidth={0.06} outlineColor="#000000">
+          BLUE BASE
+        </Text>
+      </Billboard>
+      <Billboard position={[hw - 1.5, 3.5, 0]} follow lockX={false} lockY={false} lockZ={false}>
+        <Text fontSize={1.2} color="#ff4444" anchorX="center" anchorY="middle" fontWeight={700}
+          outlineWidth={0.06} outlineColor="#000000">
+          RED BASE
+        </Text>
+      </Billboard>
     </>
   );
 }
