@@ -1,6 +1,6 @@
 import { useRef, useMemo, useEffect } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
-import { Sky, Grid } from '@react-three/drei';
+import { Sky } from '@react-three/drei';
 import * as THREE from 'three';
 import { Obstacle, OBSTACLE_DEFINITIONS, FIELD_WIDTH_M, FIELD_HEIGHT_M } from '@/types/fieldLayout';
 
@@ -35,7 +35,6 @@ function FirstPersonCamera({ position }: { position: [number, number, number] })
       pitch.current = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, pitch.current));
     };
 
-    // Touch support
     let lastTouch: { x: number; y: number } | null = null;
     const onTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 1) {
@@ -52,9 +51,7 @@ function FirstPersonCamera({ position }: { position: [number, number, number] })
         lastTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       }
     };
-    const onTouchEnd = () => {
-      lastTouch = null;
-    };
+    const onTouchEnd = () => { lastTouch = null; };
 
     canvas.addEventListener('pointerdown', onPointerDown);
     canvas.addEventListener('pointerup', onPointerUp);
@@ -86,30 +83,24 @@ function FirstPersonCamera({ position }: { position: [number, number, number] })
 function FieldGround() {
   return (
     <>
-      {/* Green grass surface */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
         <planeGeometry args={[FIELD_WIDTH_M, FIELD_HEIGHT_M]} />
         <meshStandardMaterial color="#2d5a1e" />
       </mesh>
-      {/* Surrounding area */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
         <planeGeometry args={[120, 120]} />
         <meshStandardMaterial color="#1a3a10" />
       </mesh>
-      {/* Grid overlay */}
-      <Grid
-        args={[FIELD_WIDTH_M, FIELD_HEIGHT_M]}
-        position={[0, 0, 0]}
-        cellSize={5}
-        cellThickness={0.5}
-        cellColor="#3a7a2a"
-        sectionSize={FIELD_WIDTH_M / 2}
-        sectionThickness={1}
-        sectionColor="#ffffff"
-        fadeDistance={80}
-        fadeStrength={1}
-        infiniteGrid={false}
-      />
+      {/* 5m grid lines on field */}
+      {Array.from({ length: 10 }).map((_, i) => {
+        const xPos = -FIELD_WIDTH_M / 2 + (i + 1) * 5;
+        return (
+          <mesh key={`gl-${i}`} position={[xPos, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[0.03, FIELD_HEIGHT_M]} />
+            <meshBasicMaterial color="#3a7a2a" transparent opacity={0.3} />
+          </mesh>
+        );
+      })}
     </>
   );
 }
@@ -118,151 +109,162 @@ function FieldGround() {
 function FieldNetting() {
   const hw = FIELD_WIDTH_M / 2;
   const hh = FIELD_HEIGHT_M / 2;
-  const netHeight = 3;
+  const netH = 3;
 
-  // Simple transparent panels for nets
   const netMat = useMemo(() => new THREE.MeshStandardMaterial({
-    color: '#333333',
-    transparent: true,
-    opacity: 0.15,
-    side: THREE.DoubleSide,
+    color: '#222222', transparent: true, opacity: 0.12, side: THREE.DoubleSide,
   }), []);
 
-  const posts: [number, number, number][] = [
-    [-hw, 0, -hh], [hw, 0, -hh], [hw, 0, hh], [-hw, 0, hh],
+  const poleMat = useMemo(() => new THREE.MeshStandardMaterial({ color: '#666666' }), []);
+
+  const nets = [
+    { pos: [0, netH / 2, -hh] as [number, number, number], rot: [0, 0, 0] as [number, number, number], w: FIELD_WIDTH_M },
+    { pos: [0, netH / 2, hh] as [number, number, number], rot: [0, 0, 0] as [number, number, number], w: FIELD_WIDTH_M },
+    { pos: [-hw, netH / 2, 0] as [number, number, number], rot: [0, Math.PI / 2, 0] as [number, number, number], w: FIELD_HEIGHT_M },
+    { pos: [hw, netH / 2, 0] as [number, number, number], rot: [0, Math.PI / 2, 0] as [number, number, number], w: FIELD_HEIGHT_M },
   ];
+
+  const poles: [number, number][] = [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]];
 
   return (
     <group>
-      {/* Net panels */}
-      {[
-        { pos: [0, netHeight / 2, -hh] as [number, number, number], rot: [0, 0, 0] as [number, number, number], w: FIELD_WIDTH_M },
-        { pos: [0, netHeight / 2, hh] as [number, number, number], rot: [0, 0, 0] as [number, number, number], w: FIELD_WIDTH_M },
-        { pos: [-hw, netHeight / 2, 0] as [number, number, number], rot: [0, Math.PI / 2, 0] as [number, number, number], w: FIELD_HEIGHT_M },
-        { pos: [hw, netHeight / 2, 0] as [number, number, number], rot: [0, Math.PI / 2, 0] as [number, number, number], w: FIELD_HEIGHT_M },
-      ].map((net, i) => (
-        <mesh key={i} position={net.pos} rotation={net.rot} material={netMat}>
-          <planeGeometry args={[net.w, netHeight]} />
+      {nets.map((n, i) => (
+        <mesh key={i} position={n.pos} rotation={n.rot} material={netMat}>
+          <planeGeometry args={[n.w, netH]} />
         </mesh>
       ))}
-      {/* Corner posts */}
-      {posts.map((pos, i) => (
-        <mesh key={`post-${i}`} position={[pos[0], netHeight / 2, pos[2]]}>
-          <cylinderGeometry args={[0.05, 0.05, netHeight, 8]} />
-          <meshStandardMaterial color="#555555" />
+      {poles.map(([px, pz], i) => (
+        <mesh key={`p-${i}`} position={[px, netH / 2, pz]} material={poleMat}>
+          <cylinderGeometry args={[0.04, 0.04, netH, 6]} />
         </mesh>
       ))}
     </group>
   );
 }
 
-// ---- 3D Obstacle ----
+// ---- Accurate 3D Obstacle shapes ----
 function Obstacle3D({ obstacle }: { obstacle: Obstacle }) {
   const def = OBSTACLE_DEFINITIONS[obstacle.type];
-  
-  // Convert % position to world coordinates
-  // x% maps to field width, y% maps to field depth (z axis)
   const worldX = (obstacle.x / 100 - 0.5) * FIELD_WIDTH_M;
   const worldZ = (obstacle.y / 100 - 0.5) * FIELD_HEIGHT_M;
   const rotRad = (obstacle.rotation * Math.PI) / 180;
+  const { widthM: w, depthM: d, heightM: h, color, profile3D } = def;
 
-  const color = def.color;
+  const mat = useMemo(() => new THREE.MeshStandardMaterial({ color, roughness: 0.8 }), [color]);
 
-  // Create shapes based on type
-  if (def.shape === 'circle') {
-    // Cylinders (cakes, cans, cones)
-    const radius = def.widthM / 2;
-    const height = def.heightM;
-    
-    if (obstacle.type === 'cone') {
-      return (
-        <mesh position={[worldX, height / 2, worldZ]} rotation={[0, rotRad, 0]} castShadow>
-          <coneGeometry args={[radius, height, 16]} />
-          <meshStandardMaterial color={color} />
-        </mesh>
-      );
-    }
-    
-    return (
-      <mesh position={[worldX, height / 2, worldZ]} rotation={[0, rotRad, 0]} castShadow>
-        <cylinderGeometry args={[radius, radius, height, 16]} />
-        <meshStandardMaterial color={color} />
-      </mesh>
-    );
-  }
-
-  if (def.shape === 'triangle') {
-    // Doritos - triangular prism
-    const hw = def.widthM / 2;
-    const hd = def.depthM / 2;
-    const height = def.heightM;
-
-    const shape = new THREE.Shape();
-    shape.moveTo(0, -hd);
-    shape.lineTo(hw, hd);
-    shape.lineTo(-hw, hd);
-    shape.closePath();
-
-    const extrudeSettings = { depth: height, bevelEnabled: false };
-
-    return (
-      <mesh
-        position={[worldX, 0, worldZ]}
-        rotation={[-Math.PI / 2, 0, rotRad]}
-        castShadow
-      >
-        <extrudeGeometry args={[shape, extrudeSettings]} />
-        <meshStandardMaterial color={color} />
-      </mesh>
-    );
-  }
-
-  // Rectangular bunkers (temples, bricks, snakes, wings, mini-race)
-  const w = def.widthM;
-  const d = def.depthM;
-  const h = def.heightM;
-
-  if (def.shape === 'rounded-rect' || def.shape === 'wing') {
-    // Snake beams and wings - rounded top
+  if (profile3D === 'cylinder') {
+    // Tall/short cake, can — inflatable cylinder with slight taper
+    const r = w / 2;
     return (
       <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-        {/* Base box */}
-        <mesh position={[0, h * 0.4, 0]} castShadow>
-          <boxGeometry args={[w, h * 0.8, d]} />
-          <meshStandardMaterial color={color} />
+        <mesh position={[0, h / 2, 0]} material={mat} castShadow>
+          <cylinderGeometry args={[r, r * 1.05, h, 20]} />
         </mesh>
-        {/* Rounded top */}
-        <mesh position={[0, h * 0.8, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-          <cylinderGeometry args={[w / 2, w / 2, d, 12, 1, false, 0, Math.PI]} />
-          <meshStandardMaterial color={color} />
+        {/* Top rim ring */}
+        <mesh position={[0, h, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[r * 0.85, r * 0.08, 8, 20]} />
+          <meshStandardMaterial color={color} roughness={0.6} />
         </mesh>
       </group>
     );
   }
 
-  // Standard rect
+  if (profile3D === 'cone') {
+    const r = w / 2;
+    return (
+      <mesh position={[worldX, h / 2, worldZ]} rotation={[0, rotRad, 0]} material={mat} castShadow>
+        <coneGeometry args={[r, h, 16]} />
+      </mesh>
+    );
+  }
+
+  if (profile3D === 'prism-triangle') {
+    // Dorito — triangular prism. The cross-section is a triangle, extruded along depth.
+    // From the side it's a tall triangle. From above it's a triangle.
+    // Real doritos are inflatable A-frame shapes.
+    const shape = useMemo(() => {
+      const s = new THREE.Shape();
+      // Triangle cross-section: base=width, peak at center top
+      s.moveTo(-w / 2, 0);
+      s.lineTo(w / 2, 0);
+      s.lineTo(0, h);
+      s.closePath();
+      return s;
+    }, [w, h]);
+
+    return (
+      <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+        <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, d / 2]} material={mat} castShadow>
+          <extrudeGeometry args={[shape, { depth: d, bevelEnabled: true, bevelSize: 0.05, bevelThickness: 0.05, bevelSegments: 2 }]} />
+        </mesh>
+      </group>
+    );
+  }
+
+  if (profile3D === 'half-cylinder') {
+    // Snake beam — a long, low half-cylinder tube lying on the ground
+    return (
+      <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+        {/* Half-cylinder: rotate a cylinder 90° and use only top half effect via positioning */}
+        <mesh position={[0, h * 0.4, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+          <cylinderGeometry args={[w / 2, w / 2, d, 12, 1, false, 0, Math.PI]} />
+          <meshStandardMaterial color={color} roughness={0.8} />
+        </mesh>
+        {/* Flat bottom */}
+        <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[w, d]} />
+          <meshStandardMaterial color={color} roughness={0.9} />
+        </mesh>
+      </group>
+    );
+  }
+
+  if (profile3D === 'stepped-pyramid') {
+    // Temple / Temple Maya — stacked tiers getting smaller, like a Mayan pyramid
+    const tiers = 3;
+    return (
+      <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+        {Array.from({ length: tiers }).map((_, i) => {
+          const scale = 1 - (i * 0.25);
+          const tierH = h / tiers;
+          const tw = w * scale;
+          const td = d * scale;
+          return (
+            <mesh key={i} position={[0, tierH * i + tierH / 2, 0]} castShadow>
+              <boxGeometry args={[tw, tierH * 0.95, td]} />
+              <meshStandardMaterial
+                color={color}
+                roughness={0.75}
+              />
+            </mesh>
+          );
+        })}
+      </group>
+    );
+  }
+
+  if (profile3D === 'flat-panel') {
+    // Wing / Mini Race — low, wide, inflatable panel with rounded top
+    return (
+      <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+        {/* Main body */}
+        <mesh position={[0, h * 0.35, 0]} castShadow>
+          <boxGeometry args={[w, h * 0.7, d]} />
+          <meshStandardMaterial color={color} roughness={0.8} />
+        </mesh>
+        {/* Rounded top edge */}
+        <mesh position={[0, h * 0.7, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+          <cylinderGeometry args={[h * 0.3, h * 0.3, w, 12, 1, false, 0, Math.PI]} />
+          <meshStandardMaterial color={color} roughness={0.8} />
+        </mesh>
+      </group>
+    );
+  }
+
+  // Default box fallback
   return (
-    <mesh position={[worldX, h / 2, worldZ]} rotation={[0, rotRad, 0]} castShadow>
+    <mesh position={[worldX, h / 2, worldZ]} rotation={[0, rotRad, 0]} material={mat} castShadow>
       <boxGeometry args={[w, h, d]} />
-      <meshStandardMaterial color={color} />
-    </mesh>
-  );
-}
-
-// ---- Viewpoint marker ----
-function ViewpointMarker({ position }: { position: [number, number, number] }) {
-  const ref = useRef<THREE.Mesh>(null);
-  
-  useFrame(({ clock }) => {
-    if (ref.current) {
-      ref.current.position.y = 0.5 + Math.sin(clock.getElapsedTime() * 3) * 0.15;
-    }
-  });
-
-  return (
-    <mesh ref={ref} position={position}>
-      <coneGeometry args={[0.2, 0.5, 4]} />
-      <meshStandardMaterial color="#ff6600" emissive="#ff4400" emissiveIntensity={0.5} />
     </mesh>
   );
 }
@@ -275,14 +277,9 @@ function Scene({ obstacles, viewPosition }: {
   return (
     <>
       <Sky sunPosition={[100, 50, 100]} turbidity={8} rayleigh={2} />
-      <ambientLight intensity={0.6} />
-      <directionalLight
-        position={[30, 40, 20]}
-        intensity={1.2}
-        castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
-      />
+      <ambientLight intensity={0.5} />
+      <directionalLight position={[30, 40, 20]} intensity={1.3} castShadow
+        shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
       <hemisphereLight args={['#87ceeb', '#2d5a1e', 0.4]} />
 
       <FirstPersonCamera position={viewPosition} />
@@ -292,8 +289,6 @@ function Scene({ obstacles, viewPosition }: {
       {obstacles.map((obs) => (
         <Obstacle3D key={obs.id} obstacle={obs} />
       ))}
-
-      <ViewpointMarker position={viewPosition} />
     </>
   );
 }
@@ -301,12 +296,10 @@ function Scene({ obstacles, viewPosition }: {
 // ---- Exported component ----
 interface FieldStreetViewProps {
   obstacles: Obstacle[];
-  /** Position as percentage [x%, y%] on the field */
   viewPoint: { x: number; y: number };
 }
 
 export function FieldStreetView({ obstacles, viewPoint }: FieldStreetViewProps) {
-  // Convert % to world position; eye height ~1.7m
   const viewPosition: [number, number, number] = useMemo(() => [
     (viewPoint.x / 100 - 0.5) * FIELD_WIDTH_M,
     1.7,
