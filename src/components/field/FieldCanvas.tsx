@@ -8,6 +8,33 @@ interface FieldCanvasProps {
   interactive?: boolean;
   selectedId?: string | null;
   onSelect?: (id: string | null) => void;
+  showLabels?: boolean;
+}
+
+const CALLOUT_PREFIX: Record<string, string> = {
+  'tall-cake': 'TC',
+  'small-cake': 'SC',
+  'dorito-big': 'D',
+  'dorito-small': 'd',
+  'snake': 'S',
+  'temple': 'T',
+  'temple-maya': 'TM',
+  'brick': 'B',
+  'wing': 'W',
+  'mini-race': 'MR',
+  'can': 'C',
+  'cone': 'K',
+};
+
+function generateCalloutLabels(obstacles: Obstacle[]): Record<string, string> {
+  const counters: Record<string, number> = {};
+  const labels: Record<string, string> = {};
+  obstacles.forEach((obs) => {
+    const prefix = CALLOUT_PREFIX[obs.type] || '?';
+    counters[obs.type] = (counters[obs.type] || 0) + 1;
+    labels[obs.id] = `${prefix}${counters[obs.type]}`;
+  });
+  return labels;
 }
 
 // Field aspect ratio: 45m wide × 36m deep = 1.25:1
@@ -19,6 +46,7 @@ export function FieldCanvas({
   interactive = false,
   selectedId,
   onSelect,
+  showLabels = false,
 }: FieldCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dims, setDims] = useState({ width: 800, height: 640 });
@@ -267,6 +295,34 @@ export function FieldCanvas({
             interactive={interactive}
           />
         ))}
+
+        {/* Callout labels */}
+        {showLabels && (() => {
+          const labels = generateCalloutLabels(obstacles);
+          return obstacles.map((obs) => {
+            const cx = (obs.x / 100) * dims.width;
+            const cy = (obs.y / 100) * dims.height;
+            return (
+              <g key={`label-${obs.id}`} style={{ pointerEvents: 'none' }}>
+                <rect
+                  x={cx + 6} y={cy - 14}
+                  width={labels[obs.id].length * 7 + 6} height={16}
+                  rx={3}
+                  fill="rgba(0,0,0,0.75)"
+                />
+                <text
+                  x={cx + 9} y={cy - 3}
+                  fill="white"
+                  fontSize={10}
+                  fontFamily="monospace"
+                  fontWeight={700}
+                >
+                  {labels[obs.id]}
+                </text>
+              </g>
+            );
+          });
+        })()}
       </svg>
     </div>
   );

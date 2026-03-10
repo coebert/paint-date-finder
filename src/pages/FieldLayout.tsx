@@ -1,6 +1,6 @@
 import { useState, useCallback, Suspense, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Eye, PenTool, RotateCcw, RotateCw, Trash2, Download, Copy, Compass, Maximize, Minimize } from 'lucide-react';
+import { ArrowLeft, Eye, PenTool, RotateCcw, RotateCw, Trash2, Download, Copy, Compass, Maximize, Minimize, Tag } from 'lucide-react';
 import { SaveLayoutDialog } from '@/components/field/SaveLayoutDialog';
 import { CommunityLayoutsDialog } from '@/components/field/CommunityLayoutsDialog';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,7 @@ export default function FieldLayout() {
   const [stance, setStance] = useState<{ sprinting: boolean; crouching: boolean; eyeHeight: number }>({ sprinting: false, crouching: false, eyeHeight: 1.7 });
   const [isFieldFullscreen, setIsFieldFullscreen] = useState(false);
   const [is3DFullscreen, setIs3DFullscreen] = useState(false);
+  const [showLabels, setShowLabels] = useState(false);
   const fieldContainerRef = useRef<HTMLDivElement>(null);
   const streetViewContainerRef = useRef<HTMLDivElement>(null);
 
@@ -161,9 +162,14 @@ export default function FieldLayout() {
                       CPPS COMPETITION FIELD
                       <Badge className="bg-accent text-accent-foreground">2025 Season</Badge>
                     </CardTitle>
-                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => toggleFullscreen(fieldContainerRef, setIsFieldFullscreen)}>
-                      {isFieldFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button variant={showLabels ? 'default' : 'outline'} size="sm" className="h-8 gap-1 text-xs" onClick={() => setShowLabels(v => !v)}>
+                        <Tag className="w-3.5 h-3.5" /> Callouts
+                      </Button>
+                      <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => toggleFullscreen(fieldContainerRef, setIsFieldFullscreen)}>
+                        {isFieldFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+                      </Button>
+                    </div>
                   </div>
                   <p className="text-sm text-muted-foreground">
                     Standard Sup'Air inflatable field layout used in CPPS tournament play.
@@ -171,7 +177,7 @@ export default function FieldLayout() {
                   </p>
                 </CardHeader>
                 <CardContent>
-                  <FieldCanvas obstacles={CPPS_FIELD_LAYOUT} />
+                  <FieldCanvas obstacles={CPPS_FIELD_LAYOUT} showLabels={showLabels} />
                 </CardContent>
               </Card>
             </div>
@@ -243,6 +249,7 @@ export default function FieldLayout() {
                       interactive
                       selectedId={selectedId}
                       onSelect={setSelectedId}
+                      showLabels={showLabels}
                     />
                   </CardContent>
                 </Card>
