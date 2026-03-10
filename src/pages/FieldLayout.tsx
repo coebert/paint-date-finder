@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { FieldCanvas } from '@/components/field/FieldCanvas';
+import { FieldCanvas, CALLOUT_PREFIX } from '@/components/field/FieldCanvas';
 import { ObstaclePalette } from '@/components/field/ObstaclePalette';
 import { FieldStreetView } from '@/components/field/FieldStreetView';
 import { CPPS_FIELD_LAYOUT, Obstacle, ObstacleType, OBSTACLE_DEFINITIONS } from '@/types/fieldLayout';
@@ -182,6 +182,27 @@ export default function FieldLayout() {
               </Card>
             </div>
 
+            {/* Callout Legend */}
+            {showLabels && (
+              <Card className="bg-card border-border/50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="font-display tracking-wider text-lg">CALLOUT KEY</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-x-4 gap-y-1.5">
+                    {Object.values(OBSTACLE_DEFINITIONS).map((def) => (
+                      <div key={def.type} className="flex items-center gap-2 text-sm">
+                        <code className="bg-secondary text-foreground px-1.5 py-0.5 rounded text-xs font-bold font-mono min-w-[28px] text-center">
+                          {CALLOUT_PREFIX[def.type]}
+                        </code>
+                        <span className="text-muted-foreground text-xs">{def.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Legend */}
             <Card className="bg-card border-border/50">
               <CardHeader>
@@ -195,8 +216,8 @@ export default function FieldLayout() {
                         className="w-5 h-5 flex-shrink-0"
                         style={{
                           backgroundColor: def.color,
-                        borderRadius: def.birdEye === 'circle' ? '50%' : def.birdEye === 'triangle' ? '2px' : '3px',
-                        clipPath: def.birdEye === 'triangle' ? 'polygon(50% 0%, 100% 100%, 0% 100%)' : undefined,
+                          borderRadius: def.birdEye === 'circle' ? '50%' : def.birdEye === 'triangle' ? '2px' : '3px',
+                          clipPath: def.birdEye === 'triangle' ? 'polygon(50% 0%, 100% 100%, 0% 100%)' : undefined,
                         }}
                       />
                       <div>
