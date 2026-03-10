@@ -166,8 +166,8 @@ export default function FieldLayout() {
                         className="w-5 h-5 flex-shrink-0"
                         style={{
                           backgroundColor: def.color,
-                          borderRadius: def.shape === 'circle' ? '50%' : def.shape === 'triangle' ? '2px' : '3px',
-                          clipPath: def.shape === 'triangle' ? 'polygon(50% 0%, 100% 100%, 0% 100%)' : undefined,
+                        borderRadius: def.birdEye === 'circle' ? '50%' : def.birdEye === 'triangle' ? '2px' : '3px',
+                        clipPath: def.birdEye === 'triangle' ? 'polygon(50% 0%, 100% 100%, 0% 100%)' : undefined,
                         }}
                       />
                       <div>
@@ -331,6 +331,7 @@ export default function FieldLayout() {
                   <FieldStreetView
                     obstacles={streetViewObstacles}
                     viewPoint={streetViewPoint}
+                    onViewPointChange={setStreetViewPoint}
                   />
                 </Suspense>
 
@@ -351,7 +352,8 @@ export default function FieldLayout() {
                       <CardContent className="py-3 px-4 space-y-2">
                         <p className="text-xs font-medium text-foreground">Controls</p>
                         <ul className="text-[11px] text-muted-foreground space-y-1">
-                          <li>• Click mini-map to move</li>
+                          <li>• <kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono">W</kbd><kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono ml-0.5">A</kbd><kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono ml-0.5">S</kbd><kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono ml-0.5">D</kbd> or Arrow keys to walk</li>
+                          <li>• Click mini-map to teleport</li>
                           <li>• Drag 3D view to look around</li>
                           <li>• Touch & swipe on mobile</li>
                         </ul>

@@ -23,8 +23,8 @@ export function ObstaclePalette({ onAdd }: ObstaclePaletteProps) {
             className="w-5 h-5"
             style={{
               backgroundColor: def.color,
-              borderRadius: def.shape === 'circle' ? '50%' : def.shape === 'triangle' ? '2px' : '3px',
-              clipPath: def.shape === 'triangle' ? 'polygon(50% 0%, 100% 100%, 0% 100%)' : undefined,
+              borderRadius: def.birdEye === 'circle' ? '50%' : def.birdEye === 'triangle' ? '2px' : '3px',
+              clipPath: def.birdEye === 'triangle' ? 'polygon(50% 0%, 100% 100%, 0% 100%)' : undefined,
             }}
           />
           <span className="text-[10px] leading-tight text-center font-medium">{def.label}</span>
