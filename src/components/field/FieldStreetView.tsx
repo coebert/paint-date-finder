@@ -567,12 +567,87 @@ function Obstacle3D({ obstacle }: { obstacle: Obstacle }) {
   );
 }
 
+// ---- Virtual Joystick ----
+function VirtualJoystick({ joystickRef }: { joystickRef: React.MutableRefObject<JoystickInput> }) {
+  const padRef = useRef<HTMLDivElement>(null);
+  const knobRef = useRef<HTMLDivElement>(null);
+  const activeTouch = useRef<number | null>(null);
+  const center = useRef({ x: 0, y: 0 });
+  const RADIUS = 40;
+
+  const handleStart = useCallback((e: React.TouchEvent) => {
+    if (activeTouch.current !== null) return;
+    const touch = e.changedTouches[0];
+    activeTouch.current = touch.identifier;
+    const rect = padRef.current!.getBoundingClientRect();
+    center.current = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    updateKnob(touch.clientX, touch.clientY);
+  }, []);
+
+  const updateKnob = useCallback((cx: number, cy: number) => {
+    let dx = cx - center.current.x;
+    let dy = cy - center.current.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > RADIUS) {
+      dx = (dx / dist) * RADIUS;
+      dy = (dy / dist) * RADIUS;
+    }
+    if (knobRef.current) {
+      knobRef.current.style.transform = `translate(${dx}px, ${dy}px)`;
+    }
+    joystickRef.current = { moveX: dx / RADIUS, moveY: dy / RADIUS };
+  }, [joystickRef]);
+
+  const handleMove = useCallback((e: React.TouchEvent) => {
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      if (e.changedTouches[i].identifier === activeTouch.current) {
+        updateKnob(e.changedTouches[i].clientX, e.changedTouches[i].clientY);
+        break;
+      }
+    }
+  }, [updateKnob]);
+
+  const handleEnd = useCallback((e: React.TouchEvent) => {
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      if (e.changedTouches[i].identifier === activeTouch.current) {
+        activeTouch.current = null;
+        if (knobRef.current) knobRef.current.style.transform = 'translate(0px, 0px)';
+        joystickRef.current = { moveX: 0, moveY: 0 };
+        break;
+      }
+    }
+  }, [joystickRef]);
+
+  return (
+    <div
+      ref={padRef}
+      className="absolute bottom-4 left-4 w-[100px] h-[100px] rounded-full border-2 border-foreground/20 bg-background/30 backdrop-blur-sm flex items-center justify-center touch-none z-10"
+      onTouchStart={handleStart}
+      onTouchMove={handleMove}
+      onTouchEnd={handleEnd}
+      onTouchCancel={handleEnd}
+    >
+      <div
+        ref={knobRef}
+        className="w-10 h-10 rounded-full bg-foreground/40 border border-foreground/50 pointer-events-none"
+        style={{ transition: 'none' }}
+      />
+      {/* Direction indicators */}
+      <span className="absolute top-1 left-1/2 -translate-x-1/2 text-[9px] text-foreground/40 pointer-events-none select-none">▲</span>
+      <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] text-foreground/40 pointer-events-none select-none">▼</span>
+      <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[9px] text-foreground/40 pointer-events-none select-none">◀</span>
+      <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] text-foreground/40 pointer-events-none select-none">▶</span>
+    </div>
+  );
+}
+
 // ---- Main scene ----
-function Scene({ obstacles, viewPosition, onPositionChange, onStanceChange }: {
+function Scene({ obstacles, viewPosition, onPositionChange, onStanceChange, joystickRef }: {
   obstacles: Obstacle[];
   viewPosition: [number, number, number];
   onPositionChange?: (x: number, z: number) => void;
   onStanceChange?: (stance: { sprinting: boolean; crouching: boolean; eyeHeight: number }) => void;
+  joystickRef: React.MutableRefObject<JoystickInput>;
 }) {
   return (
     <>
@@ -592,7 +667,7 @@ function Scene({ obstacles, viewPosition, onPositionChange, onStanceChange }: {
       <directionalLight position={[-20, 30, -15]} intensity={0.4} />
       <hemisphereLight args={['#b4d7ff', '#3a8f29', 0.5]} />
 
-      <FirstPersonCamera position={viewPosition} onPositionChange={onPositionChange} onStanceChange={onStanceChange} />
+      <FirstPersonCamera position={viewPosition} onPositionChange={onPositionChange} onStanceChange={onStanceChange} joystickRef={joystickRef} />
       <FieldGround />
       <FieldNetting />
 
@@ -612,6 +687,8 @@ interface FieldStreetViewProps {
 }
 
 export function FieldStreetView({ obstacles, viewPoint, onViewPointChange, onStanceChange }: FieldStreetViewProps) {
+  const joystickRef = useRef<JoystickInput>({ moveX: 0, moveY: 0 });
+  
   const viewPosition: [number, number, number] = useMemo(() => [
     (viewPoint.x / 100 - 0.5) * FIELD_WIDTH_M,
     1.7,
@@ -629,8 +706,12 @@ export function FieldStreetView({ obstacles, viewPoint, onViewPointChange, onSta
         camera={{ fov: 75, near: 0.1, far: 200 }}
         style={{ width: '100%', height: '100%' }}
       >
-        <Scene obstacles={obstacles} viewPosition={viewPosition} onPositionChange={handlePositionChange} onStanceChange={onStanceChange} />
+        <Scene obstacles={obstacles} viewPosition={viewPosition} onPositionChange={handlePositionChange} onStanceChange={onStanceChange} joystickRef={joystickRef} />
       </Canvas>
+      {/* Virtual joystick - visible on touch devices */}
+      <div className="md:hidden">
+        <VirtualJoystick joystickRef={joystickRef} />
+      </div>
     </div>
   );
 }
