@@ -28,6 +28,7 @@ export default function FieldLayout() {
   const [stance, setStance] = useState<{ sprinting: boolean; crouching: boolean; eyeHeight: number }>({ sprinting: false, crouching: false, eyeHeight: 1.7 });
   const [isFieldFullscreen, setIsFieldFullscreen] = useState(false);
   const [is3DFullscreen, setIs3DFullscreen] = useState(false);
+  const [showLabels, setShowLabels] = useState(false);
   const fieldContainerRef = useRef<HTMLDivElement>(null);
   const streetViewContainerRef = useRef<HTMLDivElement>(null);
 
