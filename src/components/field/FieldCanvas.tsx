@@ -46,6 +46,7 @@ export function FieldCanvas({
   interactive = false,
   selectedId,
   onSelect,
+  showLabels = false,
 }: FieldCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dims, setDims] = useState({ width: 800, height: 640 });
