@@ -138,6 +138,7 @@ export type Database = {
         Row: {
           author_name: string | null
           created_at: string
+          delete_token: string | null
           description: string | null
           id: string
           name: string
@@ -149,6 +150,7 @@ export type Database = {
         Insert: {
           author_name?: string | null
           created_at?: string
+          delete_token?: string | null
           description?: string | null
           id?: string
           name: string
@@ -160,6 +162,7 @@ export type Database = {
         Update: {
           author_name?: string | null
           created_at?: string
+          delete_token?: string | null
           description?: string | null
           id?: string
           name?: string
@@ -348,6 +351,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_field_layout: {
+        Args: { _id: string; _token: string }
+        Returns: boolean
+      }
       get_visit_stats: {
         Args: { days_back?: number }
         Returns: {
