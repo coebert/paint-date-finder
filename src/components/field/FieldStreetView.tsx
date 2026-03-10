@@ -312,26 +312,25 @@ function Obstacle3D({ obstacle }: { obstacle: Obstacle }) {
   }
 
   if (profile3D === 'stepped-pyramid') {
-    // Temple / Temple Maya — stacked tiers getting smaller, like a Mayan pyramid
     const tiers = 3;
     return (
-      <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-        {Array.from({ length: tiers }).map((_, i) => {
-          const scale = 1 - (i * 0.25);
-          const tierH = h / tiers;
-          const tw = w * scale;
-          const td = d * scale;
-          return (
-            <mesh key={i} position={[0, tierH * i + tierH / 2, 0]} castShadow>
-              <boxGeometry args={[tw, tierH * 0.95, td]} />
-              <meshStandardMaterial
-                color={color}
-                roughness={0.75}
-              />
-            </mesh>
-          );
-        })}
-      </group>
+      <>
+        {label}
+        <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+          {Array.from({ length: tiers }).map((_, i) => {
+            const scale = 1 - (i * 0.25);
+            const tierH = h / tiers;
+            const tw = w * scale;
+            const td = d * scale;
+            return (
+              <mesh key={i} position={[0, tierH * i + tierH / 2, 0]} castShadow>
+                <boxGeometry args={[tw, tierH * 0.95, td]} />
+                <meshStandardMaterial color={color} roughness={0.75} />
+              </mesh>
+            );
+          })}
+        </group>
+      </>
     );
   }
 
