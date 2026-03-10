@@ -105,6 +105,7 @@ function TeamCard({ team }: { team: Team }) {
         </div>
       </CardContent>
     </Card>
+    </Link>
   );
 }
 
