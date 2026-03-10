@@ -371,7 +371,7 @@ export default function FieldLayout() {
                         <p className="text-xs text-muted-foreground mt-1">
                           Eye height: <span className="text-foreground font-mono">{stance.eyeHeight}m</span>
                           {stance.sprinting && <Badge className="ml-1.5 bg-accent text-accent-foreground text-[9px] px-1 py-0">SPRINT</Badge>}
-                          {stance.crouching && <Badge className="ml-1.5 bg-orange-600 text-white text-[9px] px-1 py-0">CROUCH</Badge>}
+                          {stance.crouching && <Badge className="ml-1.5 bg-destructive text-destructive-foreground text-[9px] px-1 py-0">CROUCH</Badge>}
                         </p>
                       </CardContent>
                     </Card>
