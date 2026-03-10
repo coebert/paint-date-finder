@@ -2,7 +2,7 @@ import { useRef, useMemo, useEffect, useCallback, useState } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { Sky, Text, Billboard } from '@react-three/drei';
 import * as THREE from 'three';
-import { Tag, EyeOff } from 'lucide-react';
+import { Tag, EyeOff, Zap, ArrowDownToLine } from 'lucide-react';
 import { Obstacle, OBSTACLE_DEFINITIONS, FIELD_WIDTH_M, FIELD_HEIGHT_M } from '@/types/fieldLayout';
 
 // Shared joystick input (set by HTML overlay, read by Three.js camera)
@@ -16,13 +16,19 @@ export interface LookInput {
   lookY: number; // -1 to 1 (pitch)
 }
 
+export interface MobileStanceInput {
+  sprinting: boolean;
+  crouching: boolean;
+}
+
 // ---- First-person camera controller ----
-function FirstPersonCamera({ position, onPositionChange, onStanceChange, joystickRef, lookRef }: { 
+function FirstPersonCamera({ position, onPositionChange, onStanceChange, joystickRef, lookRef, mobileStanceRef }: { 
   position: [number, number, number];
   onPositionChange?: (x: number, z: number) => void;
   onStanceChange?: (stance: { sprinting: boolean; crouching: boolean; eyeHeight: number }) => void;
   joystickRef: React.RefObject<JoystickInput>;
   lookRef: React.RefObject<LookInput>;
+  mobileStanceRef: React.RefObject<MobileStanceInput>;
 }) {
   const { camera, gl } = useThree();
   const yaw = useRef(0);
@@ -111,8 +117,10 @@ function FirstPersonCamera({ position, onPositionChange, onStanceChange, joystic
   const lastStance = useRef({ sprinting: false, crouching: false });
 
   useFrame((_, delta) => {
-    const isSprinting = keys.current.has('shift');
-    const isCrouching = keys.current.has('c');
+    const mobileSprint = mobileStanceRef.current?.sprinting ?? false;
+    const mobileCrouch = mobileStanceRef.current?.crouching ?? false;
+    const isSprinting = keys.current.has('shift') || mobileSprint;
+    const isCrouching = keys.current.has('c') || mobileCrouch;
     const baseSpeed = 5;
     const speed = isSprinting ? 10 : isCrouching ? 2.5 : baseSpeed;
     const eyeHeight = isCrouching ? 0.9 : 1.7;
@@ -828,13 +836,14 @@ function VirtualLookJoystick({ lookRef }: { lookRef: React.MutableRefObject<Look
 }
 
 // ---- Main scene ----
-function Scene({ obstacles, viewPosition, onPositionChange, onStanceChange, joystickRef, lookRef, showLabels }: {
+function Scene({ obstacles, viewPosition, onPositionChange, onStanceChange, joystickRef, lookRef, mobileStanceRef, showLabels }: {
   obstacles: Obstacle[];
   viewPosition: [number, number, number];
   onPositionChange?: (x: number, z: number) => void;
   onStanceChange?: (stance: { sprinting: boolean; crouching: boolean; eyeHeight: number }) => void;
   joystickRef: React.MutableRefObject<JoystickInput>;
   lookRef: React.MutableRefObject<LookInput>;
+  mobileStanceRef: React.MutableRefObject<MobileStanceInput>;
   showLabels: boolean;
 }) {
   return (
@@ -855,7 +864,7 @@ function Scene({ obstacles, viewPosition, onPositionChange, onStanceChange, joys
       <directionalLight position={[-20, 30, -15]} intensity={0.4} />
       <hemisphereLight args={['#b4d7ff', '#3a8f29', 0.5]} />
 
-      <FirstPersonCamera position={viewPosition} onPositionChange={onPositionChange} onStanceChange={onStanceChange} joystickRef={joystickRef} lookRef={lookRef} />
+      <FirstPersonCamera position={viewPosition} onPositionChange={onPositionChange} onStanceChange={onStanceChange} joystickRef={joystickRef} lookRef={lookRef} mobileStanceRef={mobileStanceRef} />
       <FieldGround />
       <FieldNetting />
 
@@ -877,7 +886,29 @@ interface FieldStreetViewProps {
 export function FieldStreetView({ obstacles, viewPoint, onViewPointChange, onStanceChange }: FieldStreetViewProps) {
   const joystickRef = useRef<JoystickInput>({ moveX: 0, moveY: 0 });
   const lookRef = useRef<LookInput>({ lookX: 0, lookY: 0 });
+  const mobileStanceRef = useRef<MobileStanceInput>({ sprinting: false, crouching: false });
   const [showLabels, setShowLabels] = useState(true);
+  const [mobileSprinting, setMobileSprinting] = useState(false);
+  const [mobileCrouching, setMobileCrouching] = useState(false);
+
+  // Sync mobile stance buttons to ref
+  useEffect(() => {
+    mobileStanceRef.current = { sprinting: mobileSprinting, crouching: mobileCrouching };
+  }, [mobileSprinting, mobileCrouching]);
+
+  const toggleSprint = useCallback(() => {
+    setMobileSprinting(prev => {
+      if (!prev) setMobileCrouching(false); // can't sprint and crouch
+      return !prev;
+    });
+  }, []);
+
+  const toggleCrouch = useCallback(() => {
+    setMobileCrouching(prev => {
+      if (!prev) setMobileSprinting(false); // can't crouch and sprint
+      return !prev;
+    });
+  }, []);
   
   const viewPosition: [number, number, number] = useMemo(() => [
     (viewPoint.x / 100 - 0.5) * FIELD_WIDTH_M,
@@ -896,7 +927,7 @@ export function FieldStreetView({ obstacles, viewPoint, onViewPointChange, onSta
         camera={{ fov: 75, near: 0.1, far: 200 }}
         style={{ width: '100%', height: '100%' }}
       >
-        <Scene obstacles={obstacles} viewPosition={viewPosition} onPositionChange={handlePositionChange} onStanceChange={onStanceChange} joystickRef={joystickRef} lookRef={lookRef} showLabels={showLabels} />
+        <Scene obstacles={obstacles} viewPosition={viewPosition} onPositionChange={handlePositionChange} onStanceChange={onStanceChange} joystickRef={joystickRef} lookRef={lookRef} mobileStanceRef={mobileStanceRef} showLabels={showLabels} />
       </Canvas>
       {/* Label toggle button */}
       <button
@@ -907,10 +938,35 @@ export function FieldStreetView({ obstacles, viewPoint, onViewPointChange, onSta
         {showLabels ? <Tag size={14} /> : <EyeOff size={14} />}
         {showLabels ? 'Labels' : 'Labels'}
       </button>
-      {/* Virtual joysticks - visible on touch devices */}
+      {/* Virtual joysticks & stance buttons - visible on touch devices */}
       <div className="md:hidden">
         <VirtualJoystick joystickRef={joystickRef} />
         <VirtualLookJoystick lookRef={lookRef} />
+        {/* Sprint & Crouch buttons between joysticks */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex flex-col gap-2">
+          <button
+            onTouchStart={(e) => { e.preventDefault(); toggleSprint(); }}
+            className={`w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-sm border transition-colors touch-none ${
+              mobileSprinting 
+                ? 'bg-primary/70 border-primary text-primary-foreground' 
+                : 'bg-background/30 border-foreground/20 text-foreground/60'
+            }`}
+            title="Sprint"
+          >
+            <Zap size={20} />
+          </button>
+          <button
+            onTouchStart={(e) => { e.preventDefault(); toggleCrouch(); }}
+            className={`w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-sm border transition-colors touch-none ${
+              mobileCrouching 
+                ? 'bg-primary/70 border-primary text-primary-foreground' 
+                : 'bg-background/30 border-foreground/20 text-foreground/60'
+            }`}
+            title="Crouch"
+          >
+            <ArrowDownToLine size={20} />
+          </button>
+        </div>
       </div>
     </div>
   );
