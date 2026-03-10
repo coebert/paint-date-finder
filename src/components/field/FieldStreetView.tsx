@@ -307,7 +307,8 @@ function Obstacle3D({ obstacle }: { obstacle: Obstacle }) {
   const { widthM: w, depthM: d, heightM: h, color, profile3D } = def;
   const labelY = h + 0.4;
 
-  const mat = useMemo(() => new THREE.MeshStandardMaterial({ color, roughness: 0.8 }), [color]);
+  // Glossy PVC material like real inflatables
+  const mat = useMemo(() => new THREE.MeshStandardMaterial({ color, roughness: 0.45, metalness: 0.05 }), [color]);
 
   // Dorito triangle shape (must be at top level for hooks rules)
   const triShape = useMemo(() => {
