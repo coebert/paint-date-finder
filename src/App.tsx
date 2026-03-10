@@ -26,6 +26,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/teams" element={<Teams />} />
+          <Route path="/teams/:id" element={<TeamDetail />} />
           
           {/* Admin Routes */}
           <Route
