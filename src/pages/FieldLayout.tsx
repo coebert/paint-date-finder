@@ -138,14 +138,23 @@ export default function FieldLayout() {
                 <CardTitle className="font-display tracking-wider text-lg">OBSTACLE KEY</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                   {Object.values(OBSTACLE_DEFINITIONS).map((def) => (
-                    <div key={def.type} className="flex items-center gap-2 text-sm">
+                    <div key={def.type} className="flex items-center gap-3 text-sm">
                       <div
-                        className="w-4 h-4 rounded-sm flex-shrink-0"
-                        style={{ backgroundColor: def.color }}
+                        className="w-5 h-5 flex-shrink-0"
+                        style={{
+                          backgroundColor: def.color,
+                          borderRadius: def.shape === 'circle' ? '50%' : def.shape === 'triangle' ? '2px' : '3px',
+                          clipPath: def.shape === 'triangle' ? 'polygon(50% 0%, 100% 100%, 0% 100%)' : undefined,
+                        }}
                       />
-                      <span className="text-muted-foreground">{def.label}</span>
+                      <div>
+                        <span className="text-foreground text-xs font-medium">{def.label}</span>
+                        <span className="text-muted-foreground text-[10px] block">
+                          {def.widthM}×{def.depthM}m · {def.heightM}m tall
+                        </span>
+                      </div>
                     </div>
                   ))}
                 </div>
