@@ -5,6 +5,7 @@ export interface Team {
   id: string;
   name: string;
   division: string;
+  league: string;
   position: number | null;
   points: number;
   captain_name: string | null;
