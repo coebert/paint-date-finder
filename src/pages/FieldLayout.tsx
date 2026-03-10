@@ -162,9 +162,14 @@ export default function FieldLayout() {
                       CPPS COMPETITION FIELD
                       <Badge className="bg-accent text-accent-foreground">2025 Season</Badge>
                     </CardTitle>
-                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => toggleFullscreen(fieldContainerRef, setIsFieldFullscreen)}>
-                      {isFieldFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button variant={showLabels ? 'default' : 'outline'} size="sm" className="h-8 gap-1 text-xs" onClick={() => setShowLabels(v => !v)}>
+                        <Tag className="w-3.5 h-3.5" /> Callouts
+                      </Button>
+                      <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => toggleFullscreen(fieldContainerRef, setIsFieldFullscreen)}>
+                        {isFieldFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+                      </Button>
+                    </div>
                   </div>
                   <p className="text-sm text-muted-foreground">
                     Standard Sup'Air inflatable field layout used in CPPS tournament play.
