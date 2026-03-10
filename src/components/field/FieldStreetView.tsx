@@ -5,9 +5,10 @@ import * as THREE from 'three';
 import { Obstacle, OBSTACLE_DEFINITIONS, FIELD_WIDTH_M, FIELD_HEIGHT_M } from '@/types/fieldLayout';
 
 // ---- First-person camera controller ----
-function FirstPersonCamera({ position, onPositionChange }: { 
+function FirstPersonCamera({ position, onPositionChange, onStanceChange }: { 
   position: [number, number, number];
   onPositionChange?: (x: number, z: number) => void;
+  onStanceChange?: (stance: { sprinting: boolean; crouching: boolean; eyeHeight: number }) => void;
 }) {
   const { camera, gl } = useThree();
   const yaw = useRef(0);
