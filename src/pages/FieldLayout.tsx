@@ -177,7 +177,7 @@ export default function FieldLayout() {
                   </p>
                 </CardHeader>
                 <CardContent>
-                  <FieldCanvas obstacles={CPPS_FIELD_LAYOUT} />
+                  <FieldCanvas obstacles={CPPS_FIELD_LAYOUT} showLabels={showLabels} />
                 </CardContent>
               </Card>
             </div>
