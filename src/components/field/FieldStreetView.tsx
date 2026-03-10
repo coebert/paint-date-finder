@@ -1,4 +1,4 @@
-import { useRef, useMemo, useEffect } from 'react';
+import { useRef, useMemo, useEffect, useCallback } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { Sky } from '@react-three/drei';
 import * as THREE from 'three';
