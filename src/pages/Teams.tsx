@@ -162,7 +162,7 @@ export default function Teams() {
                 className="pl-10 bg-secondary border-border"
               />
             </div>
-            <Select value={division} onValueChange={setDivision}>
+            <Select value={division} onValueChange={(v) => setDivision(v === 'all' ? '' : v)}>
               <SelectTrigger className="w-full sm:w-48 bg-secondary border-border">
                 <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
                 <SelectValue placeholder="All Divisions" />
