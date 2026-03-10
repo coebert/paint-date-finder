@@ -20,7 +20,7 @@ export default function Index() {
   const [eventType, setEventType] = useState<EventType | undefined>();
   const [venue, setVenue] = useState('');
   const [region, setRegion] = useState('');
-  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [verifiedOnly, setVerifiedOnly] = useState(true);
   
   // Track page visits
   useVisitTracking();
