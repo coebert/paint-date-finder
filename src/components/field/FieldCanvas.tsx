@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { Obstacle } from '@/types/fieldLayout';
+import { Obstacle, FIELD_WIDTH_M, FIELD_HEIGHT_M } from '@/types/fieldLayout';
 import { ObstacleSVG } from './ObstacleSVG';
 
 interface FieldCanvasProps {
@@ -10,7 +10,8 @@ interface FieldCanvasProps {
   onSelect?: (id: string | null) => void;
 }
 
-const FIELD_ASPECT = 1.6; // width:height ratio for a standard paintball field
+// Field aspect ratio: 45m wide × 36m deep = 1.25:1
+const FIELD_ASPECT = FIELD_WIDTH_M / FIELD_HEIGHT_M;
 
 export function FieldCanvas({
   obstacles,
@@ -20,7 +21,7 @@ export function FieldCanvas({
   onSelect,
 }: FieldCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [dims, setDims] = useState({ width: 800, height: 500 });
+  const [dims, setDims] = useState({ width: 800, height: 640 });
   const [dragging, setDragging] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
@@ -66,8 +67,8 @@ export function FieldCanvas({
     (e: React.PointerEvent) => {
       if (!dragging || !onObstaclesChange) return;
       const pos = svgToField(e.clientX, e.clientY);
-      const newX = Math.max(2, Math.min(98, pos.x - dragOffset.x));
-      const newY = Math.max(2, Math.min(98, pos.y - dragOffset.y));
+      const newX = Math.max(1, Math.min(99, pos.x - dragOffset.x));
+      const newY = Math.max(1, Math.min(99, pos.y - dragOffset.y));
       onObstaclesChange(
         obstacles.map((o) =>
           o.id === dragging ? { ...o, x: newX, y: newY } : o
@@ -85,6 +86,11 @@ export function FieldCanvas({
     onSelect?.(null);
   };
 
+  // Grid spacing in metres for reference lines
+  const gridSpacingM = 5;
+  const gridLinesX = Math.floor(FIELD_WIDTH_M / gridSpacingM);
+  const gridLinesY = Math.floor(FIELD_HEIGHT_M / gridSpacingM);
+
   return (
     <div ref={containerRef} className="w-full">
       <svg
@@ -96,90 +102,149 @@ export function FieldCanvas({
         onPointerUp={handlePointerUp}
         style={{ touchAction: 'none' }}
       >
-        {/* Field background */}
-        <rect width={dims.width} height={dims.height} fill="hsl(120, 35%, 22%)" rx={8} />
+        {/* Field background - grass green */}
+        <rect width={dims.width} height={dims.height} fill="hsl(120, 35%, 20%)" rx={4} />
         
-        {/* Turf texture lines */}
-        {Array.from({ length: 20 }).map((_, i) => (
+        {/* Alternating turf strips (like mowed grass) */}
+        {Array.from({ length: gridLinesX }).map((_, i) => (
+          i % 2 === 0 ? (
+            <rect
+              key={`turf-${i}`}
+              x={(dims.width / gridLinesX) * i}
+              y={0}
+              width={dims.width / gridLinesX}
+              height={dims.height}
+              fill="hsl(120, 32%, 21%)"
+            />
+          ) : null
+        ))}
+
+        {/* Grid lines - 5m intervals */}
+        {Array.from({ length: gridLinesX + 1 }).map((_, i) => (
           <line
-            key={i}
-            x1={(dims.width / 20) * i}
+            key={`gx-${i}`}
+            x1={(dims.width / gridLinesX) * i}
             y1={0}
-            x2={(dims.width / 20) * i}
+            x2={(dims.width / gridLinesX) * i}
             y2={dims.height}
-            stroke="hsl(120, 30%, 24%)"
-            strokeWidth={1}
+            stroke="rgba(255,255,255,0.06)"
+            strokeWidth={0.5}
+          />
+        ))}
+        {Array.from({ length: gridLinesY + 1 }).map((_, i) => (
+          <line
+            key={`gy-${i}`}
+            x1={0}
+            y1={(dims.height / gridLinesY) * i}
+            x2={dims.width}
+            y2={(dims.height / gridLinesY) * i}
+            stroke="rgba(255,255,255,0.06)"
+            strokeWidth={0.5}
           />
         ))}
 
-        {/* Center line */}
+        {/* Center line (50-yard line) */}
         <line
           x1={dims.width / 2}
           y1={0}
           x2={dims.width / 2}
           y2={dims.height}
-          stroke="rgba(255,255,255,0.15)"
-          strokeWidth={2}
-          strokeDasharray="8,8"
-        />
-
-        {/* Boundary lines */}
-        <rect
-          x={4}
-          y={4}
-          width={dims.width - 8}
-          height={dims.height - 8}
-          fill="none"
           stroke="rgba(255,255,255,0.2)"
-          strokeWidth={2}
-          rx={6}
+          strokeWidth={1.5}
+          strokeDasharray="6,4"
         />
 
-        {/* Start boxes */}
+        {/* Boundary netting outline */}
         <rect
-          x={8}
-          y={dims.height * 0.35}
-          width={dims.width * 0.03}
-          height={dims.height * 0.3}
+          x={2}
+          y={2}
+          width={dims.width - 4}
+          height={dims.height - 4}
           fill="none"
-          stroke="hsl(200, 80%, 50%)"
+          stroke="rgba(255,255,255,0.25)"
           strokeWidth={2}
-          opacity={0.5}
-          rx={2}
+          rx={4}
         />
-        <rect
-          x={dims.width - 8 - dims.width * 0.03}
-          y={dims.height * 0.35}
-          width={dims.width * 0.03}
-          height={dims.height * 0.3}
-          fill="none"
-          stroke="hsl(0, 80%, 50%)"
-          strokeWidth={2}
-          opacity={0.5}
-          rx={2}
-        />
+
+        {/* Start boxes - 3m × 3m boxes */}
+        {(() => {
+          const boxW = (3 / FIELD_WIDTH_M) * dims.width;
+          const boxH = (3 / FIELD_HEIGHT_M) * dims.height;
+          const inset = (1 / FIELD_WIDTH_M) * dims.width;
+          return (
+            <>
+              {/* Blue start box - left */}
+              <rect
+                x={inset}
+                y={dims.height / 2 - boxH / 2}
+                width={boxW}
+                height={boxH}
+                fill="hsla(200, 80%, 50%, 0.15)"
+                stroke="hsl(200, 80%, 50%)"
+                strokeWidth={1.5}
+                rx={2}
+              />
+              {/* Red start box - right */}
+              <rect
+                x={dims.width - inset - boxW}
+                y={dims.height / 2 - boxH / 2}
+                width={boxW}
+                height={boxH}
+                fill="hsla(0, 80%, 50%, 0.15)"
+                stroke="hsl(0, 80%, 50%)"
+                strokeWidth={1.5}
+                rx={2}
+              />
+            </>
+          );
+        })()}
 
         {/* Team labels */}
         <text
-          x={dims.width * 0.02}
-          y={dims.height * 0.33}
-          fill="hsl(200, 80%, 60%)"
-          fontSize={10}
-          fontFamily="var(--font-display)"
-          opacity={0.6}
+          x={12}
+          y={16}
+          fill="hsl(200, 70%, 60%)"
+          fontSize={11}
+          fontWeight={700}
+          fontFamily="monospace"
+          opacity={0.5}
         >
           BLUE
         </text>
         <text
-          x={dims.width * 0.96}
-          y={dims.height * 0.33}
-          fill="hsl(0, 80%, 60%)"
-          fontSize={10}
-          fontFamily="var(--font-display)"
+          x={dims.width - 12}
+          y={16}
+          fill="hsl(0, 70%, 60%)"
+          fontSize={11}
+          fontWeight={700}
+          fontFamily="monospace"
           textAnchor="end"
-          opacity={0.6}
+          opacity={0.5}
         >
           RED
+        </text>
+
+        {/* Dimension labels */}
+        <text
+          x={dims.width / 2}
+          y={dims.height - 6}
+          fill="rgba(255,255,255,0.25)"
+          fontSize={9}
+          fontFamily="monospace"
+          textAnchor="middle"
+        >
+          {FIELD_WIDTH_M}m
+        </text>
+        <text
+          x={8}
+          y={dims.height / 2}
+          fill="rgba(255,255,255,0.25)"
+          fontSize={9}
+          fontFamily="monospace"
+          textAnchor="middle"
+          transform={`rotate(-90, 8, ${dims.height / 2})`}
+        >
+          {FIELD_HEIGHT_M}m
         </text>
 
         {/* Click background to deselect */}
