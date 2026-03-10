@@ -11,6 +11,7 @@ import { AdminRoute } from "./components/AdminRoute";
 import AdminOverview from "./pages/admin/AdminOverview";
 import AdminSubmissions from "./pages/admin/AdminSubmissions";
 import AdminEvents from "./pages/admin/AdminEvents";
+import AdminTeams from "./pages/admin/AdminTeams";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,14 @@ const App = () => (
             element={
               <AdminRoute>
                 <AdminEvents />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/teams"
+            element={
+              <AdminRoute>
+                <AdminTeams />
               </AdminRoute>
             }
           />
