@@ -23,7 +23,8 @@ interface TeamEditDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const DIVISIONS = ['Elite', 'Division 2', 'Division 3', 'Division 4', 'Division 5', 'Breakout'];
+const DIVISIONS = ['Elite', 'Division 2', 'Division 3', 'Division 4', 'Division 5', 'Breakout', 'Independent'];
+const LEAGUES = ['CPPS', 'Other'];
 
 export function TeamEditDialog({ team, open, onOpenChange }: TeamEditDialogProps) {
   const queryClient = useQueryClient();
@@ -33,6 +34,7 @@ export function TeamEditDialog({ team, open, onOpenChange }: TeamEditDialogProps
   const [form, setForm] = useState({
     name: '',
     division: '',
+    league: 'CPPS',
     position: '',
     points: '',
     captain_name: '',
@@ -54,6 +56,7 @@ export function TeamEditDialog({ team, open, onOpenChange }: TeamEditDialogProps
     setForm({
       name: team.name || '',
       division: team.division || '',
+      league: team.league || 'CPPS',
       position: team.position?.toString() || '',
       points: team.points?.toString() || '0',
       captain_name: team.captain_name || '',
@@ -81,6 +84,7 @@ export function TeamEditDialog({ team, open, onOpenChange }: TeamEditDialogProps
         .update({
           name: data.name,
           division: data.division,
+          league: data.league,
           position: data.position ? parseInt(data.position) : null,
           points: parseInt(data.points) || 0,
           captain_name: data.captain_name || null,
@@ -206,6 +210,15 @@ export function TeamEditDialog({ team, open, onOpenChange }: TeamEditDialogProps
             <div className="space-y-2">
               <Label>Team Name</Label>
               <Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} required />
+            </div>
+            <div className="space-y-2">
+              <Label>League</Label>
+              <Select value={form.league} onValueChange={v => setForm(p => ({ ...p, league: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {LEAGUES.map(l => <SelectItem key={l} value={l}>{l === 'Other' ? 'Other / Independent' : l}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label>Division</Label>
