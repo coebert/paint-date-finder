@@ -335,20 +335,20 @@ function Obstacle3D({ obstacle }: { obstacle: Obstacle }) {
   }
 
   if (profile3D === 'flat-panel') {
-    // Wing / Mini Race — low, wide, inflatable panel with rounded top
     return (
-      <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-        {/* Main body */}
-        <mesh position={[0, h * 0.35, 0]} castShadow>
-          <boxGeometry args={[w, h * 0.7, d]} />
-          <meshStandardMaterial color={color} roughness={0.8} />
-        </mesh>
-        {/* Rounded top edge */}
-        <mesh position={[0, h * 0.7, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
-          <cylinderGeometry args={[h * 0.3, h * 0.3, w, 12, 1, false, 0, Math.PI]} />
-          <meshStandardMaterial color={color} roughness={0.8} />
-        </mesh>
-      </group>
+      <>
+        {label}
+        <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+          <mesh position={[0, h * 0.35, 0]} castShadow>
+            <boxGeometry args={[w, h * 0.7, d]} />
+            <meshStandardMaterial color={color} roughness={0.8} />
+          </mesh>
+          <mesh position={[0, h * 0.7, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+            <cylinderGeometry args={[h * 0.3, h * 0.3, w, 12, 1, false, 0, Math.PI]} />
+            <meshStandardMaterial color={color} roughness={0.8} />
+          </mesh>
+        </group>
+      </>
     );
   }
 
