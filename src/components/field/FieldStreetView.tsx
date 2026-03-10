@@ -15,8 +15,15 @@ function FirstPersonCamera({ position, onPositionChange }: {
   const isPointerDown = useRef(false);
   const keys = useRef<Set<string>>(new Set());
   const currentPos = useRef<[number, number, number]>([...position]);
+  const isWalking = useRef(false);
+  const lastReportedPos = useRef<[number, number]>([position[0], position[2]]);
 
+  // Only reset on teleport (position prop change not caused by walking)
   useEffect(() => {
+    if (isWalking.current) {
+      isWalking.current = false;
+      return;
+    }
     currentPos.current = [...position];
     camera.position.set(...position);
     yaw.current = 0;
