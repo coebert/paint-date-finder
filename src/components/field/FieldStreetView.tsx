@@ -595,9 +595,10 @@ interface FieldStreetViewProps {
   obstacles: Obstacle[];
   viewPoint: { x: number; y: number };
   onViewPointChange?: (point: { x: number; y: number }) => void;
+  onStanceChange?: (stance: { sprinting: boolean; crouching: boolean; eyeHeight: number }) => void;
 }
 
-export function FieldStreetView({ obstacles, viewPoint, onViewPointChange }: FieldStreetViewProps) {
+export function FieldStreetView({ obstacles, viewPoint, onViewPointChange, onStanceChange }: FieldStreetViewProps) {
   const viewPosition: [number, number, number] = useMemo(() => [
     (viewPoint.x / 100 - 0.5) * FIELD_WIDTH_M,
     1.7,
@@ -609,13 +610,13 @@ export function FieldStreetView({ obstacles, viewPoint, onViewPointChange }: Fie
   }, [onViewPointChange]);
 
   return (
-    <div className="w-full h-[400px] md:h-[500px] rounded-lg overflow-hidden border border-border/50 bg-black">
+    <div className="w-full h-[400px] md:h-[500px] rounded-lg overflow-hidden border border-border/50 bg-black relative">
       <Canvas
         shadows
         camera={{ fov: 75, near: 0.1, far: 200 }}
         style={{ width: '100%', height: '100%' }}
       >
-        <Scene obstacles={obstacles} viewPosition={viewPosition} onPositionChange={handlePositionChange} />
+        <Scene obstacles={obstacles} viewPosition={viewPosition} onPositionChange={handlePositionChange} onStanceChange={onStanceChange} />
       </Canvas>
     </div>
   );
