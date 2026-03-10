@@ -137,43 +137,93 @@ function FirstPersonCamera({ position, onPositionChange }: {
   return null;
 }
 
-// ---- Ground ----
+// ---- Ground ---- (Realistic bright green artificial turf with white boundary lines)
 function FieldGround() {
+  const hw = FIELD_WIDTH_M / 2;
+  const hh = FIELD_HEIGHT_M / 2;
+
   return (
     <>
+      {/* Main field turf - bright green like real artificial turf */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
         <planeGeometry args={[FIELD_WIDTH_M, FIELD_HEIGHT_M]} />
-        <meshStandardMaterial color="#2d5a1e" />
+        <meshStandardMaterial color="#3a8f29" roughness={0.95} />
       </mesh>
+      {/* Surrounding area - darker grass/dirt */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
         <planeGeometry args={[120, 120]} />
-        <meshStandardMaterial color="#1a3a10" />
+        <meshStandardMaterial color="#2a6e1a" roughness={1} />
       </mesh>
-      {/* 5m grid lines on field */}
-      {Array.from({ length: 10 }).map((_, i) => {
-        const xPos = -FIELD_WIDTH_M / 2 + (i + 1) * 5;
+
+      {/* White boundary lines (like real tournament fields) */}
+      {/* Long sides */}
+      <mesh position={[0, 0.003, -hh]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[FIELD_WIDTH_M, 0.1]} />
+        <meshBasicMaterial color="#ffffff" />
+      </mesh>
+      <mesh position={[0, 0.003, hh]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[FIELD_WIDTH_M, 0.1]} />
+        <meshBasicMaterial color="#ffffff" />
+      </mesh>
+      {/* Short sides */}
+      <mesh position={[-hw, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[0.1, FIELD_HEIGHT_M]} />
+        <meshBasicMaterial color="#ffffff" />
+      </mesh>
+      <mesh position={[hw, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[0.1, FIELD_HEIGHT_M]} />
+        <meshBasicMaterial color="#ffffff" />
+      </mesh>
+
+      {/* Center line - dashed white */}
+      {Array.from({ length: 12 }).map((_, i) => {
+        const segLen = FIELD_HEIGHT_M / 24;
+        const zPos = -hh + (i * 2 + 0.5) * segLen * 2;
         return (
-          <mesh key={`gl-${i}`} position={[xPos, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[0.03, FIELD_HEIGHT_M]} />
-            <meshBasicMaterial color="#3a7a2a" transparent opacity={0.3} />
+          <mesh key={`cl-${i}`} position={[0, 0.003, zPos]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[0.06, segLen]} />
+            <meshBasicMaterial color="#ffffff" transparent opacity={0.7} />
           </mesh>
         );
       })}
+
+      {/* Turf texture lines (mow stripes like real turf fields) */}
+      {Array.from({ length: 18 }).map((_, i) => {
+        const zPos = -hh + ((i + 1) / 19) * FIELD_HEIGHT_M;
+        return (
+          <mesh key={`ts-${i}`} position={[0, 0.001, zPos]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[FIELD_WIDTH_M, 0.02]} />
+            <meshBasicMaterial color="#44a030" transparent opacity={0.3} />
+          </mesh>
+        );
+      })}
+
+      {/* Start boxes - blue and red */}
+      <mesh position={[-hw + 1.5, 0.004, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[3, 6]} />
+        <meshBasicMaterial color="#2244cc" transparent opacity={0.2} />
+      </mesh>
+      <mesh position={[hw - 1.5, 0.004, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[3, 6]} />
+        <meshBasicMaterial color="#cc2222" transparent opacity={0.2} />
+      </mesh>
     </>
   );
 }
 
-// ---- Boundary netting ----
+// ---- Boundary netting ---- (Taller, more visible like real tournament netting)
 function FieldNetting() {
   const hw = FIELD_WIDTH_M / 2;
   const hh = FIELD_HEIGHT_M / 2;
-  const netH = 3;
+  const netH = 4.5; // Real netting is typically 12-15ft (3.6-4.5m)
 
   const netMat = useMemo(() => new THREE.MeshStandardMaterial({
-    color: '#222222', transparent: true, opacity: 0.12, side: THREE.DoubleSide,
+    color: '#111111', transparent: true, opacity: 0.25, side: THREE.DoubleSide,
   }), []);
 
-  const poleMat = useMemo(() => new THREE.MeshStandardMaterial({ color: '#666666' }), []);
+  const poleMat = useMemo(() => new THREE.MeshStandardMaterial({ 
+    color: '#555555', metalness: 0.6, roughness: 0.4 
+  }), []);
 
   const nets = [
     { pos: [0, netH / 2, -hh] as [number, number, number], rot: [0, 0, 0] as [number, number, number], w: FIELD_WIDTH_M },
@@ -182,7 +232,21 @@ function FieldNetting() {
     { pos: [hw, netH / 2, 0] as [number, number, number], rot: [0, Math.PI / 2, 0] as [number, number, number], w: FIELD_HEIGHT_M },
   ];
 
-  const poles: [number, number][] = [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]];
+  // More poles like real fields (every ~5m)
+  const longPoles: [number, number][] = Array.from({ length: 10 }).map((_, i) => 
+    [-hw + (i + 1) * (FIELD_WIDTH_M / 11), -hh] as [number, number]
+  );
+  const longPoles2: [number, number][] = Array.from({ length: 10 }).map((_, i) => 
+    [-hw + (i + 1) * (FIELD_WIDTH_M / 11), hh] as [number, number]
+  );
+  const shortPoles: [number, number][] = Array.from({ length: 7 }).map((_, i) => 
+    [-hw, -hh + (i + 1) * (FIELD_HEIGHT_M / 8)] as [number, number]
+  );
+  const shortPoles2: [number, number][] = Array.from({ length: 7 }).map((_, i) => 
+    [hw, -hh + (i + 1) * (FIELD_HEIGHT_M / 8)] as [number, number]
+  );
+  const cornerPoles: [number, number][] = [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]];
+  const allPoles = [...cornerPoles, ...longPoles, ...longPoles2, ...shortPoles, ...shortPoles2];
 
   return (
     <group>
@@ -191,9 +255,16 @@ function FieldNetting() {
           <planeGeometry args={[n.w, netH]} />
         </mesh>
       ))}
-      {poles.map(([px, pz], i) => (
+      {/* Net horizontal support cable at top */}
+      {nets.map((n, i) => (
+        <mesh key={`cable-${i}`} position={[n.pos[0], netH, n.pos[2]]} rotation={n.rot}>
+          <boxGeometry args={[n.w, 0.02, 0.02]} />
+          <meshStandardMaterial color="#333333" />
+        </mesh>
+      ))}
+      {allPoles.map(([px, pz], i) => (
         <mesh key={`p-${i}`} position={[px, netH / 2, pz]} material={poleMat}>
-          <cylinderGeometry args={[0.04, 0.04, netH, 6]} />
+          <cylinderGeometry args={[0.03, 0.04, netH, 6]} />
         </mesh>
       ))}
     </group>
@@ -236,7 +307,8 @@ function Obstacle3D({ obstacle }: { obstacle: Obstacle }) {
   const { widthM: w, depthM: d, heightM: h, color, profile3D } = def;
   const labelY = h + 0.4;
 
-  const mat = useMemo(() => new THREE.MeshStandardMaterial({ color, roughness: 0.8 }), [color]);
+  // Glossy PVC material like real inflatables
+  const mat = useMemo(() => new THREE.MeshStandardMaterial({ color, roughness: 0.45, metalness: 0.05 }), [color]);
 
   // Dorito triangle shape (must be at top level for hooks rules)
   const triShape = useMemo(() => {
@@ -475,11 +547,23 @@ function Scene({ obstacles, viewPosition, onPositionChange }: {
 }) {
   return (
     <>
-      <Sky sunPosition={[100, 50, 100]} turbidity={8} rayleigh={2} />
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[30, 40, 20]} intensity={1.3} castShadow
-        shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
-      <hemisphereLight args={['#87ceeb', '#2d5a1e', 0.4]} />
+      <Sky sunPosition={[80, 60, 50]} turbidity={6} rayleigh={1.5} mieCoefficient={0.005} mieDirectionalG={0.8} />
+      {/* Bright outdoor tournament lighting */}
+      <ambientLight intensity={0.7} />
+      <directionalLight 
+        position={[25, 50, 30]} 
+        intensity={1.8} 
+        castShadow
+        shadow-mapSize-width={2048} 
+        shadow-mapSize-height={2048}
+        shadow-camera-left={-30}
+        shadow-camera-right={30}
+        shadow-camera-top={25}
+        shadow-camera-bottom={-25}
+      />
+      {/* Fill light from opposite side */}
+      <directionalLight position={[-20, 30, -15]} intensity={0.4} />
+      <hemisphereLight args={['#b4d7ff', '#3a8f29', 0.5]} />
 
       <FirstPersonCamera position={viewPosition} onPositionChange={onPositionChange} />
       <FieldGround />
