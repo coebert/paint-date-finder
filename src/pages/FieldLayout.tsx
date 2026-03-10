@@ -354,7 +354,9 @@ export default function FieldLayout() {
                       <CardContent className="py-3 px-4 space-y-2">
                         <p className="text-xs font-medium text-foreground">Controls</p>
                         <ul className="text-[11px] text-muted-foreground space-y-1">
-                          <li>• <kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono">W</kbd><kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono ml-0.5">A</kbd><kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono ml-0.5">S</kbd><kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono ml-0.5">D</kbd> or Arrow keys to walk</li>
+                         <li>• <kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono">W</kbd><kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono ml-0.5">A</kbd><kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono ml-0.5">S</kbd><kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono ml-0.5">D</kbd> or Arrow keys to walk</li>
+                          <li>• Hold <kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono">Shift</kbd> to sprint</li>
+                          <li>• Hold <kbd className="px-1 py-0.5 bg-background rounded text-[10px] font-mono">C</kbd> to crouch</li>
                           <li>• Click mini-map to teleport</li>
                           <li>• Drag 3D view to look around</li>
                           <li>• Touch & swipe on mobile</li>
