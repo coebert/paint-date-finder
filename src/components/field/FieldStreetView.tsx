@@ -5,13 +5,19 @@ import * as THREE from 'three';
 import { Obstacle, OBSTACLE_DEFINITIONS, FIELD_WIDTH_M, FIELD_HEIGHT_M } from '@/types/fieldLayout';
 
 // ---- First-person camera controller ----
-function FirstPersonCamera({ position }: { position: [number, number, number] }) {
+function FirstPersonCamera({ position, onPositionChange }: { 
+  position: [number, number, number];
+  onPositionChange?: (x: number, z: number) => void;
+}) {
   const { camera, gl } = useThree();
   const yaw = useRef(0);
   const pitch = useRef(0);
   const isPointerDown = useRef(false);
+  const keys = useRef<Set<string>>(new Set());
+  const currentPos = useRef<[number, number, number]>([...position]);
 
   useEffect(() => {
+    currentPos.current = [...position];
     camera.position.set(...position);
     yaw.current = 0;
     pitch.current = 0;
@@ -53,12 +59,21 @@ function FirstPersonCamera({ position }: { position: [number, number, number] })
     };
     const onTouchEnd = () => { lastTouch = null; };
 
+    const onKeyDown = (e: KeyboardEvent) => {
+      keys.current.add(e.key.toLowerCase());
+    };
+    const onKeyUp = (e: KeyboardEvent) => {
+      keys.current.delete(e.key.toLowerCase());
+    };
+
     canvas.addEventListener('pointerdown', onPointerDown);
     canvas.addEventListener('pointerup', onPointerUp);
     canvas.addEventListener('pointermove', onPointerMove);
     canvas.addEventListener('touchstart', onTouchStart, { passive: true });
     canvas.addEventListener('touchmove', onTouchMove, { passive: true });
     canvas.addEventListener('touchend', onTouchEnd);
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
 
     return () => {
       canvas.removeEventListener('pointerdown', onPointerDown);
@@ -67,11 +82,43 @@ function FirstPersonCamera({ position }: { position: [number, number, number] })
       canvas.removeEventListener('touchstart', onTouchStart);
       canvas.removeEventListener('touchmove', onTouchMove);
       canvas.removeEventListener('touchend', onTouchEnd);
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
     };
   }, [gl]);
 
-  useFrame(() => {
-    camera.position.set(...position);
+  useFrame((_, delta) => {
+    const speed = 5; // meters per second
+    const moveDir = new THREE.Vector3(0, 0, 0);
+    
+    if (keys.current.has('w') || keys.current.has('arrowup')) moveDir.z -= 1;
+    if (keys.current.has('s') || keys.current.has('arrowdown')) moveDir.z += 1;
+    if (keys.current.has('a') || keys.current.has('arrowleft')) moveDir.x -= 1;
+    if (keys.current.has('d') || keys.current.has('arrowright')) moveDir.x += 1;
+
+    if (moveDir.lengthSq() > 0) {
+      moveDir.normalize();
+      // Rotate movement direction by yaw so W always moves forward
+      moveDir.applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw.current);
+      const step = speed * delta;
+      currentPos.current[0] += moveDir.x * step;
+      currentPos.current[2] += moveDir.z * step;
+
+      // Clamp to field bounds
+      const hw = FIELD_WIDTH_M / 2;
+      const hh = FIELD_HEIGHT_M / 2;
+      currentPos.current[0] = Math.max(-hw + 0.5, Math.min(hw - 0.5, currentPos.current[0]));
+      currentPos.current[2] = Math.max(-hh + 0.5, Math.min(hh - 0.5, currentPos.current[2]));
+
+      // Notify parent of position change
+      if (onPositionChange) {
+        const xPct = (currentPos.current[0] / FIELD_WIDTH_M + 0.5) * 100;
+        const yPct = (currentPos.current[2] / FIELD_HEIGHT_M + 0.5) * 100;
+        onPositionChange(xPct, yPct);
+      }
+    }
+
+    camera.position.set(currentPos.current[0], currentPos.current[1], currentPos.current[2]);
     const euler = new THREE.Euler(pitch.current, yaw.current, 0, 'YXZ');
     camera.quaternion.setFromEuler(euler);
   });
