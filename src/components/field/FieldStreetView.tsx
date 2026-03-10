@@ -4,11 +4,18 @@ import { Sky, Text, Billboard } from '@react-three/drei';
 import * as THREE from 'three';
 import { Obstacle, OBSTACLE_DEFINITIONS, FIELD_WIDTH_M, FIELD_HEIGHT_M } from '@/types/fieldLayout';
 
+// Shared joystick input (set by HTML overlay, read by Three.js camera)
+export interface JoystickInput {
+  moveX: number; // -1 to 1 (left/right)
+  moveY: number; // -1 to 1 (forward/back)
+}
+
 // ---- First-person camera controller ----
-function FirstPersonCamera({ position, onPositionChange, onStanceChange }: { 
+function FirstPersonCamera({ position, onPositionChange, onStanceChange, joystickRef }: { 
   position: [number, number, number];
   onPositionChange?: (x: number, z: number) => void;
   onStanceChange?: (stance: { sprinting: boolean; crouching: boolean; eyeHeight: number }) => void;
+  joystickRef: React.RefObject<JoystickInput>;
 }) {
   const { camera, gl } = useThree();
   const yaw = useRef(0);
@@ -19,7 +26,6 @@ function FirstPersonCamera({ position, onPositionChange, onStanceChange }: {
   const isWalking = useRef(false);
   const lastReportedPos = useRef<[number, number]>([position[0], position[2]]);
 
-  // Only reset on teleport (position prop change not caused by walking)
   useEffect(() => {
     if (isWalking.current) {
       isWalking.current = false;
@@ -104,7 +110,6 @@ function FirstPersonCamera({ position, onPositionChange, onStanceChange }: {
     const speed = isSprinting ? 10 : isCrouching ? 2.5 : baseSpeed;
     const eyeHeight = isCrouching ? 0.9 : 1.7;
 
-    // Report stance changes
     if (onStanceChange && (lastStance.current.sprinting !== isSprinting || lastStance.current.crouching !== isCrouching)) {
       lastStance.current = { sprinting: isSprinting, crouching: isCrouching };
       onStanceChange({ sprinting: isSprinting, crouching: isCrouching, eyeHeight });
@@ -114,10 +119,18 @@ function FirstPersonCamera({ position, onPositionChange, onStanceChange }: {
 
     const moveDir = new THREE.Vector3(0, 0, 0);
     
+    // Keyboard input
     if (keys.current.has('w') || keys.current.has('arrowup')) moveDir.z -= 1;
     if (keys.current.has('s') || keys.current.has('arrowdown')) moveDir.z += 1;
     if (keys.current.has('a') || keys.current.has('arrowleft')) moveDir.x -= 1;
     if (keys.current.has('d') || keys.current.has('arrowright')) moveDir.x += 1;
+
+    // Virtual joystick input
+    const joy = joystickRef.current;
+    if (joy && (Math.abs(joy.moveX) > 0.05 || Math.abs(joy.moveY) > 0.05)) {
+      moveDir.x += joy.moveX;
+      moveDir.z += joy.moveY;
+    }
 
     if (moveDir.lengthSq() > 0) {
       moveDir.normalize();
