@@ -1,6 +1,8 @@
 import { useState, useCallback, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Eye, PenTool, RotateCcw, RotateCw, Trash2, Download, Copy, Compass } from 'lucide-react';
+import { SaveLayoutDialog } from '@/components/field/SaveLayoutDialog';
+import { CommunityLayoutsDialog } from '@/components/field/CommunityLayoutsDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
