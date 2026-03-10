@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Teams from "./pages/Teams";
+import TeamDetail from "./pages/TeamDetail";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import { AdminRoute } from "./components/AdminRoute";
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/teams" element={<Teams />} />
+          <Route path="/teams/:id" element={<TeamDetail />} />
           
           {/* Admin Routes */}
           <Route

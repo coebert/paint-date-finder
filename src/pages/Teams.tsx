@@ -20,7 +20,8 @@ const divisionColors: Record<string, string> = {
 
 function TeamCard({ team }: { team: Team }) {
   return (
-    <Card className="bg-card border-border/50 hover:border-accent/30 transition-all duration-200 group">
+    <Link to={`/teams/${team.id}`}>
+    <Card className="bg-card border-border/50 hover:border-accent/30 transition-all duration-200 group cursor-pointer">
       <CardContent className="p-4">
         <div className="flex items-start gap-4">
           {/* Logo / placeholder */}
@@ -104,6 +105,7 @@ function TeamCard({ team }: { team: Team }) {
         </div>
       </CardContent>
     </Card>
+    </Link>
   );
 }
 
