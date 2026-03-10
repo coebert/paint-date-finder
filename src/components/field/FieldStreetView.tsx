@@ -117,8 +117,10 @@ function FirstPersonCamera({ position, onPositionChange, onStanceChange, joystic
   const lastStance = useRef({ sprinting: false, crouching: false });
 
   useFrame((_, delta) => {
-    const isSprinting = keys.current.has('shift');
-    const isCrouching = keys.current.has('c');
+    const mobileSprint = mobileStanceRef.current?.sprinting ?? false;
+    const mobileCrouch = mobileStanceRef.current?.crouching ?? false;
+    const isSprinting = keys.current.has('shift') || mobileSprint;
+    const isCrouching = keys.current.has('c') || mobileCrouch;
     const baseSpeed = 5;
     const speed = isSprinting ? 10 : isCrouching ? 2.5 : baseSpeed;
     const eyeHeight = isCrouching ? 0.9 : 1.7;
