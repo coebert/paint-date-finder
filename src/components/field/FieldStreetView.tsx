@@ -11,6 +11,11 @@ export interface JoystickInput {
   moveY: number; // -1 to 1 (forward/back)
 }
 
+export interface LookInput {
+  lookX: number; // -1 to 1 (yaw)
+  lookY: number; // -1 to 1 (pitch)
+}
+
 // ---- First-person camera controller ----
 function FirstPersonCamera({ position, onPositionChange, onStanceChange, joystickRef }: { 
   position: [number, number, number];
