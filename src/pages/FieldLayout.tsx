@@ -1,14 +1,16 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, Suspense } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Eye, PenTool, RotateCcw, RotateCw, Trash2, Download, Copy } from 'lucide-react';
+import { ArrowLeft, Eye, PenTool, RotateCcw, RotateCw, Trash2, Download, Copy, Compass } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { FieldCanvas } from '@/components/field/FieldCanvas';
 import { ObstaclePalette } from '@/components/field/ObstaclePalette';
+import { FieldStreetView } from '@/components/field/FieldStreetView';
 import { CPPS_FIELD_LAYOUT, Obstacle, ObstacleType, OBSTACLE_DEFINITIONS } from '@/types/fieldLayout';
 import { toast } from 'sonner';
+import { Skeleton } from '@/components/ui/skeleton';
 
 let nextId = 1;
 function genId() {
@@ -18,6 +20,9 @@ function genId() {
 export default function FieldLayout() {
   const [designObstacles, setDesignObstacles] = useState<Obstacle[]>([...CPPS_FIELD_LAYOUT]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [streetViewPoint, setStreetViewPoint] = useState<{ x: number; y: number }>({ x: 10, y: 50 });
+  const [streetViewObstacles, setStreetViewObstacles] = useState<Obstacle[]>(CPPS_FIELD_LAYOUT);
+  const [streetViewSource, setStreetViewSource] = useState<'cpps' | 'custom'>('cpps');
 
   const selectedObstacle = designObstacles.find((o) => o.id === selectedId) || null;
 
@@ -80,6 +85,15 @@ export default function FieldLayout() {
     toast.success('Obstacle duplicated');
   }, [selectedId, designObstacles]);
 
+  // Handle clicking on the mini-map in street view to pick viewpoint
+  const handleStreetViewMapClick = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
+    const svg = e.currentTarget;
+    const rect = svg.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setStreetViewPoint({ x: Math.max(2, Math.min(98, x)), y: Math.max(2, Math.min(98, y)) });
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -106,11 +120,18 @@ export default function FieldLayout() {
           <TabsList className="bg-secondary/50">
             <TabsTrigger value="current" className="gap-2 data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
               <Eye className="h-4 w-4" />
-              Current CPPS Layout
+              <span className="hidden sm:inline">Current Layout</span>
+              <span className="sm:hidden">Layout</span>
             </TabsTrigger>
             <TabsTrigger value="designer" className="gap-2 data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
               <PenTool className="h-4 w-4" />
-              Design Your Own
+              <span className="hidden sm:inline">Design Your Own</span>
+              <span className="sm:hidden">Design</span>
+            </TabsTrigger>
+            <TabsTrigger value="streetview" className="gap-2 data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
+              <Compass className="h-4 w-4" />
+              <span className="hidden sm:inline">Street View</span>
+              <span className="sm:hidden">3D View</span>
             </TabsTrigger>
           </TabsList>
 
@@ -264,8 +285,203 @@ export default function FieldLayout() {
               </div>
             </div>
           </TabsContent>
+
+          {/* Street View */}
+          <TabsContent value="streetview" className="space-y-6">
+            <Card className="bg-card border-border/50">
+              <CardHeader>
+                <CardTitle className="font-display tracking-wider flex items-center gap-3">
+                  FIELD STREET VIEW
+                  <Badge variant="outline" className="border-accent/50 text-accent">3D</Badge>
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Click anywhere on the mini-map below to place yourself on the field,
+                  then drag inside the 3D view to look around.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Source selector */}
+                <div className="flex gap-2">
+                  <Button
+                    variant={streetViewSource === 'cpps' ? 'default' : 'outline'}
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => {
+                      setStreetViewSource('cpps');
+                      setStreetViewObstacles(CPPS_FIELD_LAYOUT);
+                    }}
+                  >
+                    CPPS Layout
+                  </Button>
+                  <Button
+                    variant={streetViewSource === 'custom' ? 'default' : 'outline'}
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => {
+                      setStreetViewSource('custom');
+                      setStreetViewObstacles(designObstacles);
+                    }}
+                  >
+                    Your Design ({designObstacles.length} obstacles)
+                  </Button>
+                </div>
+
+                {/* 3D View */}
+                <Suspense fallback={<Skeleton className="w-full h-[400px] md:h-[500px] rounded-lg" />}>
+                  <FieldStreetView
+                    obstacles={streetViewObstacles}
+                    viewPoint={streetViewPoint}
+                  />
+                </Suspense>
+
+                {/* Mini-map for position picking */}
+                <div className="flex flex-col md:flex-row gap-4 items-start">
+                  <div className="flex-1 w-full">
+                    <p className="text-xs text-muted-foreground mb-2 font-medium">
+                      CLICK TO SET YOUR VIEWPOINT
+                    </p>
+                    <StreetViewMiniMap
+                      obstacles={streetViewObstacles}
+                      viewPoint={streetViewPoint}
+                      onClick={handleStreetViewMapClick}
+                    />
+                  </div>
+                  <div className="w-full md:w-48 space-y-3">
+                    <Card className="bg-secondary/50 border-border/30">
+                      <CardContent className="py-3 px-4 space-y-2">
+                        <p className="text-xs font-medium text-foreground">Controls</p>
+                        <ul className="text-[11px] text-muted-foreground space-y-1">
+                          <li>• Click mini-map to move</li>
+                          <li>• Drag 3D view to look around</li>
+                          <li>• Touch & swipe on mobile</li>
+                        </ul>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-secondary/50 border-border/30">
+                      <CardContent className="py-3 px-4">
+                        <p className="text-xs text-muted-foreground">
+                          Position: <span className="text-foreground font-mono">{Math.round(streetViewPoint.x)}%, {Math.round(streetViewPoint.y)}%</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Eye height: <span className="text-foreground font-mono">1.7m</span>
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    {/* Quick position buttons */}
+                    <div className="grid grid-cols-3 gap-1">
+                      {[
+                        { label: 'Blue Start', x: 5, y: 50 },
+                        { label: 'Center', x: 50, y: 50 },
+                        { label: 'Red Start', x: 95, y: 50 },
+                        { label: 'Snake', x: 30, y: 20 },
+                        { label: '50 Line', x: 50, y: 30 },
+                        { label: 'Dorito', x: 70, y: 20 },
+                      ].map((pos) => (
+                        <Button
+                          key={pos.label}
+                          variant="outline"
+                          size="sm"
+                          className="text-[10px] h-7 px-1"
+                          onClick={() => setStreetViewPoint({ x: pos.x, y: pos.y })}
+                        >
+                          {pos.label}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </main>
     </div>
+  );
+}
+
+// ---- Mini-map component for street view position picking ----
+function StreetViewMiniMap({
+  obstacles,
+  viewPoint,
+  onClick,
+}: {
+  obstacles: Obstacle[];
+  viewPoint: { x: number; y: number };
+  onClick: (e: React.MouseEvent<SVGSVGElement>) => void;
+}) {
+  const aspect = 45 / 36;
+  const w = 450;
+  const h = w / aspect;
+
+  return (
+    <svg
+      viewBox={`0 0 ${w} ${h}`}
+      className="w-full rounded-lg border border-border/50 cursor-crosshair"
+      onClick={onClick}
+      style={{ maxHeight: 280 }}
+    >
+      {/* Field background */}
+      <rect width={w} height={h} fill="hsl(120, 35%, 20%)" rx={4} />
+
+      {/* Grid */}
+      {Array.from({ length: 9 }).map((_, i) => (
+        <line key={`gx-${i}`} x1={(w / 9) * (i + 1)} y1={0} x2={(w / 9) * (i + 1)} y2={h}
+          stroke="rgba(255,255,255,0.06)" strokeWidth={0.5} />
+      ))}
+      {Array.from({ length: 7 }).map((_, i) => (
+        <line key={`gy-${i}`} x1={0} y1={(h / 7) * (i + 1)} x2={w} y2={(h / 7) * (i + 1)}
+          stroke="rgba(255,255,255,0.06)" strokeWidth={0.5} />
+      ))}
+
+      {/* Center line */}
+      <line x1={w / 2} y1={0} x2={w / 2} y2={h}
+        stroke="rgba(255,255,255,0.2)" strokeWidth={1} strokeDasharray="4,3" />
+
+      {/* Boundary */}
+      <rect x={2} y={2} width={w - 4} height={h - 4}
+        fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth={1.5} rx={3} />
+
+      {/* Obstacles as simple dots */}
+      {obstacles.map((obs) => {
+        const def = OBSTACLE_DEFINITIONS[obs.type];
+        const ox = (obs.x / 100) * w;
+        const oy = (obs.y / 100) * h;
+        const r = Math.max(4, ((def.widthM + def.depthM) / 2 / 45) * w);
+        return (
+          <circle key={obs.id} cx={ox} cy={oy} r={r}
+            fill={def.color} opacity={0.85} />
+        );
+      })}
+
+      {/* Viewpoint marker */}
+      <circle
+        cx={(viewPoint.x / 100) * w}
+        cy={(viewPoint.y / 100) * h}
+        r={8}
+        fill="none"
+        stroke="hsl(25, 95%, 53%)"
+        strokeWidth={2}
+      />
+      <circle
+        cx={(viewPoint.x / 100) * w}
+        cy={(viewPoint.y / 100) * h}
+        r={3}
+        fill="hsl(25, 95%, 53%)"
+      />
+      {/* Pulsing ring */}
+      <circle
+        cx={(viewPoint.x / 100) * w}
+        cy={(viewPoint.y / 100) * h}
+        r={12}
+        fill="none"
+        stroke="hsl(25, 95%, 53%)"
+        strokeWidth={1}
+        opacity={0.4}
+      >
+        <animate attributeName="r" from="8" to="16" dur="1.5s" repeatCount="indefinite" />
+        <animate attributeName="opacity" from="0.5" to="0" dur="1.5s" repeatCount="indefinite" />
+      </circle>
+    </svg>
   );
 }
