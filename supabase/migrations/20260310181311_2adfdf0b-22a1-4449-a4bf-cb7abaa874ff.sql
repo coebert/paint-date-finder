@@ -1,0 +1,25 @@
+-- Update all team logos
+UPDATE teams SET logo_url = 'https://jsibyruejumcpldutyqg.supabase.co/storage/v1/object/public/team-logos/lucky-15s-mustangs.png' WHERE id = 'dffc97f7-65f7-455c-840c-8e90fa18fa63';
+UPDATE teams SET logo_url = 'https://jsibyruejumcpldutyqg.supabase.co/storage/v1/object/public/team-logos/mayhem-tigers.png' WHERE id = 'f9e5b3bc-beee-4663-acd3-e62a51158997';
+UPDATE teams SET logo_url = 'https://jsibyruejumcpldutyqg.supabase.co/storage/v1/object/public/team-logos/sabotage.png' WHERE id = '9d23c6ec-b76c-4822-b423-08b07e35cce3';
+UPDATE teams SET logo_url = 'https://jsibyruejumcpldutyqg.supabase.co/storage/v1/object/public/team-logos/trash-pandas.png' WHERE id = 'b0b6870c-ff3a-40d3-9576-59047a7963fb';
+UPDATE teams SET logo_url = 'https://jsibyruejumcpldutyqg.supabase.co/storage/v1/object/public/team-logos/clan-legacy.png' WHERE id = '7469dc59-5488-4e5b-874d-548c95ed564f';
+UPDATE teams SET logo_url = 'https://jsibyruejumcpldutyqg.supabase.co/storage/v1/object/public/team-logos/ducks.png' WHERE id = '818cd5af-14cd-4c6b-98bb-2739da6f7f53';
+UPDATE teams SET logo_url = 'https://jsibyruejumcpldutyqg.supabase.co/storage/v1/object/public/team-logos/mayhem-tigers-red.png' WHERE id = '2c4fdd79-d024-4dad-8956-887e84192aa1';
+UPDATE teams SET logo_url = 'https://jsibyruejumcpldutyqg.supabase.co/storage/v1/object/public/team-logos/sad-outlaws.png' WHERE id = 'eaa4bb3c-e37f-4843-9aed-241087374222';
+UPDATE teams SET logo_url = 'https://jsibyruejumcpldutyqg.supabase.co/storage/v1/object/public/team-logos/iron-wolf.png' WHERE id = '0c371b27-b298-4e73-a60d-cc6b5362e00a';
+UPDATE teams SET logo_url = 'https://jsibyruejumcpldutyqg.supabase.co/storage/v1/object/public/team-logos/one41.png' WHERE id = 'd4a434cd-c6b2-4957-90b1-3afe83661fbc';
+UPDATE teams SET logo_url = 'https://jsibyruejumcpldutyqg.supabase.co/storage/v1/object/public/team-logos/se-factory.png' WHERE id = '678760d3-163c-41a2-8b0a-a48f186381cf';
+UPDATE teams SET logo_url = 'https://jsibyruejumcpldutyqg.supabase.co/storage/v1/object/public/team-logos/uk-redskins.png' WHERE id = '8f804405-1342-4e67-9f6f-cb6e0d34c453';
+UPDATE teams SET logo_url = 'https://jsibyruejumcpldutyqg.supabase.co/storage/v1/object/public/team-logos/heathens.png' WHERE id = 'dc763b68-964d-4abd-9a85-b08834064d28';
+UPDATE teams SET logo_url = 'https://jsibyruejumcpldutyqg.supabase.co/storage/v1/object/public/team-logos/nottingham-knights.png' WHERE id = '91dcd001-ac81-4df0-8a78-11307cc0b6b9';
+UPDATE teams SET logo_url = 'https://jsibyruejumcpldutyqg.supabase.co/storage/v1/object/public/team-logos/uk-fury.png' WHERE id = '794a68d9-86e3-43a6-b6ff-4fe19649b1e6';
+UPDATE teams SET logo_url = 'https://jsibyruejumcpldutyqg.supabase.co/storage/v1/object/public/team-logos/uk-redskins-braves.png' WHERE id = '1c056986-a7ac-4550-ba3c-2b98430ce274';
+UPDATE teams SET logo_url = 'https://jsibyruejumcpldutyqg.supabase.co/storage/v1/object/public/team-logos/fat-freddys-cat.png' WHERE id = '6c552f03-ba3d-49c4-b158-61c8c5f59443';
+UPDATE teams SET logo_url = 'https://jsibyruejumcpldutyqg.supabase.co/storage/v1/object/public/team-logos/norfolk-chaos.png' WHERE id = '3b622f42-0b60-45a0-b269-134f7a69db0c';
+UPDATE teams SET logo_url = 'https://jsibyruejumcpldutyqg.supabase.co/storage/v1/object/public/team-logos/riptide.png' WHERE id = 'bd37b2eb-7898-4409-aa94-243cd90fd29b';
+UPDATE teams SET logo_url = 'https://jsibyruejumcpldutyqg.supabase.co/storage/v1/object/public/team-logos/staffordshire-vipers.png' WHERE id = '777f7a79-fa53-4a54-8e46-5d64aa0c56aa';
+UPDATE teams SET logo_url = 'https://jsibyruejumcpldutyqg.supabase.co/storage/v1/object/public/team-logos/cerberus.png' WHERE id = 'a24997f8-c1fa-440d-988f-fc0c172da7dc';
+UPDATE teams SET logo_url = 'https://jsibyruejumcpldutyqg.supabase.co/storage/v1/object/public/team-logos/dirty-dogz.png' WHERE id = '36698090-b7e0-4a00-9890-36d84ccedb7c';
+UPDATE teams SET logo_url = 'https://jsibyruejumcpldutyqg.supabase.co/storage/v1/object/public/team-logos/reptiles.png' WHERE id = '4563b668-9331-4d15-a7fe-178ac29a2105';
+UPDATE teams SET logo_url = 'https://jsibyruejumcpldutyqg.supabase.co/storage/v1/object/public/team-logos/the-others.png' WHERE id = '92071466-1693-4320-af4a-f3e4cdacb33a';
