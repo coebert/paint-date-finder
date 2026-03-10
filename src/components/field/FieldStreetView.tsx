@@ -2,6 +2,7 @@ import { useRef, useMemo, useEffect, useCallback, useState } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { Sky, Text, Billboard } from '@react-three/drei';
 import * as THREE from 'three';
+import { Tag, EyeOff } from 'lucide-react';
 import { Obstacle, OBSTACLE_DEFINITIONS, FIELD_WIDTH_M, FIELD_HEIGHT_M } from '@/types/fieldLayout';
 
 // Shared joystick input (set by HTML overlay, read by Three.js camera)
@@ -327,7 +328,7 @@ function ObstacleLabel({ position, label, color }: { position: [number, number, 
 }
 
 // ---- Accurate 3D Obstacle shapes ----
-function Obstacle3D({ obstacle }: { obstacle: Obstacle }) {
+function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showLabels?: boolean }) {
   const def = OBSTACLE_DEFINITIONS[obstacle.type];
   const worldX = (obstacle.x / 100 - 0.5) * FIELD_WIDTH_M;
   const worldZ = (obstacle.y / 100 - 0.5) * FIELD_HEIGHT_M;
@@ -335,7 +336,7 @@ function Obstacle3D({ obstacle }: { obstacle: Obstacle }) {
   const { widthM: w, depthM: d, heightM: h, color, profile3D } = def;
   const labelY = h + 0.4;
 
-  const label = <ObstacleLabel position={[worldX, labelY, worldZ]} label={def.label} color={color} />;
+  const label = showLabels ? <ObstacleLabel position={[worldX, labelY, worldZ]} label={def.label} color={color} /> : null;
 
   // Shared inflatable PVC material
   const mat = useMemo(() => new THREE.MeshStandardMaterial({ 
@@ -736,12 +737,13 @@ function VirtualJoystick({ joystickRef }: { joystickRef: React.MutableRefObject<
 }
 
 // ---- Main scene ----
-function Scene({ obstacles, viewPosition, onPositionChange, onStanceChange, joystickRef }: {
+function Scene({ obstacles, viewPosition, onPositionChange, onStanceChange, joystickRef, showLabels }: {
   obstacles: Obstacle[];
   viewPosition: [number, number, number];
   onPositionChange?: (x: number, z: number) => void;
   onStanceChange?: (stance: { sprinting: boolean; crouching: boolean; eyeHeight: number }) => void;
   joystickRef: React.MutableRefObject<JoystickInput>;
+  showLabels: boolean;
 }) {
   return (
     <>
@@ -766,7 +768,7 @@ function Scene({ obstacles, viewPosition, onPositionChange, onStanceChange, joys
       <FieldNetting />
 
       {obstacles.map((obs) => (
-        <Obstacle3D key={obs.id} obstacle={obs} />
+        <Obstacle3D key={obs.id} obstacle={obs} showLabels={showLabels} />
       ))}
     </>
   );
@@ -782,6 +784,7 @@ interface FieldStreetViewProps {
 
 export function FieldStreetView({ obstacles, viewPoint, onViewPointChange, onStanceChange }: FieldStreetViewProps) {
   const joystickRef = useRef<JoystickInput>({ moveX: 0, moveY: 0 });
+  const [showLabels, setShowLabels] = useState(true);
   
   const viewPosition: [number, number, number] = useMemo(() => [
     (viewPoint.x / 100 - 0.5) * FIELD_WIDTH_M,
@@ -800,8 +803,17 @@ export function FieldStreetView({ obstacles, viewPoint, onViewPointChange, onSta
         camera={{ fov: 75, near: 0.1, far: 200 }}
         style={{ width: '100%', height: '100%' }}
       >
-        <Scene obstacles={obstacles} viewPosition={viewPosition} onPositionChange={handlePositionChange} onStanceChange={onStanceChange} joystickRef={joystickRef} />
+        <Scene obstacles={obstacles} viewPosition={viewPosition} onPositionChange={handlePositionChange} onStanceChange={onStanceChange} joystickRef={joystickRef} showLabels={showLabels} />
       </Canvas>
+      {/* Label toggle button */}
+      <button
+        onClick={() => setShowLabels(prev => !prev)}
+        className="absolute top-3 left-3 z-10 flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-black/60 hover:bg-black/80 text-white text-xs font-medium backdrop-blur-sm transition-colors border border-white/10"
+        title={showLabels ? 'Hide labels' : 'Show labels'}
+      >
+        {showLabels ? <Tag size={14} /> : <EyeOff size={14} />}
+        {showLabels ? 'Labels' : 'Labels'}
+      </button>
       {/* Virtual joystick - visible on touch devices */}
       <div className="md:hidden">
         <VirtualJoystick joystickRef={joystickRef} />
