@@ -59,6 +59,7 @@ export default {
           "speedball": "hsl(var(--event-speedball))",
           "scenario": "hsl(var(--event-scenario))",
           "other": "hsl(var(--event-other))",
+          "mag-fed": "hsl(var(--event-mag-fed))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
