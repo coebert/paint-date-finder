@@ -2,6 +2,7 @@ import { useRef, useMemo, useEffect, useCallback, useState } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { Sky, Text, Billboard } from '@react-three/drei';
 import * as THREE from 'three';
+import { Tag, TagOff } from 'lucide-react';
 import { Obstacle, OBSTACLE_DEFINITIONS, FIELD_WIDTH_M, FIELD_HEIGHT_M } from '@/types/fieldLayout';
 
 // Shared joystick input (set by HTML overlay, read by Three.js camera)
