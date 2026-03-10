@@ -152,15 +152,23 @@ function Obstacle3D({ obstacle }: { obstacle: Obstacle }) {
 
   const mat = useMemo(() => new THREE.MeshStandardMaterial({ color, roughness: 0.8 }), [color]);
 
+  // Dorito triangle shape (must be at top level for hooks rules)
+  const triShape = useMemo(() => {
+    const s = new THREE.Shape();
+    s.moveTo(-w / 2, 0);
+    s.lineTo(w / 2, 0);
+    s.lineTo(0, h);
+    s.closePath();
+    return s;
+  }, [w, h]);
+
   if (profile3D === 'cylinder') {
-    // Tall/short cake, can — inflatable cylinder with slight taper
     const r = w / 2;
     return (
       <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
         <mesh position={[0, h / 2, 0]} material={mat} castShadow>
           <cylinderGeometry args={[r, r * 1.05, h, 20]} />
         </mesh>
-        {/* Top rim ring */}
         <mesh position={[0, h, 0]} rotation={[Math.PI / 2, 0, 0]}>
           <torusGeometry args={[r * 0.85, r * 0.08, 8, 20]} />
           <meshStandardMaterial color={color} roughness={0.6} />
@@ -179,23 +187,10 @@ function Obstacle3D({ obstacle }: { obstacle: Obstacle }) {
   }
 
   if (profile3D === 'prism-triangle') {
-    // Dorito — triangular prism. The cross-section is a triangle, extruded along depth.
-    // From the side it's a tall triangle. From above it's a triangle.
-    // Real doritos are inflatable A-frame shapes.
-    const shape = useMemo(() => {
-      const s = new THREE.Shape();
-      // Triangle cross-section: base=width, peak at center top
-      s.moveTo(-w / 2, 0);
-      s.lineTo(w / 2, 0);
-      s.lineTo(0, h);
-      s.closePath();
-      return s;
-    }, [w, h]);
-
     return (
       <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
         <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, d / 2]} material={mat} castShadow>
-          <extrudeGeometry args={[shape, { depth: d, bevelEnabled: true, bevelSize: 0.05, bevelThickness: 0.05, bevelSegments: 2 }]} />
+          <extrudeGeometry args={[triShape, { depth: d, bevelEnabled: true, bevelSize: 0.05, bevelThickness: 0.05, bevelSegments: 2 }]} />
         </mesh>
       </group>
     );
