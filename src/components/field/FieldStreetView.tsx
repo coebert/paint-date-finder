@@ -2,7 +2,7 @@ import { useRef, useMemo, useEffect, useCallback, useState } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { Sky, Text, Billboard } from '@react-three/drei';
 import * as THREE from 'three';
-import { Tag, EyeOff, Zap, ArrowDownToLine } from 'lucide-react';
+import { Tag, EyeOff, Zap, ArrowDownToLine, Compass } from 'lucide-react';
 import { Obstacle, OBSTACLE_DEFINITIONS, FIELD_WIDTH_M, FIELD_HEIGHT_M } from '@/types/fieldLayout';
 
 // Shared joystick input (set by HTML overlay, read by Three.js camera)
@@ -22,13 +22,14 @@ export interface MobileStanceInput {
 }
 
 // ---- First-person camera controller ----
-function FirstPersonCamera({ position, onPositionChange, onStanceChange, joystickRef, lookRef, mobileStanceRef }: { 
+function FirstPersonCamera({ position, onPositionChange, onStanceChange, joystickRef, lookRef, mobileStanceRef, headingRef }: { 
   position: [number, number, number];
   onPositionChange?: (x: number, z: number) => void;
   onStanceChange?: (stance: { sprinting: boolean; crouching: boolean; eyeHeight: number }) => void;
   joystickRef: React.RefObject<JoystickInput>;
   lookRef: React.RefObject<LookInput>;
   mobileStanceRef: React.RefObject<MobileStanceInput>;
+  headingRef: React.MutableRefObject<number>;
 }) {
   const { camera, gl } = useThree();
   const yaw = useRef(0);
@@ -184,6 +185,7 @@ function FirstPersonCamera({ position, onPositionChange, onStanceChange, joystic
     camera.position.set(currentPos.current[0], currentPos.current[1], currentPos.current[2]);
     const euler = new THREE.Euler(pitch.current, yaw.current, 0, 'YXZ');
     camera.quaternion.setFromEuler(euler);
+    headingRef.current = yaw.current;
   });
 
   return null;
@@ -841,7 +843,7 @@ function VirtualLookJoystick({ lookRef }: { lookRef: React.MutableRefObject<Look
 }
 
 // ---- Main scene ----
-function Scene({ obstacles, viewPosition, onPositionChange, onStanceChange, joystickRef, lookRef, mobileStanceRef, showLabels }: {
+function Scene({ obstacles, viewPosition, onPositionChange, onStanceChange, joystickRef, lookRef, mobileStanceRef, headingRef, showLabels }: {
   obstacles: Obstacle[];
   viewPosition: [number, number, number];
   onPositionChange?: (x: number, z: number) => void;
@@ -849,6 +851,7 @@ function Scene({ obstacles, viewPosition, onPositionChange, onStanceChange, joys
   joystickRef: React.MutableRefObject<JoystickInput>;
   lookRef: React.MutableRefObject<LookInput>;
   mobileStanceRef: React.MutableRefObject<MobileStanceInput>;
+  headingRef: React.MutableRefObject<number>;
   showLabels: boolean;
 }) {
   return (
@@ -869,7 +872,7 @@ function Scene({ obstacles, viewPosition, onPositionChange, onStanceChange, joys
       <directionalLight position={[-20, 30, -15]} intensity={0.4} />
       <hemisphereLight args={['#b4d7ff', '#3a8f29', 0.5]} />
 
-      <FirstPersonCamera position={viewPosition} onPositionChange={onPositionChange} onStanceChange={onStanceChange} joystickRef={joystickRef} lookRef={lookRef} mobileStanceRef={mobileStanceRef} />
+      <FirstPersonCamera position={viewPosition} onPositionChange={onPositionChange} onStanceChange={onStanceChange} joystickRef={joystickRef} lookRef={lookRef} mobileStanceRef={mobileStanceRef} headingRef={headingRef} />
       <FieldGround />
       <FieldNetting />
 
@@ -892,9 +895,25 @@ export function FieldStreetView({ obstacles, viewPoint, onViewPointChange, onSta
   const joystickRef = useRef<JoystickInput>({ moveX: 0, moveY: 0 });
   const lookRef = useRef<LookInput>({ lookX: 0, lookY: 0 });
   const mobileStanceRef = useRef<MobileStanceInput>({ sprinting: false, crouching: false });
+  const headingRef = useRef<number>(0);
+  const compassRef = useRef<HTMLDivElement>(null);
   const [showLabels, setShowLabels] = useState(true);
   const [mobileSprinting, setMobileSprinting] = useState(false);
   const [mobileCrouching, setMobileCrouching] = useState(false);
+
+  // Animate compass from headingRef
+  useEffect(() => {
+    let raf: number;
+    const update = () => {
+      if (compassRef.current) {
+        const deg = (headingRef.current * 180) / Math.PI;
+        compassRef.current.style.transform = `rotate(${deg}deg)`;
+      }
+      raf = requestAnimationFrame(update);
+    };
+    raf = requestAnimationFrame(update);
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
   // Sync mobile stance buttons to ref
   useEffect(() => {
@@ -903,14 +922,14 @@ export function FieldStreetView({ obstacles, viewPoint, onViewPointChange, onSta
 
   const toggleSprint = useCallback(() => {
     setMobileSprinting(prev => {
-      if (!prev) setMobileCrouching(false); // can't sprint and crouch
+      if (!prev) setMobileCrouching(false);
       return !prev;
     });
   }, []);
 
   const toggleCrouch = useCallback(() => {
     setMobileCrouching(prev => {
-      if (!prev) setMobileSprinting(false); // can't crouch and sprint
+      if (!prev) setMobileSprinting(false);
       return !prev;
     });
   }, []);
@@ -932,7 +951,7 @@ export function FieldStreetView({ obstacles, viewPoint, onViewPointChange, onSta
         camera={{ fov: 75, near: 0.1, far: 200 }}
         style={{ width: '100%', height: '100%' }}
       >
-        <Scene obstacles={obstacles} viewPosition={viewPosition} onPositionChange={handlePositionChange} onStanceChange={onStanceChange} joystickRef={joystickRef} lookRef={lookRef} mobileStanceRef={mobileStanceRef} showLabels={showLabels} />
+        <Scene obstacles={obstacles} viewPosition={viewPosition} onPositionChange={handlePositionChange} onStanceChange={onStanceChange} joystickRef={joystickRef} lookRef={lookRef} mobileStanceRef={mobileStanceRef} headingRef={headingRef} showLabels={showLabels} />
       </Canvas>
       {/* Label toggle button */}
       <button
@@ -943,7 +962,46 @@ export function FieldStreetView({ obstacles, viewPoint, onViewPointChange, onSta
         {showLabels ? <Tag size={14} /> : <EyeOff size={14} />}
         {showLabels ? 'Labels' : 'Labels'}
       </button>
-      {/* Virtual joysticks & stance buttons - visible on touch devices */}
+      {/* Compass overlay */}
+      <div className="absolute top-3 right-3 z-10 w-14 h-14 md:w-16 md:h-16">
+        <div className="w-full h-full rounded-full bg-black/60 backdrop-blur-sm border border-white/10 flex items-center justify-center">
+          <div ref={compassRef} className="w-10 h-10 md:w-12 md:h-12 relative">
+            <svg viewBox="0 0 100 100" className="w-full h-full">
+              {/* Cardinal direction ticks */}
+              {[0, 90, 180, 270].map((angle) => (
+                <line
+                  key={angle}
+                  x1="50" y1="8" x2="50" y2="14"
+                  stroke="rgba(255,255,255,0.4)"
+                  strokeWidth="1.5"
+                  transform={`rotate(${angle} 50 50)`}
+                />
+              ))}
+              {/* Minor ticks */}
+              {[45, 135, 225, 315].map((angle) => (
+                <line
+                  key={angle}
+                  x1="50" y1="10" x2="50" y2="14"
+                  stroke="rgba(255,255,255,0.2)"
+                  strokeWidth="1"
+                  transform={`rotate(${angle} 50 50)`}
+                />
+              ))}
+              {/* North arrow (red) */}
+              <polygon points="50,12 44,50 50,44 56,50" fill="#cc1122" />
+              {/* South arrow (white/grey) */}
+              <polygon points="50,88 44,50 50,56 56,50" fill="rgba(255,255,255,0.35)" />
+              {/* Center dot */}
+              <circle cx="50" cy="50" r="3" fill="white" />
+              {/* Cardinal labels */}
+              <text x="50" y="7" textAnchor="middle" fill="#cc1122" fontSize="11" fontWeight="bold" fontFamily="sans-serif">N</text>
+              <text x="50" y="98" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="9" fontFamily="sans-serif">S</text>
+              <text x="95" y="53" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="9" fontFamily="sans-serif">E</text>
+              <text x="5" y="53" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="9" fontFamily="sans-serif">W</text>
+            </svg>
+          </div>
+        </div>
+      </div>
       <div className="md:hidden">
         <VirtualJoystick joystickRef={joystickRef} />
         <VirtualLookJoystick lookRef={lookRef} />
