@@ -295,6 +295,34 @@ export function FieldCanvas({
             interactive={interactive}
           />
         ))}
+
+        {/* Callout labels */}
+        {showLabels && (() => {
+          const labels = generateCalloutLabels(obstacles);
+          return obstacles.map((obs) => {
+            const cx = (obs.x / 100) * dims.width;
+            const cy = (obs.y / 100) * dims.height;
+            return (
+              <g key={`label-${obs.id}`} style={{ pointerEvents: 'none' }}>
+                <rect
+                  x={cx + 6} y={cy - 14}
+                  width={labels[obs.id].length * 7 + 6} height={16}
+                  rx={3}
+                  fill="rgba(0,0,0,0.75)"
+                />
+                <text
+                  x={cx + 9} y={cy - 3}
+                  fill="white"
+                  fontSize={10}
+                  fontFamily="monospace"
+                  fontWeight={700}
+                >
+                  {labels[obs.id]}
+                </text>
+              </g>
+            );
+          });
+        })()}
       </svg>
     </div>
   );
