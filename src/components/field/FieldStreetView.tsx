@@ -22,13 +22,14 @@ export interface MobileStanceInput {
 }
 
 // ---- First-person camera controller ----
-function FirstPersonCamera({ position, onPositionChange, onStanceChange, joystickRef, lookRef, mobileStanceRef }: { 
+function FirstPersonCamera({ position, onPositionChange, onStanceChange, joystickRef, lookRef, mobileStanceRef, headingRef }: { 
   position: [number, number, number];
   onPositionChange?: (x: number, z: number) => void;
   onStanceChange?: (stance: { sprinting: boolean; crouching: boolean; eyeHeight: number }) => void;
   joystickRef: React.RefObject<JoystickInput>;
   lookRef: React.RefObject<LookInput>;
   mobileStanceRef: React.RefObject<MobileStanceInput>;
+  headingRef: React.MutableRefObject<number>;
 }) {
   const { camera, gl } = useThree();
   const yaw = useRef(0);
