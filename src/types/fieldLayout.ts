@@ -28,7 +28,8 @@ export interface ObstacleDefinition {
   widthM: number;  // footprint width (left-right from above)
   depthM: number;  // footprint depth (top-bottom from above)
   heightM: number; // physical height off ground
-  color: string;
+  color: string;           // primary panel color
+  colorSecondary: string;  // secondary panel color (for two-tone CPPS look)
   // Bird's eye shape description
   birdEye: 'circle' | 'triangle' | 'rect' | 'capsule' | 'stepped-rect';
   // 3D profile cross-section
@@ -39,141 +40,141 @@ export interface ObstacleDefinition {
 export const FIELD_WIDTH_M = 45;
 export const FIELD_HEIGHT_M = 36;
 
-// Real Sup'Air / Airups / Air-Bunker manufacturer specs
+// CPPS Sup'Air colour scheme: Red and Blue panels
+const CPPS_RED = '#cc1122';
+const CPPS_BLUE = '#1155cc';
+
+// Real Sup'Air / Airups / Air-Bunker manufacturer specs — CPPS red/blue palette
 export const OBSTACLE_DEFINITIONS: Record<ObstacleType, ObstacleDefinition> = {
   'tall-cake': {
     type: 'tall-cake',
     label: 'Tall Cake',
-    // Cylinder: 1.5m diameter, 1.5m tall
     widthM: 1.5,
     depthM: 1.5,
     heightM: 1.5,
-    color: '#e87420',
+    color: CPPS_RED,
+    colorSecondary: CPPS_BLUE,
     birdEye: 'circle',
     profile3D: 'cylinder',
   },
   'small-cake': {
     type: 'small-cake',
     label: 'Small Cake',
-    // Cylinder: 1.0m diameter, 1.0m tall
     widthM: 1.0,
     depthM: 1.0,
     heightM: 1.0,
-    color: '#c96218',
+    color: CPPS_BLUE,
+    colorSecondary: CPPS_RED,
     birdEye: 'circle',
     profile3D: 'cylinder',
   },
   'dorito-big': {
     type: 'dorito-big',
     label: 'Dorito (Big)',
-    // Equilateral triangular prism: 2.1m sides, 2.1m tall
     widthM: 2.1,
-    depthM: 1.82, // height of equilateral triangle = side * √3/2
+    depthM: 1.82,
     heightM: 2.1,
-    color: '#2e8bc0',
+    color: CPPS_BLUE,
+    colorSecondary: CPPS_RED,
     birdEye: 'triangle',
     profile3D: 'prism-triangle',
   },
   'dorito-small': {
     type: 'dorito-small',
     label: 'Dorito (Small)',
-    // Equilateral: 1.7m sides, 1.7m tall
     widthM: 1.7,
     depthM: 1.47,
     heightM: 1.7,
-    color: '#3a9fd8',
+    color: CPPS_RED,
+    colorSecondary: CPPS_BLUE,
     birdEye: 'triangle',
     profile3D: 'prism-triangle',
   },
   'snake': {
     type: 'snake',
     label: 'Snake Beam',
-    // AIRBUNKER spec: H=0.75m, W=0.5m, L=3.0m
-    // Airups PSP spec: H=28in(0.71m), W=10ft(3.05m), D=20in(0.51m)
-    // Using AIRBUNKER standard dimensions
     widthM: 0.5,
     depthM: 3.0,
     heightM: 0.75,
-    color: '#3d8a3d',
+    color: CPPS_BLUE,
+    colorSecondary: CPPS_RED,
     birdEye: 'capsule',
     profile3D: 'half-cylinder',
   },
   'temple': {
     type: 'temple',
     label: 'Temple',
-    // Stepped pyramid: 1.5m × 1.5m × 1.5m
     widthM: 1.5,
     depthM: 1.5,
     heightM: 1.5,
-    color: '#8855aa',
+    color: CPPS_RED,
+    colorSecondary: CPPS_BLUE,
     birdEye: 'stepped-rect',
     profile3D: 'stepped-pyramid',
   },
   'temple-maya': {
     type: 'temple-maya',
     label: 'Temple Maya',
-    // AIRBUNKER spec: H=2.5m, W=1.5m, D=1.5m
-    // Airups NXL spec: H=7ft(2.13m), W=5ft(1.52m), D=5ft(1.52m)
-    // Using AIRBUNKER standard - taller at 2.5m
     widthM: 1.5,
     depthM: 1.5,
     heightM: 2.5,
-    color: '#7744aa',
+    color: CPPS_BLUE,
+    colorSecondary: CPPS_RED,
     birdEye: 'stepped-rect',
     profile3D: 'stepped-pyramid',
   },
   'brick': {
     type: 'brick',
     label: 'Brick',
-    // Low rectangle: 1.5m × 1.25m × 0.75m from Air-Bunker
     widthM: 1.5,
     depthM: 1.25,
     heightM: 0.75,
-    color: '#cc3333',
+    color: CPPS_RED,
+    colorSecondary: CPPS_BLUE,
     birdEye: 'rect',
     profile3D: 'box',
   },
   'wing': {
     type: 'wing',
     label: 'Wing',
-    // Flat rounded panel: 1.95m × 1.5m × 0.5m from Air-Bunker
     widthM: 1.95,
     depthM: 1.5,
     heightM: 0.5,
-    color: '#cc4488',
+    color: CPPS_BLUE,
+    colorSecondary: CPPS_RED,
     birdEye: 'capsule',
     profile3D: 'flat-panel',
   },
   'mini-race': {
     type: 'mini-race',
     label: 'Mini Race',
-    // Small rectangle: 1.5m × 1.3m × 0.5m from Air-Bunker
     widthM: 1.5,
     depthM: 1.3,
     heightM: 0.5,
-    color: '#ccaa22',
+    color: CPPS_RED,
+    colorSecondary: CPPS_BLUE,
     birdEye: 'capsule',
     profile3D: 'flat-panel',
   },
   'can': {
     type: 'can',
     label: 'Can / Cylinder',
-    // Tall thin cylinder: 1.2m diameter, 2.0m tall
     widthM: 1.2,
     depthM: 1.2,
     heightM: 2.0,
-    color: '#339966',
+    color: CPPS_RED,
+    colorSecondary: CPPS_BLUE,
     birdEye: 'circle',
     profile3D: 'cylinder',
   },
   'cone': {
     type: 'cone',
     label: 'Cone',
-    // Cone: 1.25m base, 2.25m tall
     widthM: 1.25,
     depthM: 1.25,
     heightM: 2.25,
-    color: '#dd8822',
+    color: CPPS_BLUE,
+    colorSecondary: CPPS_RED,
     birdEye: 'circle',
     profile3D: 'cone',
   },
