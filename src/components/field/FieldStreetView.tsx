@@ -95,8 +95,23 @@ function FirstPersonCamera({ position, onPositionChange, onStanceChange }: {
     };
   }, [gl]);
 
+  const lastStance = useRef({ sprinting: false, crouching: false });
+
   useFrame((_, delta) => {
-    const speed = 5; // meters per second
+    const isSprinting = keys.current.has('shift');
+    const isCrouching = keys.current.has('c');
+    const baseSpeed = 5;
+    const speed = isSprinting ? 10 : isCrouching ? 2.5 : baseSpeed;
+    const eyeHeight = isCrouching ? 0.9 : 1.7;
+
+    // Report stance changes
+    if (onStanceChange && (lastStance.current.sprinting !== isSprinting || lastStance.current.crouching !== isCrouching)) {
+      lastStance.current = { sprinting: isSprinting, crouching: isCrouching };
+      onStanceChange({ sprinting: isSprinting, crouching: isCrouching, eyeHeight });
+    }
+
+    currentPos.current[1] = eyeHeight;
+
     const moveDir = new THREE.Vector3(0, 0, 0);
     
     if (keys.current.has('w') || keys.current.has('arrowup')) moveDir.z -= 1;
@@ -116,7 +131,6 @@ function FirstPersonCamera({ position, onPositionChange, onStanceChange }: {
       currentPos.current[0] = Math.max(-hw + 0.5, Math.min(hw - 0.5, currentPos.current[0]));
       currentPos.current[2] = Math.max(-hh + 0.5, Math.min(hh - 0.5, currentPos.current[2]));
 
-      // Throttle: only report if moved >0.5m since last report
       if (onPositionChange) {
         const dx = currentPos.current[0] - lastReportedPos.current[0];
         const dz = currentPos.current[2] - lastReportedPos.current[1];
