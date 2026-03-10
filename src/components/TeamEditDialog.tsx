@@ -23,7 +23,8 @@ interface TeamEditDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const DIVISIONS = ['Elite', 'Division 2', 'Division 3', 'Division 4', 'Division 5', 'Breakout'];
+const DIVISIONS = ['Elite', 'Division 2', 'Division 3', 'Division 4', 'Division 5', 'Breakout', 'Independent'];
+const LEAGUES = ['CPPS', 'Other'];
 
 export function TeamEditDialog({ team, open, onOpenChange }: TeamEditDialogProps) {
   const queryClient = useQueryClient();
