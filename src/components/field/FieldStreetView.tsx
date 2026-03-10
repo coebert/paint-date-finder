@@ -811,7 +811,7 @@ export function FieldStreetView({ obstacles, viewPoint, onViewPointChange, onSta
         className="absolute top-3 left-3 z-10 flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-black/60 hover:bg-black/80 text-white text-xs font-medium backdrop-blur-sm transition-colors border border-white/10"
         title={showLabels ? 'Hide labels' : 'Show labels'}
       >
-        {showLabels ? <TagIcon size={14} /> : <TagOffIcon size={14} />}
+        {showLabels ? <Tag size={14} /> : <EyeOff size={14} />}
         {showLabels ? 'Labels' : 'Labels'}
       </button>
       {/* Virtual joystick - visible on touch devices */}
