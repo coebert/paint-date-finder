@@ -89,6 +89,22 @@ export default function FieldLayout() {
     toast.success('Loaded CPPS layout');
   }, []);
 
+  const nxlLayoutMap: Record<NxlPresetId, Obstacle[]> = {
+    'nxl-tampa': NXL_TAMPA_BAY_LAYOUT,
+    'nxl-vegas': NXL_LAS_VEGAS_LAYOUT,
+    'nxl-windy': NXL_WINDY_CITY_LAYOUT,
+  };
+
+  const getPresetLayout = (preset: 'cpps' | NxlPresetId): Obstacle[] => {
+    if (preset === 'cpps') return CPPS_FIELD_LAYOUT;
+    return nxlLayoutMap[preset];
+  };
+
+  const getPresetMeta = (preset: 'cpps' | NxlPresetId) => {
+    if (preset === 'cpps') return { title: 'CPPS COMPETITION FIELD', badge: '2025 Season', description: 'Standard Sup\'Air inflatable field layout used in CPPS tournament play. The field is symmetrical with a center-line dividing two mirror-image halves.' };
+    return NXL_PRESETS.find(p => p.id === preset)!;
+  };
+
   const handleLoadNXL = useCallback(() => {
     setDesignObstacles([...NXL_TAMPA_BAY_LAYOUT]);
     setSelectedId(null);
