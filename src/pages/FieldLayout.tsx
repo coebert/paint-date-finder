@@ -176,6 +176,11 @@ export default function FieldLayout() {
               <span className="hidden sm:inline">Street View</span>
               <span className="sm:hidden">3D View</span>
             </TabsTrigger>
+            <TabsTrigger value="compare" className="gap-2 data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
+              <Columns2 className="h-4 w-4" />
+              <span className="hidden sm:inline">Compare</span>
+              <span className="sm:hidden">Compare</span>
+            </TabsTrigger>
           </TabsList>
 
           {/* Current Layout */}
