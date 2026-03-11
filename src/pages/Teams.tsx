@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, ArrowLeft, Trophy, Mail, Globe, Phone, Users, Filter, Shield, Swords } from 'lucide-react';
+import { Search, ArrowLeft, Trophy, Globe, Users, Filter, Shield, Swords } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

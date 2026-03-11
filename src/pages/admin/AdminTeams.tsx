@@ -28,6 +28,7 @@ export default function AdminTeams() {
   const { data: teams, isLoading, error } = useTeams({
     division: divisionFilter || undefined,
     search: searchQuery || undefined,
+    includeContact: true,
   });
 
   const handleEdit = (team: Team) => {

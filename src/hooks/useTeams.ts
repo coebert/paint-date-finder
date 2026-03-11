@@ -22,13 +22,16 @@ export interface Team {
   updated_at: string;
 }
 
-export function useTeams(filters?: { division?: string; search?: string; league?: string }) {
+export function useTeams(filters?: { division?: string; search?: string; league?: string; includeContact?: boolean }) {
   return useQuery({
     queryKey: ['teams', filters],
     queryFn: async () => {
+      const columns = filters?.includeContact
+        ? '*'
+        : 'id,name,division,league,position,points,captain_name,website,logo_url,region,home_venue,description,is_active,created_at,updated_at,social_media';
       let query = supabase
         .from('teams')
-        .select('*')
+        .select(columns)
         .eq('is_active', true)
         .order('division')
         .order('position', { ascending: true, nullsFirst: false });

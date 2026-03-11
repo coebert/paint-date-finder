@@ -19,7 +19,7 @@ export function useTeamById(id: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('teams')
-        .select('*')
+        .select('id,name,division,league,position,points,captain_name,website,logo_url,region,home_venue,description,is_active,created_at,updated_at,social_media')
         .eq('id', id!)
         .single();
       if (error) throw error;
