@@ -638,24 +638,64 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
     );
   }
 
-  // Default box fallback (brick, giant-plus) — red body, blue top cap
+  // Giant Plus: cross/plus shape made of two intersecting boxes
+  if (def.birdEye === 'plus') {
+    const capH = h * 0.15;
+    const bodyH = h - capH;
+    const armW = w * 0.38; // width of each arm
+    return (
+      <>
+        {label}
+        <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+          {/* Horizontal bar — red body */}
+          <mesh position={[0, bodyH / 2, 0]} castShadow>
+            <boxGeometry args={[w, bodyH, armW]} />
+            <primitive object={matRed} attach="material" />
+          </mesh>
+          {/* Vertical bar — red body */}
+          <mesh position={[0, bodyH / 2, 0]} castShadow>
+            <boxGeometry args={[armW, bodyH, d]} />
+            <primitive object={matRed} attach="material" />
+          </mesh>
+          {/* Horizontal bar — blue cap */}
+          <mesh position={[0, bodyH + capH / 2, 0]} castShadow>
+            <boxGeometry args={[w, capH, armW]} />
+            <primitive object={matBlue} attach="material" />
+          </mesh>
+          {/* Vertical bar — blue cap */}
+          <mesh position={[0, bodyH + capH / 2, 0]} castShadow>
+            <boxGeometry args={[armW, capH, d]} />
+            <primitive object={matBlue} attach="material" />
+          </mesh>
+          {/* White seams */}
+          <mesh position={[0, bodyH, 0]}>
+            <boxGeometry args={[w * 1.01, 0.03, armW * 1.01]} />
+            <primitive object={seamMat} attach="material" />
+          </mesh>
+          <mesh position={[0, bodyH, 0]}>
+            <boxGeometry args={[armW * 1.01, 0.03, d * 1.01]} />
+            <primitive object={seamMat} attach="material" />
+          </mesh>
+        </group>
+      </>
+    );
+  }
+
+  // Default box fallback (brick, etc.) — red body, blue top cap
   const capH = h * 0.2;
   const bodyH = h - capH;
   return (
     <>
       {label}
       <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-        {/* Red body */}
         <mesh position={[0, bodyH / 2, 0]} castShadow>
           <boxGeometry args={[w, bodyH, d]} />
           <primitive object={matRed} attach="material" />
         </mesh>
-        {/* Blue top cap */}
         <mesh position={[0, bodyH + capH / 2, 0]} castShadow>
           <boxGeometry args={[w, capH, d]} />
           <primitive object={matBlue} attach="material" />
         </mesh>
-        {/* White seam between body and cap */}
         <mesh position={[0, bodyH, 0]}>
           <boxGeometry args={[w * 1.01, 0.03, d * 1.01]} />
           <primitive object={seamMat} attach="material" />
