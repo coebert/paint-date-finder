@@ -19,7 +19,8 @@ export type ObstacleType =
   | 'wing'
   | 'mini-race'
   | 'can'
-  | 'cone';
+  | 'cone'
+  | 'giant-plus';
 
 export interface ObstacleDefinition {
   type: ObstacleType;
