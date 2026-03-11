@@ -239,6 +239,153 @@ export const NXL_WINDY_CITY_LAYOUT: Obstacle[] = [
   { id: 'wc-sd4', type: 'dorito-small', x: 63, y: 77, rotation: 90 },
 ];
 
+// ─── NXL World Cup 2024 ───
+// Field: 150ft × 120ft (45m × 36m).
+// Mapped from the official PBLeagues bird's-eye field diagram.
+// Kissimmee, FL — Nov 6-10, 2024.
+// 180° rotational symmetry about center.
+export const NXL_WORLD_CUP_LAYOUT: Obstacle[] = [
+  // ═══════ TOP HALF ═══════
+
+  // --- Top sideline / back-base doritos ---
+  { id: 'cup-sd1', type: 'dorito-small', x: 20, y: 17, rotation: 90 },      // SD near left base
+  { id: 'cup-md1', type: 'dorito-big', x: 37, y: 17, rotation: 0 },         // MD
+  { id: 'cup-md2', type: 'dorito-big', x: 47, y: 17, rotation: 0 },         // MD
+
+  // --- Doritos along top sideline ---
+  { id: 'cup-d1', type: 'dorito-big', x: 57, y: 10, rotation: 0 },
+  { id: 'cup-d2', type: 'dorito-big', x: 67, y: 8, rotation: 0 },
+  { id: 'cup-d3', type: 'dorito-big', x: 77, y: 10, rotation: 0 },
+  { id: 'cup-d4', type: 'dorito-big', x: 87, y: 12, rotation: 0 },
+
+  // --- Wing at top ---
+  { id: 'cup-wg1', type: 'wing', x: 50, y: 13, rotation: 90 },
+
+  // --- MT near left base ---
+  { id: 'cup-mt1', type: 'temple-maya', x: 23, y: 21, rotation: 0 },
+
+  // --- Snake Beams (upper corridor) ---
+  { id: 'cup-sb1', type: 'snake', x: 43, y: 25, rotation: 0 },
+  { id: 'cup-sb2', type: 'snake', x: 47, y: 25, rotation: 0 },
+
+  // --- MD mid-left ---
+  { id: 'cup-md3', type: 'dorito-big', x: 37, y: 25, rotation: 0 },
+
+  // --- Tree (can) ---
+  { id: 'cup-tr1', type: 'can', x: 50, y: 25, rotation: 0 },
+
+  // --- Mini W ---
+  { id: 'cup-mw1', type: 'mini-race', x: 23, y: 27, rotation: 0 },
+
+  // --- Temples (back corners) ---
+  { id: 'cup-t1', type: 'temple', x: 20, y: 33, rotation: 0 },
+  { id: 'cup-t2', type: 'temple', x: 20, y: 50, rotation: 0 },
+
+  // --- Giant Brick (center) ---
+  { id: 'cup-gb1', type: 'brick', x: 50, y: 33, rotation: 0 },
+
+  // --- Giant Wing (mid) ---
+  { id: 'cup-gw1', type: 'wing', x: 40, y: 38, rotation: 0 },
+
+  // --- Cylinder ---
+  { id: 'cup-c1', type: 'can', x: 17, y: 42, rotation: 0 },
+
+  // --- Giant Wing + Giant Brick (lower center) ---
+  { id: 'cup-gw2', type: 'wing', x: 47, y: 46, rotation: 0 },
+  { id: 'cup-gb2', type: 'brick', x: 50, y: 46, rotation: 0 },
+
+  // --- MT center ---
+  { id: 'cup-mt2', type: 'temple-maya', x: 40, y: 50, rotation: 0 },
+
+  // ═══════ BOTTOM HALF (180° mirror) ═══════
+
+  // --- Bottom sideline / back-base doritos ---
+  { id: 'cup-sd2', type: 'dorito-small', x: 80, y: 83, rotation: -90 },
+  { id: 'cup-md4', type: 'dorito-big', x: 63, y: 83, rotation: 180 },
+  { id: 'cup-md5', type: 'dorito-big', x: 53, y: 83, rotation: 180 },
+
+  // --- Doritos along bottom sideline ---
+  { id: 'cup-d5', type: 'dorito-big', x: 43, y: 90, rotation: 180 },
+  { id: 'cup-d6', type: 'dorito-big', x: 33, y: 92, rotation: 180 },
+  { id: 'cup-d7', type: 'dorito-big', x: 23, y: 90, rotation: 180 },
+  { id: 'cup-d8', type: 'dorito-big', x: 13, y: 88, rotation: 180 },
+
+  // --- Wing at bottom ---
+  { id: 'cup-wg2', type: 'wing', x: 50, y: 87, rotation: 90 },
+
+  // --- MT near right base ---
+  { id: 'cup-mt3', type: 'temple-maya', x: 77, y: 79, rotation: 0 },
+
+  // --- Snake Beams (lower corridor) ---
+  { id: 'cup-sb3', type: 'snake', x: 57, y: 75, rotation: 0 },
+  { id: 'cup-sb4', type: 'snake', x: 53, y: 75, rotation: 0 },
+
+  // --- MD mid-right ---
+  { id: 'cup-md6', type: 'dorito-big', x: 63, y: 75, rotation: 180 },
+
+  // --- Tree (can) ---
+  { id: 'cup-tr2', type: 'can', x: 50, y: 75, rotation: 0 },
+
+  // --- Mini W ---
+  { id: 'cup-mw2', type: 'mini-race', x: 77, y: 73, rotation: 0 },
+
+  // --- Temples (mirrored) ---
+  { id: 'cup-t3', type: 'temple', x: 80, y: 67, rotation: 0 },
+  { id: 'cup-t4', type: 'temple', x: 80, y: 50, rotation: 0 },
+
+  // --- Giant Brick (mirrored) ---
+  { id: 'cup-gb3', type: 'brick', x: 50, y: 67, rotation: 0 },
+
+  // --- Giant Wing (mirrored) ---
+  { id: 'cup-gw3', type: 'wing', x: 60, y: 62, rotation: 0 },
+
+  // --- Cylinder (mirrored) ---
+  { id: 'cup-c2', type: 'can', x: 83, y: 58, rotation: 0 },
+
+  // --- Giant Wing + Giant Brick (mirrored) ---
+  { id: 'cup-gw4', type: 'wing', x: 53, y: 54, rotation: 0 },
+  { id: 'cup-gb4', type: 'brick', x: 50, y: 54, rotation: 0 },
+
+  // --- MT (mirrored) ---
+  { id: 'cup-mt4', type: 'temple-maya', x: 60, y: 50, rotation: 0 },
+
+  // ═══════ BACK-BASE SB ROWS ═══════
+
+  // --- Bottom base SB row (5 beams) ---
+  { id: 'cup-sb5', type: 'snake', x: 37, y: 85, rotation: 90 },
+  { id: 'cup-sb6', type: 'snake', x: 43, y: 85, rotation: 90 },
+  { id: 'cup-sb7', type: 'snake', x: 47, y: 85, rotation: 90 },
+  { id: 'cup-sb8', type: 'snake', x: 53, y: 85, rotation: 90 },
+  { id: 'cup-sb9', type: 'snake', x: 57, y: 85, rotation: 90 },
+
+  // --- Top base SB row (mirrored) ---
+  { id: 'cup-sb10', type: 'snake', x: 63, y: 15, rotation: 90 },
+  { id: 'cup-sb11', type: 'snake', x: 57, y: 15, rotation: 90 },
+  { id: 'cup-sb12', type: 'snake', x: 53, y: 15, rotation: 90 },
+  { id: 'cup-sb13', type: 'snake', x: 47, y: 15, rotation: 90 },
+  { id: 'cup-sb14', type: 'snake', x: 43, y: 15, rotation: 90 },
+
+  // --- Back-base bunkers ---
+  { id: 'cup-br1', type: 'brick', x: 27, y: 88, rotation: 0 },
+  { id: 'cup-ck1', type: 'small-cake', x: 33, y: 90, rotation: 0 },
+  { id: 'cup-br2', type: 'brick', x: 40, y: 90, rotation: 0 },
+  { id: 'cup-mw3', type: 'mini-race', x: 50, y: 90, rotation: 0 },
+  { id: 'cup-wg3', type: 'wing', x: 53, y: 92, rotation: 90 },
+
+  // --- Top base (mirrored) ---
+  { id: 'cup-br3', type: 'brick', x: 73, y: 12, rotation: 0 },
+  { id: 'cup-ck2', type: 'small-cake', x: 67, y: 10, rotation: 0 },
+  { id: 'cup-br4', type: 'brick', x: 60, y: 10, rotation: 0 },
+  { id: 'cup-mw4', type: 'mini-race', x: 50, y: 10, rotation: 0 },
+  { id: 'cup-wg4', type: 'wing', x: 47, y: 8, rotation: 90 },
+
+  // --- Side doritos ---
+  { id: 'cup-d9', type: 'dorito-big', x: 7, y: 20, rotation: 90 },
+  { id: 'cup-d10', type: 'dorito-big', x: 93, y: 80, rotation: -90 },
+  { id: 'cup-d11', type: 'dorito-big', x: 7, y: 70, rotation: 90 },
+  { id: 'cup-d12', type: 'dorito-big', x: 93, y: 30, rotation: -90 },
+];
+
 // Preset metadata for UI
 export const NXL_PRESETS = [
   {
@@ -264,6 +411,14 @@ export const NXL_PRESETS = [
     title: 'NXL WINDY CITY MAJOR',
     badge: 'Sep 13-15, 2024',
     description: 'Official NXL Windy City Major 2024 (Chicago) field layout. 150ft × 120ft tournament field with a balanced center-focused design.',
+  },
+  {
+    id: 'nxl-worldcup' as const,
+    label: 'NXL World Cup 2024',
+    shortLabel: 'NXL World Cup',
+    title: 'NXL WORLD CUP',
+    badge: 'Nov 6-10, 2024',
+    description: 'Official NXL World Cup 2024 field layout. 150ft × 120ft championship field at Kissimmee, FL — the pinnacle event of the NXL season.',
   },
 ] as const;
 

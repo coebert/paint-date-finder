@@ -11,7 +11,7 @@ import { FieldCanvas, CALLOUT_PREFIX } from '@/components/field/FieldCanvas';
 import { ObstaclePalette } from '@/components/field/ObstaclePalette';
 import { FieldStreetView } from '@/components/field/FieldStreetView';
 import { CPPS_FIELD_LAYOUT, NXL_TAMPA_BAY_LAYOUT, Obstacle, ObstacleType, OBSTACLE_DEFINITIONS } from '@/types/fieldLayout';
-import { NXL_LAS_VEGAS_LAYOUT, NXL_WINDY_CITY_LAYOUT, NXL_PRESETS, NxlPresetId } from '@/data/nxlLayouts';
+import { NXL_LAS_VEGAS_LAYOUT, NXL_WINDY_CITY_LAYOUT, NXL_WORLD_CUP_LAYOUT, NXL_PRESETS, NxlPresetId } from '@/data/nxlLayouts';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -93,6 +93,7 @@ export default function FieldLayout() {
     'nxl-tampa': NXL_TAMPA_BAY_LAYOUT,
     'nxl-vegas': NXL_LAS_VEGAS_LAYOUT,
     'nxl-windy': NXL_WINDY_CITY_LAYOUT,
+    'nxl-worldcup': NXL_WORLD_CUP_LAYOUT,
   };
 
   const getPresetLayout = (preset: 'cpps' | NxlPresetId): Obstacle[] => {
