@@ -24,7 +24,8 @@ export default function FieldLayout() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [streetViewPoint, setStreetViewPoint] = useState<{ x: number; y: number }>({ x: 10, y: 50 });
   const [streetViewObstacles, setStreetViewObstacles] = useState<Obstacle[]>(CPPS_FIELD_LAYOUT);
-  const [streetViewSource, setStreetViewSource] = useState<'cpps' | 'custom'>('cpps');
+  const [streetViewSource, setStreetViewSource] = useState<'cpps' | 'nxl' | 'custom'>('cpps');
+  const [currentPreset, setCurrentPreset] = useState<'cpps' | 'nxl'>('cpps');
   const [stance, setStance] = useState<{ sprinting: boolean; crouching: boolean; eyeHeight: number }>({ sprinting: false, crouching: false, eyeHeight: 1.7 });
   const [isFieldFullscreen, setIsFieldFullscreen] = useState(false);
   const [is3DFullscreen, setIs3DFullscreen] = useState(false);
