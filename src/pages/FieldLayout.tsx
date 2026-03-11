@@ -302,9 +302,15 @@ export default function FieldLayout() {
                         <Button variant="outline" size="sm" onClick={handleLoadCPPS} className="text-xs gap-1">
                           <Download className="w-3 h-3" /> Load CPPS
                         </Button>
-                        <Button variant="outline" size="sm" onClick={handleLoadNXL} className="text-xs gap-1">
-                          <Download className="w-3 h-3" /> Load NXL
-                        </Button>
+                        {NXL_PRESETS.map(p => (
+                          <Button key={p.id} variant="outline" size="sm" className="text-xs gap-1" onClick={() => {
+                            setDesignObstacles([...nxlLayoutMap[p.id]]);
+                            setSelectedId(null);
+                            toast.success(`Loaded ${p.shortLabel} layout`);
+                          }}>
+                            <Download className="w-3 h-3" /> {p.shortLabel}
+                          </Button>
+                        ))}
                         <Button variant="outline" size="sm" onClick={handleClearAll} className="text-xs gap-1 text-destructive hover:text-destructive">
                           <Trash2 className="w-3 h-3" /> Clear All
                         </Button>
