@@ -543,6 +543,10 @@ export default function FieldLayout() {
               </Card>
             </div>
           </TabsContent>
+          {/* Compare */}
+          <TabsContent value="compare" className="space-y-6">
+            <FieldCompare />
+          </TabsContent>
         </Tabs>
       </main>
     </div>
