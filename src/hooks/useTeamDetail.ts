@@ -23,7 +23,7 @@ export function useTeamById(id: string | undefined) {
         .eq('id', id!)
         .single();
       if (error) throw error;
-      return data as Team;
+      return data as unknown as Team;
     },
   });
 }
