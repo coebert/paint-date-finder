@@ -423,7 +423,6 @@ export default function FieldLayout() {
                       Your Design ({designObstacles.length} obstacles)
                     </Button>
                   </div>
-                  </div>
 
                   {/* 3D View */}
                   <Suspense fallback={<Skeleton className="w-full h-[400px] md:h-[500px] rounded-lg" />}>
