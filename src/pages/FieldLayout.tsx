@@ -1,6 +1,6 @@
 import { useState, useCallback, Suspense, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Eye, PenTool, RotateCcw, RotateCw, Trash2, Download, Copy, Compass, Maximize, Minimize, Tag } from 'lucide-react';
+import { ArrowLeft, Eye, PenTool, RotateCcw, RotateCw, Trash2, Download, Copy, Compass, Maximize, Minimize, Tag, Columns2 } from 'lucide-react';
 import { SaveLayoutDialog } from '@/components/field/SaveLayoutDialog';
 import { CommunityLayoutsDialog } from '@/components/field/CommunityLayoutsDialog';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { FieldCanvas, CALLOUT_PREFIX } from '@/components/field/FieldCanvas';
 import { ObstaclePalette } from '@/components/field/ObstaclePalette';
 import { FieldStreetView } from '@/components/field/FieldStreetView';
+import { FieldCompare } from '@/components/field/FieldCompare';
 import { CPPS_FIELD_LAYOUT, NXL_TAMPA_BAY_LAYOUT, Obstacle, ObstacleType, OBSTACLE_DEFINITIONS } from '@/types/fieldLayout';
 import { NXL_LAS_VEGAS_LAYOUT, NXL_WINDY_CITY_LAYOUT, NXL_WORLD_CUP_LAYOUT, NXL_PRESETS, NxlPresetId } from '@/data/nxlLayouts';
 import { toast } from 'sonner';
@@ -174,6 +175,11 @@ export default function FieldLayout() {
               <Compass className="h-4 w-4" />
               <span className="hidden sm:inline">Street View</span>
               <span className="sm:hidden">3D View</span>
+            </TabsTrigger>
+            <TabsTrigger value="compare" className="gap-2 data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
+              <Columns2 className="h-4 w-4" />
+              <span className="hidden sm:inline">Compare</span>
+              <span className="sm:hidden">Compare</span>
             </TabsTrigger>
           </TabsList>
 
@@ -536,6 +542,10 @@ export default function FieldLayout() {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+          {/* Compare */}
+          <TabsContent value="compare" className="space-y-6">
+            <FieldCompare />
           </TabsContent>
         </Tabs>
       </main>
