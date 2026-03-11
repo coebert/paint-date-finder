@@ -179,6 +179,17 @@ export const OBSTACLE_DEFINITIONS: Record<ObstacleType, ObstacleDefinition> = {
     birdEye: 'circle',
     profile3D: 'cone',
   },
+  'giant-plus': {
+    type: 'giant-plus',
+    label: 'Giant Plus',
+    widthM: 2.0,
+    depthM: 2.0,
+    heightM: 1.8,
+    color: CPPS_RED,
+    colorSecondary: CPPS_BLUE,
+    birdEye: 'plus',
+    profile3D: 'box',
+  },
 };
 
 // Standard CPPS Sup'Air field layout (symmetrical)
