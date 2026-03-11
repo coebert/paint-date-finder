@@ -569,42 +569,27 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
   }
 
   if (profile3D === 'half-cylinder') {
-    // Snake beam: half-cylinder tube lying on the ground along Z axis
-    // Cross-section: half-ellipse with ground width = w, peak height = h
-    const rX = w / 2;       // half-width at ground level
-    const scaleY = h / rX;  // vertical stretch to reach correct height
+    // Snake beam: low solid cylinder lying on the ground along Z axis
+    const r = w / 2;         // radius from width
     const tubeLen = d;       // total length of the beam
     return (
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-          {/* Scale Y to turn half-circle into half-ellipse matching width & height */}
-          <group scale={[1, scaleY, 1]}>
-            {/* Main half-cylinder tube body - primary color */}
-            <mesh position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-              <cylinderGeometry args={[rX, rX, tubeLen * 0.7, 16, 1, true, 0, Math.PI]} />
-              <primitive object={mat} attach="material" />
-            </mesh>
-            {/* Front end cap - secondary */}
-            <mesh position={[0, 0, -tubeLen * 0.35]} rotation={[Math.PI, 0, 0]}>
-              <sphereGeometry args={[rX, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
-              <primitive object={mat2} attach="material" />
-            </mesh>
-            {/* Back end cap - secondary */}
-            <mesh position={[0, 0, tubeLen * 0.35]}>
-              <sphereGeometry args={[rX, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
-              <primitive object={mat2} attach="material" />
-            </mesh>
-          </group>
-          {/* Flat bottom (not scaled) */}
-          <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[w, tubeLen]} />
+          {/* Main cylinder body lying on its side */}
+          <mesh position={[0, r, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+            <cylinderGeometry args={[r, r, tubeLen, 24, 1]} />
             <primitive object={mat} attach="material" />
           </mesh>
-          {/* White top seam ridge */}
-          <mesh position={[0, h + 0.01, 0]}>
-            <boxGeometry args={[0.025, 0.025, tubeLen * 0.9]} />
-            <primitive object={seamMat} attach="material" />
+          {/* Front end cap */}
+          <mesh position={[0, r, -tubeLen / 2]}>
+            <circleGeometry args={[r, 24]} />
+            <primitive object={mat2} attach="material" />
+          </mesh>
+          {/* Back end cap */}
+          <mesh position={[0, r, tubeLen / 2]} rotation={[0, Math.PI, 0]}>
+            <circleGeometry args={[r, 24]} />
+            <primitive object={mat2} attach="material" />
           </mesh>
         </group>
       </>
