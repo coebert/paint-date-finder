@@ -50,7 +50,7 @@ export function useTeams(filters?: { division?: string; search?: string; league?
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as Team[];
+      return data as unknown as Team[];
     },
   });
 }
