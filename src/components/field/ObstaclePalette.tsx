@@ -22,9 +22,14 @@ export function ObstaclePalette({ onAdd }: ObstaclePaletteProps) {
           <div
             className="w-5 h-5"
             style={{
-              backgroundColor: def.color,
-              borderRadius: def.birdEye === 'circle' ? '50%' : def.birdEye === 'triangle' ? '2px' : '3px',
-              clipPath: def.birdEye === 'triangle' ? 'polygon(50% 0%, 100% 100%, 0% 100%)' : undefined,
+              backgroundColor: def.birdEye === 'triangle' ? '#1a1a1a' : def.color,
+              borderRadius: def.birdEye === 'circle' ? '50%' : '2px',
+              clipPath:
+                def.birdEye === 'triangle'
+                  ? 'polygon(50% 0%, 100% 100%, 0% 100%)'
+                  : def.birdEye === 'plus'
+                  ? 'polygon(35% 0%, 65% 0%, 65% 35%, 100% 35%, 100% 65%, 65% 65%, 65% 100%, 35% 100%, 35% 65%, 0% 65%, 0% 35%, 35% 35%)'
+                  : undefined,
             }}
           />
           <span className="text-[10px] leading-tight text-center font-medium">{def.label}</span>
