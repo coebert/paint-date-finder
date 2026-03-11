@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { FieldCanvas, CALLOUT_PREFIX } from '@/components/field/FieldCanvas';
 import { ObstaclePalette } from '@/components/field/ObstaclePalette';
 import { FieldStreetView } from '@/components/field/FieldStreetView';
-import { CPPS_FIELD_LAYOUT, Obstacle, ObstacleType, OBSTACLE_DEFINITIONS } from '@/types/fieldLayout';
+import { CPPS_FIELD_LAYOUT, NXL_TAMPA_BAY_LAYOUT, Obstacle, ObstacleType, OBSTACLE_DEFINITIONS } from '@/types/fieldLayout';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 
