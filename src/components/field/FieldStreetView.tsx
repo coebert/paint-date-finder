@@ -539,33 +539,6 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
             </bufferGeometry>
             <primitive object={matRed} attach="material" />
           </mesh>
-          {/* Blue accent edges along base */}
-          {[[v0,v1],[v1,v2],[v2,v0]].map(([from, to], i) => {
-            const mx = (from[0]+to[0])/2, mz = (from[2]+to[2])/2;
-            const dx = to[0]-from[0], dz = to[2]-from[2];
-            const edgeLen = Math.sqrt(dx*dx + dz*dz);
-            const angle = Math.atan2(dx, dz);
-            return (
-              <mesh key={`edge-${i}`} position={[mx, 0.04, mz]} rotation={[0, angle, 0]}>
-                <boxGeometry args={[0.06, 0.08, edgeLen]} />
-                <primitive object={matBlue} attach="material" />
-              </mesh>
-            );
-          })}
-          {/* Blue accent edges along ridges to apex */}
-          {[v0,v1,v2].map((from, i) => {
-            const mx = (from[0]+apex[0])/2, my = (from[1]+apex[1])/2, mz = (from[2]+apex[2])/2;
-            const dx = apex[0]-from[0], dy = apex[1]-from[1], dz = apex[2]-from[2];
-            const edgeLen = Math.sqrt(dx*dx + dy*dy + dz*dz);
-            const pitchAngle = Math.asin(dy / edgeLen);
-            const yawAngle = Math.atan2(dx, dz);
-            return (
-              <mesh key={`ridge-${i}`} position={[mx, my, mz]} rotation={[pitchAngle, yawAngle, 0]}>
-                <boxGeometry args={[0.04, 0.04, edgeLen * 0.95]} />
-                <primitive object={matBlue} attach="material" />
-              </mesh>
-            );
-          })}
         </group>
       </>
     );
