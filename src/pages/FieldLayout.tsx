@@ -206,9 +206,9 @@ export default function FieldLayout() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="font-display tracking-wider flex items-center gap-3">
-                      {currentPreset === 'cpps' ? 'CPPS COMPETITION FIELD' : 'NXL TAMPA BAY OPEN'}
+                      {getPresetMeta(currentPreset).title}
                       <Badge className="bg-accent text-accent-foreground">
-                        {currentPreset === 'cpps' ? '2025 Season' : 'Mar 19-22, 2026'}
+                        {getPresetMeta(currentPreset).badge}
                       </Badge>
                     </CardTitle>
                     <div className="flex gap-1">
@@ -221,13 +221,11 @@ export default function FieldLayout() {
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    {currentPreset === 'cpps'
-                      ? 'Standard Sup\'Air inflatable field layout used in CPPS tournament play. The field is symmetrical with a center-line dividing two mirror-image halves.'
-                      : 'Official NXL Tampa Bay Open 2026 field layout. 150ft × 120ft tournament field at Raymond James Stadium, Tampa Bay, FL.'}
+                    {getPresetMeta(currentPreset).description}
                   </p>
                 </CardHeader>
                 <CardContent>
-                  <FieldCanvas obstacles={currentPreset === 'cpps' ? CPPS_FIELD_LAYOUT : NXL_TAMPA_BAY_LAYOUT} showLabels={showLabels} />
+                  <FieldCanvas obstacles={getPresetLayout(currentPreset)} showLabels={showLabels} />
                 </CardContent>
               </Card>
             </div>
