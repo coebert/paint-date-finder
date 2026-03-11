@@ -32,7 +32,7 @@ export interface ObstacleDefinition {
   color: string;           // primary panel color
   colorSecondary: string;  // secondary panel color (for two-tone CPPS look)
   // Bird's eye shape description
-  birdEye: 'circle' | 'triangle' | 'rect' | 'capsule' | 'stepped-rect';
+  birdEye: 'circle' | 'triangle' | 'rect' | 'capsule' | 'stepped-rect' | 'plus';
   // 3D profile cross-section
   profile3D: 'cylinder' | 'cone' | 'prism-triangle' | 'box' | 'half-cylinder' | 'stepped-pyramid' | 'flat-panel';
 }
