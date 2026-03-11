@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, ArrowLeft, Trophy, Mail, Globe, Phone, Users, Filter, Shield, Swords } from 'lucide-react';
+import { Search, ArrowLeft, Trophy, Globe, Users, Filter, Shield, Swords } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -72,19 +72,9 @@ function TeamCard({ team }: { team: Team }) {
             )}
 
             <div className="flex items-center gap-3 flex-wrap">
-              {team.contact_email && (
-                <a href={`mailto:${team.contact_email}`} className="text-xs text-accent hover:text-accent/80 flex items-center gap-1 transition-colors" onClick={e => e.stopPropagation()}>
-                  <Mail className="w-3 h-3" /> Email
-                </a>
-              )}
               {team.website && (
                 <a href={team.website} target="_blank" rel="noopener noreferrer" className="text-xs text-accent hover:text-accent/80 flex items-center gap-1 transition-colors" onClick={e => e.stopPropagation()}>
                   <Globe className="w-3 h-3" /> Website
-                </a>
-              )}
-              {team.contact_phone && (
-                <a href={`tel:${team.contact_phone}`} className="text-xs text-accent hover:text-accent/80 flex items-center gap-1 transition-colors" onClick={e => e.stopPropagation()}>
-                  <Phone className="w-3 h-3" /> Call
                 </a>
               )}
             </div>

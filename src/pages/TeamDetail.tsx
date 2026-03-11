@@ -253,23 +253,6 @@ export default function TeamDetail() {
                   </div>
                 )}
 
-                {team.contact_email && (
-                  <a href={`mailto:${team.contact_email}`} className="flex items-center gap-3 group">
-                    <Mail className="w-4 h-4 text-accent flex-shrink-0" />
-                    <span className="text-sm text-foreground group-hover:text-accent transition-colors truncate">
-                      {team.contact_email}
-                    </span>
-                  </a>
-                )}
-
-                {team.contact_phone && (
-                  <a href={`tel:${team.contact_phone}`} className="flex items-center gap-3 group">
-                    <Phone className="w-4 h-4 text-accent flex-shrink-0" />
-                    <span className="text-sm text-foreground group-hover:text-accent transition-colors">
-                      {team.contact_phone}
-                    </span>
-                  </a>
-                )}
 
                 {team.website && (
                   <a href={team.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 group">
