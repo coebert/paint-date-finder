@@ -93,6 +93,7 @@ export default function FieldLayout() {
     'nxl-tampa': NXL_TAMPA_BAY_LAYOUT,
     'nxl-vegas': NXL_LAS_VEGAS_LAYOUT,
     'nxl-windy': NXL_WINDY_CITY_LAYOUT,
+    'nxl-worldcup': NXL_WORLD_CUP_LAYOUT,
   };
 
   const getPresetLayout = (preset: 'cpps' | NxlPresetId): Obstacle[] => {
