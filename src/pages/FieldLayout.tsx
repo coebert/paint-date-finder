@@ -427,17 +427,20 @@ export default function FieldLayout() {
                     >
                       CPPS Layout
                     </Button>
-                    <Button
-                      variant={streetViewSource === 'nxl' ? 'default' : 'outline'}
-                      size="sm"
-                      className="text-xs"
-                      onClick={() => {
-                        setStreetViewSource('nxl');
-                        setStreetViewObstacles(NXL_TAMPA_BAY_LAYOUT);
-                      }}
-                    >
-                      NXL Tampa Bay
-                    </Button>
+                    {NXL_PRESETS.map(p => (
+                      <Button
+                        key={p.id}
+                        variant={streetViewSource === p.id ? 'default' : 'outline'}
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => {
+                          setStreetViewSource(p.id);
+                          setStreetViewObstacles(nxlLayoutMap[p.id]);
+                        }}
+                      >
+                        {p.shortLabel}
+                      </Button>
+                    ))}
                     <Button
                       variant={streetViewSource === 'custom' ? 'default' : 'outline'}
                       size="sm"
