@@ -88,6 +88,12 @@ export default function FieldLayout() {
     toast.success('Loaded CPPS layout');
   }, []);
 
+  const handleLoadNXL = useCallback(() => {
+    setDesignObstacles([...NXL_TAMPA_BAY_LAYOUT]);
+    setSelectedId(null);
+    toast.success('Loaded NXL Tampa Bay layout');
+  }, []);
+
   const handleDuplicate = useCallback(() => {
     if (!selectedId) return;
     const src = designObstacles.find((o) => o.id === selectedId);
