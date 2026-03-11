@@ -366,64 +366,65 @@ function ObstacleLabel({ position, label, color }: { position: [number, number, 
   );
 }
 
-// ---- Accurate 3D Obstacle shapes ----
+// ---- Accurate 3D Obstacle shapes (NXL Tampa Bay style: red body, blue cap/top) ----
 function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showLabels?: boolean }) {
   const def = OBSTACLE_DEFINITIONS[obstacle.type];
   const worldX = (obstacle.x / 100 - 0.5) * FIELD_WIDTH_M;
   const worldZ = (obstacle.y / 100 - 0.5) * FIELD_HEIGHT_M;
   const rotRad = (obstacle.rotation * Math.PI) / 180;
-  const { widthM: w, depthM: d, heightM: h, color, colorSecondary, profile3D } = def;
+  const { widthM: w, depthM: d, heightM: h, profile3D } = def;
   const labelY = h + 0.4;
 
-  const label = showLabels ? <ObstacleLabel position={[worldX, labelY, worldZ]} label={def.label} color={color} /> : null;
+  // NXL-style colors: red body, blue accents (top caps, bands)
+  const NXL_RED = '#cc1122';
+  const NXL_BLUE = '#1155cc';
 
-  // Two-tone CPPS PVC materials
-  const mat = useMemo(() => new THREE.MeshStandardMaterial({ 
-    color, roughness: 0.45, metalness: 0.05 
-  }), [color]);
+  const label = showLabels ? <ObstacleLabel position={[worldX, labelY, worldZ]} label={def.label} color={NXL_RED} /> : null;
 
-  const mat2 = useMemo(() => new THREE.MeshStandardMaterial({ 
-    color: colorSecondary, roughness: 0.45, metalness: 0.05 
-  }), [colorSecondary]);
+  const matRed = useMemo(() => new THREE.MeshStandardMaterial({ 
+    color: NXL_RED, roughness: 0.4, metalness: 0.05 
+  }), []);
+
+  const matBlue = useMemo(() => new THREE.MeshStandardMaterial({ 
+    color: NXL_BLUE, roughness: 0.4, metalness: 0.05 
+  }), []);
 
   const seamMat = useMemo(() => new THREE.MeshStandardMaterial({ 
     color: '#ffffff', roughness: 0.5, metalness: 0.05 
   }), []);
 
   if (profile3D === 'cylinder') {
-    // Cake / Can: cylinder with two-tone panels (top half one color, bottom half another)
+    // Can / Cake: solid red cylinder body with a distinct blue flat cap on top
     const r = w / 2;
+    const capH = h * 0.15; // blue cap portion
+    const bodyH = h - capH;
     return (
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-          {/* Lower body - primary color */}
-          <mesh position={[0, h * 0.25, 0]} material={mat} castShadow>
-            <cylinderGeometry args={[r * 0.98, r, h * 0.5, 24]} />
+          {/* Red body */}
+          <mesh position={[0, bodyH / 2, 0]} castShadow>
+            <cylinderGeometry args={[r, r, bodyH, 24]} />
+            <primitive object={matRed} attach="material" />
           </mesh>
-          {/* Upper body - secondary color */}
-          <mesh position={[0, h * 0.75, 0]} material={mat2} castShadow>
-            <cylinderGeometry args={[r * 0.96, r * 0.98, h * 0.5, 24]} />
+          {/* Blue cap on top */}
+          <mesh position={[0, bodyH + capH / 2, 0]} castShadow>
+            <cylinderGeometry args={[r * 1.02, r * 1.02, capH, 24]} />
+            <primitive object={matBlue} attach="material" />
           </mesh>
-          {/* Domed top - primary */}
-          <mesh position={[0, h, 0]} material={mat} castShadow>
-            <sphereGeometry args={[r * 0.96, 16, 10, 0, Math.PI * 2, 0, Math.PI / 3]} />
+          {/* Slight dome on very top */}
+          <mesh position={[0, h, 0]}>
+            <sphereGeometry args={[r * 0.5, 16, 8, 0, Math.PI * 2, 0, Math.PI / 4]} />
+            <primitive object={matBlue} attach="material" />
           </mesh>
-          {/* White seam bands at color transitions */}
-          {[0.5].map((frac) => (
-            <mesh key={frac} position={[0, h * frac, 0]} rotation={[Math.PI / 2, 0, 0]}>
-              <torusGeometry args={[r * 0.99, 0.025, 6, 24]} />
-              <primitive object={seamMat} attach="material" />
-            </mesh>
-          ))}
-          {/* Base ring */}
-          <mesh position={[0, 0.01, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[r, 0.025, 6, 24]} />
+          {/* White seam between body and cap */}
+          <mesh position={[0, bodyH, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[r * 1.01, 0.025, 6, 24]} />
             <primitive object={seamMat} attach="material" />
           </mesh>
-          {/* Top ring */}
-          <mesh position={[0, h - 0.01, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[r * 0.97, 0.02, 6, 24]} />
+          {/* Base ring */}
+          <mesh position={[0, 0.01, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[r, 0.02, 6, 24]} />
             <primitive object={seamMat} attach="material" />
           </mesh>
         </group>
@@ -432,32 +433,35 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
   }
 
   if (profile3D === 'cone') {
-    // Cone bunker: two-tone cone
+    // Cone bunker: solid red cone body, blue base band
     const r = w / 2;
     return (
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-          {/* Lower cone section - primary */}
-          <mesh position={[0, h * 0.25, 0]} material={mat} castShadow>
-            <coneGeometry args={[r, h * 0.5, 20, 1, true]} />
+          {/* Full red cone */}
+          <mesh position={[0, h / 2, 0]} castShadow>
+            <coneGeometry args={[r, h, 24]} />
+            <primitive object={matRed} attach="material" />
           </mesh>
-          {/* Upper cone section - secondary */}
-          <mesh position={[0, h * 0.65, 0]} material={mat2} castShadow>
-            <coneGeometry args={[r * 0.45, h * 0.5, 20, 1, true]} />
+          {/* Blue band at base */}
+          <mesh position={[0, h * 0.1, 0]} castShadow>
+            <cylinderGeometry args={[r * 0.98, r, h * 0.2, 24]} />
+            <primitive object={matBlue} attach="material" />
           </mesh>
-          {/* Rounded tip - primary */}
-          <mesh position={[0, h * 0.95, 0]} material={mat}>
-            <sphereGeometry args={[r * 0.12, 10, 8]} />
+          {/* Rounded tip */}
+          <mesh position={[0, h * 0.98, 0]}>
+            <sphereGeometry args={[r * 0.08, 10, 8]} />
+            <primitive object={matRed} attach="material" />
           </mesh>
-          {/* White seam at transition */}
-          <mesh position={[0, h * 0.5, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[r * 0.5, 0.025, 6, 20]} />
+          {/* White seam above blue band */}
+          <mesh position={[0, h * 0.2, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[r * 0.9, 0.02, 6, 20]} />
             <primitive object={seamMat} attach="material" />
           </mesh>
           {/* Base ring */}
           <mesh position={[0, 0.02, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[r, 0.03, 6, 20]} />
+            <torusGeometry args={[r, 0.025, 6, 20]} />
             <primitive object={seamMat} attach="material" />
           </mesh>
         </group>
@@ -466,19 +470,15 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
   }
 
   if (profile3D === 'prism-triangle') {
-    // Dorito: triangular-based pyramid (tetrahedron-like)
-    // Real Sup'Air doritos have an equilateral triangle base on the ground
-    // with all three faces rising to a single apex point at the top
+    // Dorito: solid red tetrahedron/pyramid — chunky and opaque like the reference
     const halfW = w / 2;
     const thirdD = d / 3;
     
-    // Base vertices of equilateral triangle (centered at origin, lying on ground y=0)
-    const v0: [number, number, number] = [0, 0, -thirdD * 2];       // front point
-    const v1: [number, number, number] = [-halfW, 0, thirdD];       // back-left
-    const v2: [number, number, number] = [halfW, 0, thirdD];        // back-right
-    const apex: [number, number, number] = [0, h, 0];               // top apex
+    const v0: [number, number, number] = [0, 0, -thirdD * 2];
+    const v1: [number, number, number] = [-halfW, 0, thirdD];
+    const v2: [number, number, number] = [halfW, 0, thirdD];
+    const apex: [number, number, number] = [0, h, 0];
 
-    // Helper to compute face normal from 3 vertices
     const faceNormal = (a: [number,number,number], b: [number,number,number], c: [number,number,number]): [number,number,number] => {
       const ux = b[0]-a[0], uy = b[1]-a[1], uz = b[2]-a[2];
       const vx = c[0]-a[0], vy = c[1]-a[1], vz = c[2]-a[2];
@@ -487,22 +487,20 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
       return [nx/len, ny/len, nz/len];
     };
 
-    // Three sloped faces + bottom face
-    const faces: { verts: [number,number,number][]; }[] = [
-      { verts: [v0, v1, apex] },   // left face
-      { verts: [v1, v2, apex] },   // back face  
-      { verts: [v2, v0, apex] },   // right face
+    const faces: { verts: [number,number,number][] }[] = [
+      { verts: [v0, v1, apex] },
+      { verts: [v1, v2, apex] },
+      { verts: [v2, v0, apex] },
     ];
 
     return (
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-          {/* Sloped pyramid faces */}
+          {/* All faces solid red */}
           {faces.map((face, fi) => {
             const [a, b, c] = face.verts;
             const n = faceNormal(a, b, c);
-            const faceMat = fi % 2 === 0 ? mat : mat2; // alternating red/blue panels
             return (
               <mesh key={fi} castShadow>
                 <bufferGeometry>
@@ -519,11 +517,11 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
                     itemSize={3}
                   />
                 </bufferGeometry>
-                <primitive object={faceMat} attach="material" />
+                <primitive object={matRed} attach="material" />
               </mesh>
             );
           })}
-          {/* Bottom face (triangle on ground) */}
+          {/* Bottom face */}
           <mesh>
             <bufferGeometry>
               <bufferAttribute
@@ -539,27 +537,32 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
                 itemSize={3}
               />
             </bufferGeometry>
-            <primitive object={mat} attach="material" />
+            <primitive object={matRed} attach="material" />
           </mesh>
-          {/* Edge seam lines for inflatable look */}
-          {[[v0,apex],[v1,apex],[v2,apex]].map(([from, to], i) => {
-            const mx = (from[0]+to[0])/2, my = (from[1]+to[1])/2, mz = (from[2]+to[2])/2;
-            const dx = to[0]-from[0], dy = to[1]-from[1], dz = to[2]-from[2];
-            const len = Math.sqrt(dx*dx + dy*dy + dz*dz);
+          {/* Blue accent edges along base */}
+          {[[v0,v1],[v1,v2],[v2,v0]].map(([from, to], i) => {
+            const mx = (from[0]+to[0])/2, mz = (from[2]+to[2])/2;
+            const dx = to[0]-from[0], dz = to[2]-from[2];
+            const edgeLen = Math.sqrt(dx*dx + dz*dz);
+            const angle = Math.atan2(dx, dz);
             return (
-              <mesh key={`seam-${i}`} position={[mx, my, mz]}>
-                <boxGeometry args={[0.03, 0.03, 0.03]} />
-                <primitive object={seamMat} attach="material" />
+              <mesh key={`edge-${i}`} position={[mx, 0.04, mz]} rotation={[0, angle, 0]}>
+                <boxGeometry args={[0.06, 0.08, edgeLen]} />
+                <primitive object={matBlue} attach="material" />
               </mesh>
             );
           })}
-          {/* Base edge seams */}
-          {[[v0,v1],[v1,v2],[v2,v0]].map(([from, to], i) => {
-            const mx = (from[0]+to[0])/2, my = 0.02, mz = (from[2]+to[2])/2;
+          {/* Blue accent edges along ridges to apex */}
+          {[v0,v1,v2].map((from, i) => {
+            const mx = (from[0]+apex[0])/2, my = (from[1]+apex[1])/2, mz = (from[2]+apex[2])/2;
+            const dx = apex[0]-from[0], dy = apex[1]-from[1], dz = apex[2]-from[2];
+            const edgeLen = Math.sqrt(dx*dx + dy*dy + dz*dz);
+            const pitchAngle = Math.asin(dy / edgeLen);
+            const yawAngle = Math.atan2(dx, dz);
             return (
-              <mesh key={`base-seam-${i}`} position={[mx, my, mz]}>
-                <boxGeometry args={[0.03, 0.03, 0.03]} />
-                <primitive object={seamMat} attach="material" />
+              <mesh key={`ridge-${i}`} position={[mx, my, mz]} rotation={[pitchAngle, yawAngle, 0]}>
+                <boxGeometry args={[0.04, 0.04, edgeLen * 0.95]} />
+                <primitive object={matBlue} attach="material" />
               </mesh>
             );
           })}
@@ -569,35 +572,42 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
   }
 
   if (profile3D === 'half-cylinder') {
-    // Snake beam: low solid cylinder lying on the ground along Z axis
-    const r = w / 2;         // radius from width
-    const tubeLen = d;       // total length of the beam
+    // Snake beam: red cylinder lying on the ground, blue end caps
+    const r = w / 2;
+    const tubeLen = d;
     return (
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-          {/* Main cylinder body lying on its side */}
+          {/* Red main cylinder body */}
           <mesh position={[0, r, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
             <cylinderGeometry args={[r, r, tubeLen, 24, 1]} />
-            <primitive object={mat} attach="material" />
+            <primitive object={matRed} attach="material" />
           </mesh>
-          {/* Front end cap */}
+          {/* Blue front end cap */}
           <mesh position={[0, r, -tubeLen / 2]}>
             <circleGeometry args={[r, 24]} />
-            <primitive object={mat2} attach="material" />
+            <primitive object={matBlue} attach="material" />
           </mesh>
-          {/* Back end cap */}
+          {/* Blue back end cap */}
           <mesh position={[0, r, tubeLen / 2]} rotation={[0, Math.PI, 0]}>
             <circleGeometry args={[r, 24]} />
-            <primitive object={mat2} attach="material" />
+            <primitive object={matBlue} attach="material" />
           </mesh>
+          {/* White seam rings near ends */}
+          {[-1, 1].map((sign) => (
+            <mesh key={sign} position={[0, r, sign * (tubeLen / 2 - 0.05)]} rotation={[Math.PI / 2, 0, 0]}>
+              <torusGeometry args={[r * 0.99, 0.015, 6, 24]} />
+              <primitive object={seamMat} attach="material" />
+            </mesh>
+          ))}
         </group>
       </>
     );
   }
 
   if (profile3D === 'stepped-pyramid') {
-    // Temple / Temple Maya: alternating red/blue tiers
+    // Temple / Temple Maya: red body tiers with blue top tier
     const tiers = obstacle.type === 'temple-maya' ? 4 : 3;
     return (
       <>
@@ -608,24 +618,19 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
             const tierH = h / tiers;
             const tw = w * scale;
             const td = d * scale;
-            const tierMat = i % 2 === 0 ? mat : mat2; // alternate colors per tier
+            // Top tier is blue, all others red
+            const tierMat = i === tiers - 1 ? matBlue : matRed;
             return (
               <group key={i}>
-                <mesh position={[0, tierH * i + tierH / 2, 0]} material={tierMat} castShadow>
-                  <boxGeometry args={[tw, tierH * 0.9, td]} />
+                <mesh position={[0, tierH * i + tierH / 2, 0]} castShadow>
+                  <boxGeometry args={[tw, tierH * 0.92, td]} />
+                  <primitive object={tierMat} attach="material" />
                 </mesh>
-                {/* White seam edges */}
-                {[
-                  { pos: [0, tierH * (i + 1) - tierH * 0.05, -td / 2] as [number, number, number], len: tw, rotY: 0 },
-                  { pos: [0, tierH * (i + 1) - tierH * 0.05, td / 2] as [number, number, number], len: tw, rotY: 0 },
-                  { pos: [-tw / 2, tierH * (i + 1) - tierH * 0.05, 0] as [number, number, number], len: td, rotY: Math.PI / 2 },
-                  { pos: [tw / 2, tierH * (i + 1) - tierH * 0.05, 0] as [number, number, number], len: td, rotY: Math.PI / 2 },
-                ].map((edge, j) => (
-                  <mesh key={j} position={edge.pos} rotation={[0, edge.rotY, Math.PI / 2]}>
-                    <cylinderGeometry args={[tierH * 0.06, tierH * 0.06, edge.len * 0.95, 6]} />
-                    <primitive object={seamMat} attach="material" />
-                  </mesh>
-                ))}
+                {/* White seam at top of each tier */}
+                <mesh position={[0, tierH * (i + 1) - tierH * 0.04, 0]}>
+                  <boxGeometry args={[tw * 1.01, 0.03, td * 1.01]} />
+                  <primitive object={seamMat} attach="material" />
+                </mesh>
               </group>
             );
           })}
@@ -635,27 +640,24 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
   }
 
   if (profile3D === 'flat-panel') {
-    // Wing / Mini Race: two-tone panel
+    // Wing / Mini Race: red body, blue rounded top
     return (
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-          {/* Main body - primary */}
-          <mesh position={[0, h * 0.4, 0]} material={mat} castShadow>
+          {/* Red main body */}
+          <mesh position={[0, h * 0.35, 0]} castShadow>
             <boxGeometry args={[w, h * 0.7, d]} />
+            <primitive object={matRed} attach="material" />
           </mesh>
-          {/* Rounded top - secondary */}
-          <mesh position={[0, h * 0.75, 0]} rotation={[0, 0, Math.PI / 2]} material={mat2} castShadow>
-            <cylinderGeometry args={[h * 0.28, h * 0.28, w, 12, 1, false, 0, Math.PI]} />
+          {/* Blue rounded top */}
+          <mesh position={[0, h * 0.7, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
+            <cylinderGeometry args={[h * 0.3, h * 0.3, w, 12, 1, false, 0, Math.PI]} />
+            <primitive object={matBlue} attach="material" />
           </mesh>
-          {/* White front seam */}
-          <mesh position={[0, h * 0.4, d / 2 + 0.005]}>
-            <planeGeometry args={[w * 0.9, 0.02]} />
-            <primitive object={seamMat} attach="material" />
-          </mesh>
-          {/* White back seam */}
-          <mesh position={[0, h * 0.4, -(d / 2 + 0.005)]}>
-            <planeGeometry args={[w * 0.9, 0.02]} />
+          {/* White seam between body and top */}
+          <mesh position={[0, h * 0.7, 0]}>
+            <boxGeometry args={[w * 1.01, 0.025, d * 1.01]} />
             <primitive object={seamMat} attach="material" />
           </mesh>
         </group>
@@ -663,27 +665,26 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
     );
   }
 
-  // Default box fallback (brick) - two-tone: front/back primary, sides secondary
+  // Default box fallback (brick, giant-plus) — red body, blue top cap
+  const capH = h * 0.2;
+  const bodyH = h - capH;
   return (
     <>
       {label}
       <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-        {/* Lower half - primary */}
-        <mesh position={[0, h * 0.25, 0]} material={mat} castShadow>
-          <boxGeometry args={[w, h * 0.5, d]} />
+        {/* Red body */}
+        <mesh position={[0, bodyH / 2, 0]} castShadow>
+          <boxGeometry args={[w, bodyH, d]} />
+          <primitive object={matRed} attach="material" />
         </mesh>
-        {/* Upper half - secondary */}
-        <mesh position={[0, h * 0.75, 0]} material={mat2} castShadow>
-          <boxGeometry args={[w, h * 0.5, d]} />
+        {/* Blue top cap */}
+        <mesh position={[0, bodyH + capH / 2, 0]} castShadow>
+          <boxGeometry args={[w, capH, d]} />
+          <primitive object={matBlue} attach="material" />
         </mesh>
-        {/* White seam at transition */}
-        <mesh position={[0, h * 0.5, 0]}>
+        {/* White seam between body and cap */}
+        <mesh position={[0, bodyH, 0]}>
           <boxGeometry args={[w * 1.01, 0.03, d * 1.01]} />
-          <primitive object={seamMat} attach="material" />
-        </mesh>
-        {/* White top edge */}
-        <mesh position={[0, h + 0.01, 0]}>
-          <boxGeometry args={[w * 0.95, 0.03, d * 0.95]} />
           <primitive object={seamMat} attach="material" />
         </mesh>
       </group>
