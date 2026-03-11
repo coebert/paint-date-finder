@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { FieldCanvas, CALLOUT_PREFIX } from '@/components/field/FieldCanvas';
 import { ObstaclePalette } from '@/components/field/ObstaclePalette';
 import { FieldStreetView } from '@/components/field/FieldStreetView';
-import { CPPS_FIELD_LAYOUT, Obstacle, ObstacleType, OBSTACLE_DEFINITIONS } from '@/types/fieldLayout';
+import { CPPS_FIELD_LAYOUT, NXL_TAMPA_BAY_LAYOUT, Obstacle, ObstacleType, OBSTACLE_DEFINITIONS } from '@/types/fieldLayout';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -24,7 +24,8 @@ export default function FieldLayout() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [streetViewPoint, setStreetViewPoint] = useState<{ x: number; y: number }>({ x: 10, y: 50 });
   const [streetViewObstacles, setStreetViewObstacles] = useState<Obstacle[]>(CPPS_FIELD_LAYOUT);
-  const [streetViewSource, setStreetViewSource] = useState<'cpps' | 'custom'>('cpps');
+  const [streetViewSource, setStreetViewSource] = useState<'cpps' | 'nxl' | 'custom'>('cpps');
+  const [currentPreset, setCurrentPreset] = useState<'cpps' | 'nxl'>('cpps');
   const [stance, setStance] = useState<{ sprinting: boolean; crouching: boolean; eyeHeight: number }>({ sprinting: false, crouching: false, eyeHeight: 1.7 });
   const [isFieldFullscreen, setIsFieldFullscreen] = useState(false);
   const [is3DFullscreen, setIs3DFullscreen] = useState(false);
@@ -85,6 +86,12 @@ export default function FieldLayout() {
     setDesignObstacles([...CPPS_FIELD_LAYOUT]);
     setSelectedId(null);
     toast.success('Loaded CPPS layout');
+  }, []);
+
+  const handleLoadNXL = useCallback(() => {
+    setDesignObstacles([...NXL_TAMPA_BAY_LAYOUT]);
+    setSelectedId(null);
+    toast.success('Loaded NXL Tampa Bay layout');
   }, []);
 
   const handleDuplicate = useCallback(() => {
@@ -152,15 +159,37 @@ export default function FieldLayout() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Current CPPS Layout */}
+          {/* Current Layout */}
           <TabsContent value="current" className="space-y-6">
+            {/* Preset selector */}
+            <div className="flex gap-2">
+              <Button
+                variant={currentPreset === 'cpps' ? 'default' : 'outline'}
+                size="sm"
+                className="text-xs"
+                onClick={() => setCurrentPreset('cpps')}
+              >
+                CPPS 2025
+              </Button>
+              <Button
+                variant={currentPreset === 'nxl' ? 'default' : 'outline'}
+                size="sm"
+                className="text-xs"
+                onClick={() => setCurrentPreset('nxl')}
+              >
+                NXL Tampa Bay 2026
+              </Button>
+            </div>
+
             <div ref={fieldContainerRef} className="fullscreen-container">
               <Card className="bg-card border-border/50">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="font-display tracking-wider flex items-center gap-3">
-                      CPPS COMPETITION FIELD
-                      <Badge className="bg-accent text-accent-foreground">2025 Season</Badge>
+                      {currentPreset === 'cpps' ? 'CPPS COMPETITION FIELD' : 'NXL TAMPA BAY OPEN'}
+                      <Badge className="bg-accent text-accent-foreground">
+                        {currentPreset === 'cpps' ? '2025 Season' : 'Mar 19-22, 2026'}
+                      </Badge>
                     </CardTitle>
                     <div className="flex gap-1">
                       <Button variant={showLabels ? 'default' : 'outline'} size="sm" className="h-8 gap-1 text-xs" onClick={() => setShowLabels(v => !v)}>
@@ -172,12 +201,13 @@ export default function FieldLayout() {
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Standard Sup'Air inflatable field layout used in CPPS tournament play.
-                    The field is symmetrical with a center-line dividing two mirror-image halves.
+                    {currentPreset === 'cpps'
+                      ? 'Standard Sup\'Air inflatable field layout used in CPPS tournament play. The field is symmetrical with a center-line dividing two mirror-image halves.'
+                      : 'Official NXL Tampa Bay Open 2026 field layout. 150ft × 120ft tournament field at Raymond James Stadium, Tampa Bay, FL.'}
                   </p>
                 </CardHeader>
                 <CardContent>
-                  <FieldCanvas obstacles={CPPS_FIELD_LAYOUT} showLabels={showLabels} />
+                  <FieldCanvas obstacles={currentPreset === 'cpps' ? CPPS_FIELD_LAYOUT : NXL_TAMPA_BAY_LAYOUT} showLabels={showLabels} />
                 </CardContent>
               </Card>
             </div>
@@ -253,6 +283,9 @@ export default function FieldLayout() {
                         }} />
                         <Button variant="outline" size="sm" onClick={handleLoadCPPS} className="text-xs gap-1">
                           <Download className="w-3 h-3" /> Load CPPS
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={handleLoadNXL} className="text-xs gap-1">
+                          <Download className="w-3 h-3" /> Load NXL
                         </Button>
                         <Button variant="outline" size="sm" onClick={handleClearAll} className="text-xs gap-1 text-destructive hover:text-destructive">
                           <Trash2 className="w-3 h-3" /> Clear All
@@ -364,7 +397,7 @@ export default function FieldLayout() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {/* Source selector */}
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     <Button
                       variant={streetViewSource === 'cpps' ? 'default' : 'outline'}
                       size="sm"
@@ -375,6 +408,17 @@ export default function FieldLayout() {
                       }}
                     >
                       CPPS Layout
+                    </Button>
+                    <Button
+                      variant={streetViewSource === 'nxl' ? 'default' : 'outline'}
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => {
+                        setStreetViewSource('nxl');
+                        setStreetViewObstacles(NXL_TAMPA_BAY_LAYOUT);
+                      }}
+                    >
+                      NXL Tampa Bay
                     </Button>
                     <Button
                       variant={streetViewSource === 'custom' ? 'default' : 'outline'}

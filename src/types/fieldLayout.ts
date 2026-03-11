@@ -235,3 +235,104 @@ export const CPPS_FIELD_LAYOUT: Obstacle[] = [
   { id: 'cn1', type: 'can', x: 50, y: 38, rotation: 0 },
   { id: 'cn2', type: 'can', x: 50, y: 62, rotation: 0 },
 ];
+
+// NXL Tampa Bay Open 2026 field layout
+// Field: 150ft × 120ft (45m × 36m). Symmetric about the horizontal center-line.
+// Obstacle positions mapped from the official NXL field plan.
+// In our coordinate system: x = left→right (0=Blue base, 100=Red base), y = top→bottom.
+export const NXL_TAMPA_BAY_LAYOUT: Obstacle[] = [
+  // ===== GIANT PLUS (one at each base end) =====
+  { id: 'nxl-gp1', type: 'giant-plus', x: 50, y: 8, rotation: 0 },
+  { id: 'nxl-gp2', type: 'giant-plus', x: 50, y: 92, rotation: 0 },
+
+  // ===== MEDIUM DORITOS (MD) =====
+  { id: 'nxl-md1', type: 'dorito-big', x: 30, y: 13, rotation: 0 },
+  { id: 'nxl-md2', type: 'dorito-big', x: 40, y: 13, rotation: 0 },
+  { id: 'nxl-md3', type: 'dorito-big', x: 10, y: 37, rotation: 90 },
+  { id: 'nxl-md4', type: 'dorito-big', x: 60, y: 87, rotation: 180 },
+  { id: 'nxl-md5', type: 'dorito-big', x: 70, y: 87, rotation: 180 },
+  { id: 'nxl-md6', type: 'dorito-big', x: 90, y: 63, rotation: -90 },
+
+  // ===== SMALL DORITOS (SD) =====
+  { id: 'nxl-sd1', type: 'dorito-small', x: 20, y: 15, rotation: 0 },
+  { id: 'nxl-sd2', type: 'dorito-small', x: 80, y: 85, rotation: 180 },
+
+  // ===== DORITOS along sidelines =====
+  { id: 'nxl-d1', type: 'dorito-big', x: 60, y: 10, rotation: 0 },
+  { id: 'nxl-d2', type: 'dorito-big', x: 70, y: 8, rotation: 0 },
+  { id: 'nxl-d3', type: 'dorito-big', x: 80, y: 10, rotation: 0 },
+  { id: 'nxl-d4', type: 'dorito-big', x: 90, y: 13, rotation: 0 },
+  { id: 'nxl-d5', type: 'dorito-big', x: 40, y: 90, rotation: 180 },
+  { id: 'nxl-d6', type: 'dorito-big', x: 30, y: 92, rotation: 180 },
+  { id: 'nxl-d7', type: 'dorito-big', x: 20, y: 90, rotation: 180 },
+  { id: 'nxl-d8', type: 'dorito-big', x: 10, y: 87, rotation: 180 },
+
+  // ===== SNAKE BEAMS (SB) =====
+  // Center snake corridor
+  { id: 'nxl-sb1', type: 'snake', x: 48, y: 38, rotation: 0 },
+  { id: 'nxl-sb2', type: 'snake', x: 47, y: 48, rotation: 0 },
+  { id: 'nxl-sb3', type: 'snake', x: 52, y: 62, rotation: 0 },
+  { id: 'nxl-sb4', type: 'snake', x: 53, y: 52, rotation: 0 },
+  // Bottom base snake row (4 beams in a row)
+  { id: 'nxl-sb5', type: 'snake', x: 25, y: 83, rotation: 90 },
+  { id: 'nxl-sb6', type: 'snake', x: 32, y: 83, rotation: 90 },
+  { id: 'nxl-sb7', type: 'snake', x: 38, y: 83, rotation: 90 },
+  { id: 'nxl-sb8', type: 'snake', x: 44, y: 83, rotation: 90 },
+  // Top base snake row (mirrored)
+  { id: 'nxl-sb9', type: 'snake', x: 75, y: 17, rotation: 90 },
+  { id: 'nxl-sb10', type: 'snake', x: 68, y: 17, rotation: 90 },
+  { id: 'nxl-sb11', type: 'snake', x: 62, y: 17, rotation: 90 },
+  { id: 'nxl-sb12', type: 'snake', x: 56, y: 17, rotation: 90 },
+  // Side snake
+  { id: 'nxl-sb13', type: 'snake', x: 52, y: 75, rotation: 0 },
+
+  // ===== TREES / CYLINDERS (Tr) =====
+  { id: 'nxl-tr1', type: 'can', x: 42, y: 33, rotation: 0 },
+  { id: 'nxl-tr2', type: 'can', x: 53, y: 50, rotation: 0 },
+  { id: 'nxl-tr3', type: 'can', x: 58, y: 67, rotation: 0 },
+  { id: 'nxl-tr4', type: 'can', x: 47, y: 50, rotation: 0 },
+
+  // ===== CYLINDERS (C) =====
+  { id: 'nxl-c1', type: 'can', x: 62, y: 38, rotation: 0 },
+  { id: 'nxl-c2', type: 'can', x: 38, y: 62, rotation: 0 },
+
+  // ===== MAYA TEMPLES (MT) =====
+  { id: 'nxl-mt1', type: 'temple-maya', x: 35, y: 42, rotation: 0 },
+  { id: 'nxl-mt2', type: 'temple-maya', x: 8, y: 83, rotation: 0 },
+  { id: 'nxl-mt3', type: 'temple-maya', x: 65, y: 58, rotation: 0 },
+  { id: 'nxl-mt4', type: 'temple-maya', x: 92, y: 17, rotation: 0 },
+
+  // ===== TEMPLES (T) =====
+  { id: 'nxl-t1', type: 'temple', x: 8, y: 53, rotation: 0 },
+  { id: 'nxl-t2', type: 'temple', x: 8, y: 67, rotation: 0 },
+  { id: 'nxl-t3', type: 'temple', x: 92, y: 33, rotation: 0 },
+  { id: 'nxl-t4', type: 'temple', x: 92, y: 47, rotation: 0 },
+
+  // ===== BRICKS (Br) =====
+  { id: 'nxl-br1', type: 'brick', x: 12, y: 22, rotation: 0 },
+  { id: 'nxl-br2', type: 'brick', x: 33, y: 90, rotation: 0 },
+  { id: 'nxl-br3', type: 'brick', x: 88, y: 78, rotation: 0 },
+  { id: 'nxl-br4', type: 'brick', x: 67, y: 10, rotation: 0 },
+
+  // ===== MINI W / MINI RACE (MW) =====
+  { id: 'nxl-mw1', type: 'mini-race', x: 25, y: 28, rotation: 0 },
+  { id: 'nxl-mw2', type: 'mini-race', x: 55, y: 28, rotation: 0 },
+  { id: 'nxl-mw3', type: 'mini-race', x: 75, y: 72, rotation: 0 },
+  { id: 'nxl-mw4', type: 'mini-race', x: 45, y: 72, rotation: 0 },
+
+  // ===== GIANT WING (GW) =====
+  { id: 'nxl-gw1', type: 'wing', x: 40, y: 57, rotation: 0 },
+  { id: 'nxl-gw2', type: 'wing', x: 60, y: 43, rotation: 0 },
+
+  // ===== GIANT BRICK (GB) =====
+  { id: 'nxl-gb1', type: 'brick', x: 38, y: 75, rotation: 0 },
+  { id: 'nxl-gb2', type: 'brick', x: 62, y: 25, rotation: 0 },
+
+  // ===== CAKE (Ck) =====
+  { id: 'nxl-ck1', type: 'small-cake', x: 27, y: 88, rotation: 0 },
+  { id: 'nxl-ck2', type: 'small-cake', x: 73, y: 12, rotation: 0 },
+
+  // ===== WING (Wg) =====
+  { id: 'nxl-wg1', type: 'wing', x: 40, y: 90, rotation: 90 },
+  { id: 'nxl-wg2', type: 'wing', x: 60, y: 10, rotation: 90 },
+];

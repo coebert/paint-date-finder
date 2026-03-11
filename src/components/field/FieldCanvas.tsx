@@ -24,6 +24,7 @@ export const CALLOUT_PREFIX: Record<string, string> = {
   'mini-race': 'MR',
   'can': 'C',
   'cone': 'K',
+  'giant-plus': 'GP',
 };
 
 function generateCalloutLabels(obstacles: Obstacle[]): Record<string, string> {
