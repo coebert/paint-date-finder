@@ -388,7 +388,7 @@ export default function FieldLayout() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {/* Source selector */}
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     <Button
                       variant={streetViewSource === 'cpps' ? 'default' : 'outline'}
                       size="sm"
@@ -401,6 +401,17 @@ export default function FieldLayout() {
                       CPPS Layout
                     </Button>
                     <Button
+                      variant={streetViewSource === 'nxl' ? 'default' : 'outline'}
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => {
+                        setStreetViewSource('nxl');
+                        setStreetViewObstacles(NXL_TAMPA_BAY_LAYOUT);
+                      }}
+                    >
+                      NXL Tampa Bay
+                    </Button>
+                    <Button
                       variant={streetViewSource === 'custom' ? 'default' : 'outline'}
                       size="sm"
                       className="text-xs"
@@ -411,6 +422,7 @@ export default function FieldLayout() {
                     >
                       Your Design ({designObstacles.length} obstacles)
                     </Button>
+                  </div>
                   </div>
 
                   {/* 3D View */}
