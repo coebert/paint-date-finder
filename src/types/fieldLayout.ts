@@ -19,7 +19,8 @@ export type ObstacleType =
   | 'wing'
   | 'mini-race'
   | 'can'
-  | 'cone';
+  | 'cone'
+  | 'giant-plus';
 
 export interface ObstacleDefinition {
   type: ObstacleType;
@@ -31,7 +32,7 @@ export interface ObstacleDefinition {
   color: string;           // primary panel color
   colorSecondary: string;  // secondary panel color (for two-tone CPPS look)
   // Bird's eye shape description
-  birdEye: 'circle' | 'triangle' | 'rect' | 'capsule' | 'stepped-rect';
+  birdEye: 'circle' | 'triangle' | 'rect' | 'capsule' | 'stepped-rect' | 'plus';
   // 3D profile cross-section
   profile3D: 'cylinder' | 'cone' | 'prism-triangle' | 'box' | 'half-cylinder' | 'stepped-pyramid' | 'flat-panel';
 }
@@ -177,6 +178,17 @@ export const OBSTACLE_DEFINITIONS: Record<ObstacleType, ObstacleDefinition> = {
     colorSecondary: CPPS_RED,
     birdEye: 'circle',
     profile3D: 'cone',
+  },
+  'giant-plus': {
+    type: 'giant-plus',
+    label: 'Giant Plus',
+    widthM: 2.0,
+    depthM: 2.0,
+    heightM: 1.8,
+    color: CPPS_RED,
+    colorSecondary: CPPS_BLUE,
+    birdEye: 'plus',
+    profile3D: 'box',
   },
 };
 
