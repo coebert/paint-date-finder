@@ -179,7 +179,7 @@ export default function FieldLayout() {
           {/* Current Layout */}
           <TabsContent value="current" className="space-y-6">
             {/* Preset selector */}
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <Button
                 variant={currentPreset === 'cpps' ? 'default' : 'outline'}
                 size="sm"
@@ -188,14 +188,17 @@ export default function FieldLayout() {
               >
                 CPPS 2025
               </Button>
-              <Button
-                variant={currentPreset === 'nxl' ? 'default' : 'outline'}
-                size="sm"
-                className="text-xs"
-                onClick={() => setCurrentPreset('nxl')}
-              >
-                NXL Tampa Bay 2026
-              </Button>
+              {NXL_PRESETS.map(p => (
+                <Button
+                  key={p.id}
+                  variant={currentPreset === p.id ? 'default' : 'outline'}
+                  size="sm"
+                  className="text-xs"
+                  onClick={() => setCurrentPreset(p.id)}
+                >
+                  {p.label}
+                </Button>
+              ))}
             </div>
 
             <div ref={fieldContainerRef} className="fullscreen-container">
