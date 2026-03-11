@@ -153,15 +153,37 @@ export default function FieldLayout() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Current CPPS Layout */}
+          {/* Current Layout */}
           <TabsContent value="current" className="space-y-6">
+            {/* Preset selector */}
+            <div className="flex gap-2">
+              <Button
+                variant={currentPreset === 'cpps' ? 'default' : 'outline'}
+                size="sm"
+                className="text-xs"
+                onClick={() => setCurrentPreset('cpps')}
+              >
+                CPPS 2025
+              </Button>
+              <Button
+                variant={currentPreset === 'nxl' ? 'default' : 'outline'}
+                size="sm"
+                className="text-xs"
+                onClick={() => setCurrentPreset('nxl')}
+              >
+                NXL Tampa Bay 2026
+              </Button>
+            </div>
+
             <div ref={fieldContainerRef} className="fullscreen-container">
               <Card className="bg-card border-border/50">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="font-display tracking-wider flex items-center gap-3">
-                      CPPS COMPETITION FIELD
-                      <Badge className="bg-accent text-accent-foreground">2025 Season</Badge>
+                      {currentPreset === 'cpps' ? 'CPPS COMPETITION FIELD' : 'NXL TAMPA BAY OPEN'}
+                      <Badge className="bg-accent text-accent-foreground">
+                        {currentPreset === 'cpps' ? '2025 Season' : 'Mar 19-22, 2026'}
+                      </Badge>
                     </CardTitle>
                     <div className="flex gap-1">
                       <Button variant={showLabels ? 'default' : 'outline'} size="sm" className="h-8 gap-1 text-xs" onClick={() => setShowLabels(v => !v)}>
@@ -173,12 +195,13 @@ export default function FieldLayout() {
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Standard Sup'Air inflatable field layout used in CPPS tournament play.
-                    The field is symmetrical with a center-line dividing two mirror-image halves.
+                    {currentPreset === 'cpps'
+                      ? 'Standard Sup\'Air inflatable field layout used in CPPS tournament play. The field is symmetrical with a center-line dividing two mirror-image halves.'
+                      : 'Official NXL Tampa Bay Open 2026 field layout. 150ft × 120ft tournament field at Raymond James Stadium, Tampa Bay, FL.'}
                   </p>
                 </CardHeader>
                 <CardContent>
-                  <FieldCanvas obstacles={CPPS_FIELD_LAYOUT} showLabels={showLabels} />
+                  <FieldCanvas obstacles={currentPreset === 'cpps' ? CPPS_FIELD_LAYOUT : NXL_TAMPA_BAY_LAYOUT} showLabels={showLabels} />
                 </CardContent>
               </Card>
             </div>
