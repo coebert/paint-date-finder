@@ -306,7 +306,20 @@ export function FieldCanvas({
           />
         ))}
 
-        {/* Callout labels */}
+        {/* Overlay obstacles (second layout for comparison) */}
+        {overlayObstacles && overlayObstacles.length > 0 && (
+          <g style={{ opacity: overlayOpacity }} filter="url(#overlay-hue)">
+            {overlayObstacles.map((obs) => (
+              <ObstacleSVG
+                key={`overlay-${obs.id}`}
+                obstacle={obs}
+                fieldWidth={dims.width}
+                fieldHeight={dims.height}
+              />
+            ))}
+          </g>
+        )}
+
         {showLabels && (() => {
           const labels = generateCalloutLabels(obstacles);
           return obstacles.map((obs) => {
