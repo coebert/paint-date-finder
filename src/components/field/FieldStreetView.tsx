@@ -1,6 +1,6 @@
 import { useRef, useMemo, useEffect, useCallback, useState } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
-import { Sky, Text, Billboard } from '@react-three/drei';
+import { Sky, Text, Billboard, Environment } from '@react-three/drei';
 import * as THREE from 'three';
 import { Tag, EyeOff, Zap, ArrowDownToLine, Compass } from 'lucide-react';
 import { Obstacle, OBSTACLE_DEFINITIONS, FIELD_WIDTH_M, FIELD_HEIGHT_M } from '@/types/fieldLayout';
@@ -367,6 +367,55 @@ function ObstacleLabel({ position, label, color }: { position: [number, number, 
 }
 
 // ---- Accurate 3D Obstacle shapes (NXL Tampa Bay style: red body, blue cap/top) ----
+// Creates an inflated (puffy) box geometry — subdivided box with vertices pushed outward
+function createInflatedBoxGeometry(w: number, h: number, d: number, inflate: number = 0.06): THREE.BufferGeometry {
+  const geo = new THREE.BoxGeometry(w, h, d, 8, 8, 8);
+  const pos = geo.attributes.position;
+  const cx = 0, cy = 0, cz = 0;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    // Normalize position relative to box center and inflate outward
+    const nx = (x - cx) / (w / 2);
+    const ny = (y - cy) / (h / 2);
+    const nz = (z - cz) / (d / 2);
+    // Inflation factor — strongest at face centers, zero at edges/corners
+    const onFaceX = Math.abs(nx) > 0.99 ? 1 : 0;
+    const onFaceY = Math.abs(ny) > 0.99 ? 1 : 0;
+    const onFaceZ = Math.abs(nz) > 0.99 ? 1 : 0;
+    // For face verts, inflate based on distance from face center
+    const faceFactor = onFaceX + onFaceY + onFaceZ; // 1 on face, 2 on edge, 3 on corner
+    if (faceFactor === 1) {
+      // On a face — inflate outward based on proximity to center of face
+      const distFromCenter = onFaceX ? Math.sqrt(ny*ny + nz*nz) : onFaceY ? Math.sqrt(nx*nx + nz*nz) : Math.sqrt(nx*nx + ny*ny);
+      const puff = inflate * Math.max(0, 1 - distFromCenter * distFromCenter);
+      pos.setX(i, x + (onFaceX ? Math.sign(nx) * puff * w : 0));
+      pos.setY(i, y + (onFaceY ? Math.sign(ny) * puff * h : 0));
+      pos.setZ(i, z + (onFaceZ ? Math.sign(nz) * puff * d : 0));
+    }
+  }
+  geo.computeVertexNormals();
+  return geo;
+}
+
+// Creates barrel-shaped cylinder (wider in middle) for inflatable look
+function createBarrelCylinderGeometry(rTop: number, rBottom: number, height: number, segments: number = 24, heightSegs: number = 12): THREE.BufferGeometry {
+  const geo = new THREE.CylinderGeometry(rTop, rBottom, height, segments, heightSegs);
+  const pos = geo.attributes.position;
+  const bulge = 0.08; // How much wider the middle is
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    const r = Math.sqrt(x * x + z * z);
+    if (r < 0.001) continue;
+    // t goes from 0 at ends to 1 at middle
+    const t = 1 - Math.abs(y / (height / 2));
+    const scale = 1 + bulge * Math.sin(t * Math.PI);
+    pos.setX(i, x * scale);
+    pos.setZ(i, z * scale);
+  }
+  geo.computeVertexNormals();
+  return geo;
+}
+
 function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showLabels?: boolean }) {
   const def = OBSTACLE_DEFINITIONS[obstacle.type];
   const worldX = (obstacle.x / 100 - 0.5) * FIELD_WIDTH_M;
@@ -381,50 +430,172 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
 
   const label = showLabels ? <ObstacleLabel position={[worldX, labelY, worldZ]} label={def.label} color={NXL_RED} /> : null;
 
-  const matRed = useMemo(() => new THREE.MeshStandardMaterial({ 
-    color: NXL_RED, roughness: 0.4, metalness: 0.05 
+  // Vinyl inflatable material — glossy clearcoat for that PVC shine
+  const matRed = useMemo(() => new THREE.MeshPhysicalMaterial({ 
+    color: NXL_RED, roughness: 0.35, metalness: 0.0,
+    clearcoat: 0.9, clearcoatRoughness: 0.15,
   }), []);
 
-  const matBlue = useMemo(() => new THREE.MeshStandardMaterial({ 
-    color: NXL_BLUE, roughness: 0.4, metalness: 0.05 
+  const matBlue = useMemo(() => new THREE.MeshPhysicalMaterial({ 
+    color: NXL_BLUE, roughness: 0.35, metalness: 0.0,
+    clearcoat: 0.9, clearcoatRoughness: 0.15,
   }), []);
 
-  const seamMat = useMemo(() => new THREE.MeshStandardMaterial({ 
-    color: '#ffffff', roughness: 0.5, metalness: 0.05 
+  const seamMat = useMemo(() => new THREE.MeshPhysicalMaterial({ 
+    color: '#eeeeee', roughness: 0.3, metalness: 0.0,
+    clearcoat: 1.0, clearcoatRoughness: 0.1,
   }), []);
+
+  // Pre-compute all geometries at top level (hooks can't be conditional)
+  const r = w / 2;
+  const capH_cyl = h * 0.15;
+  const bodyH_cyl = h - capH_cyl;
+  const capH_box = h * 0.2;
+  const bodyH_box = h - capH_box;
+  const capH_plus = h * 0.15;
+  const bodyH_plus = h - capH_plus;
+  const armW_plus = w * 0.38;
+
+  const barrelBodyGeo = useMemo(() => createBarrelCylinderGeometry(r, r, bodyH_cyl, 24, 12), [r, bodyH_cyl]);
+  const barrelCapGeo = useMemo(() => createBarrelCylinderGeometry(r * 1.02, r * 1.02, capH_cyl, 24, 6), [r, capH_cyl]);
+  const coneGeo = useMemo(() => {
+    // Inflatable cone — subdivided with slight bulge
+    const geo = new THREE.ConeGeometry(r, h, 24, 12);
+    const pos = geo.attributes.position;
+    const bulge = 0.06;
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+      const dist = Math.sqrt(x * x + z * z);
+      if (dist < 0.001) continue;
+      const t = (y + h / 2) / h; // 0 at base, 1 at tip
+      const expectedR = r * (1 - t);
+      if (expectedR < 0.01) continue;
+      const scale = 1 + bulge * Math.sin(t * Math.PI);
+      pos.setX(i, x * scale);
+      pos.setZ(i, z * scale);
+    }
+    geo.computeVertexNormals();
+    return geo;
+  }, [r, h]);
+
+  // Inflated dorito geometry (subdivided tetrahedron with puffed faces)
+  const doritoGeo = useMemo(() => {
+    const halfW = w / 2;
+    const thirdD = d / 3;
+    const v0 = new THREE.Vector3(0, 0, -thirdD * 2);
+    const v1 = new THREE.Vector3(-halfW, 0, thirdD);
+    const v2 = new THREE.Vector3(halfW, 0, thirdD);
+    const apex = new THREE.Vector3(0, h, 0);
+    const center = new THREE.Vector3().addVectors(v0, v1).add(v2).add(apex).multiplyScalar(0.25);
+
+    // Build subdivided tetrahedron
+    const geo = new THREE.TetrahedronGeometry(1, 2);
+    // We'll manually build a BufferGeometry from the 4 vertices
+    const positions: number[] = [];
+    const subdivide = (a: THREE.Vector3, b: THREE.Vector3, c: THREE.Vector3, depth: number) => {
+      if (depth === 0) {
+        positions.push(a.x, a.y, a.z, b.x, b.y, b.z, c.x, c.y, c.z);
+        return;
+      }
+      const ab = new THREE.Vector3().addVectors(a, b).multiplyScalar(0.5);
+      const bc = new THREE.Vector3().addVectors(b, c).multiplyScalar(0.5);
+      const ca = new THREE.Vector3().addVectors(c, a).multiplyScalar(0.5);
+      subdivide(a, ab, ca, depth - 1);
+      subdivide(ab, b, bc, depth - 1);
+      subdivide(ca, bc, c, depth - 1);
+      subdivide(ab, bc, ca, depth - 1);
+    };
+
+    const faces = [
+      [v0, v1, apex], [v1, v2, apex], [v2, v0, apex], // Side faces
+      [v0, v2, v1], // Bottom
+    ];
+    faces.forEach(([a, b, c]) => subdivide(a, b, c, 3));
+
+    const posArr = new Float32Array(positions);
+    const customGeo = new THREE.BufferGeometry();
+    customGeo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+
+    // Inflate: push each vertex outward from the centroid of its face
+    const posAttr = customGeo.attributes.position;
+    const inflate = 0.04;
+    for (let tri = 0; tri < posAttr.count / 3; tri++) {
+      const i0 = tri * 3, i1 = tri * 3 + 1, i2 = tri * 3 + 2;
+      const fc = new THREE.Vector3(
+        (posAttr.getX(i0) + posAttr.getX(i1) + posAttr.getX(i2)) / 3,
+        (posAttr.getY(i0) + posAttr.getY(i1) + posAttr.getY(i2)) / 3,
+        (posAttr.getZ(i0) + posAttr.getZ(i1) + posAttr.getZ(i2)) / 3,
+      );
+      const outDir = new THREE.Vector3().subVectors(fc, center).normalize();
+      for (const idx of [i0, i1, i2]) {
+        const p = new THREE.Vector3(posAttr.getX(idx), posAttr.getY(idx), posAttr.getZ(idx));
+        const distToCenter = p.distanceTo(fc) / Math.max(w, d, h);
+        const puff = inflate * Math.max(0, 1 - distToCenter * 3);
+        posAttr.setXYZ(idx, p.x + outDir.x * puff * w, p.y + outDir.y * puff * h, p.z + outDir.z * puff * d);
+      }
+    }
+    customGeo.computeVertexNormals();
+    return customGeo;
+  }, [w, d, h]);
+
+  // Snake beam — barrel lying on ground
+  const snakeGeo = useMemo(() => {
+    const tubeLen = d;
+    const sr = w / 2;
+    const geo = new THREE.CylinderGeometry(sr, sr, tubeLen, 24, 12);
+    const pos = geo.attributes.position;
+    const bulge = 0.1;
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+      const dist = Math.sqrt(x * x + z * z);
+      if (dist < 0.001) continue;
+      const t = 1 - Math.abs(y / (tubeLen / 2));
+      const scale = 1 + bulge * Math.sin(t * Math.PI);
+      pos.setX(i, x * scale);
+      pos.setZ(i, z * scale);
+    }
+    geo.computeVertexNormals();
+    return geo;
+  }, [w, d]);
+
+  // Snake end cap — hemisphere
+  const snakeCapGeo = useMemo(() => {
+    return new THREE.SphereGeometry(w / 2, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2);
+  }, [w]);
+
+  // Inflated box geometries for temple tiers, flat panels, bricks, plus arms
+  const inflatedBoxBody = useMemo(() => createInflatedBoxGeometry(w, bodyH_box, d, 0.07), [w, bodyH_box, d]);
+  const inflatedBoxCap = useMemo(() => createInflatedBoxGeometry(w, capH_box, d, 0.05), [w, capH_box, d]);
+
+  const inflatedPlusHBody = useMemo(() => createInflatedBoxGeometry(w, bodyH_plus, armW_plus, 0.06), [w, bodyH_plus, armW_plus]);
+  const inflatedPlusVBody = useMemo(() => createInflatedBoxGeometry(armW_plus, bodyH_plus, d, 0.06), [armW_plus, bodyH_plus, d]);
+  const inflatedPlusHCap = useMemo(() => createInflatedBoxGeometry(w, capH_plus, armW_plus, 0.04), [w, capH_plus, armW_plus]);
+  const inflatedPlusVCap = useMemo(() => createInflatedBoxGeometry(armW_plus, capH_plus, d, 0.04), [armW_plus, capH_plus, d]);
+
+  const inflatedFlatBody = useMemo(() => createInflatedBoxGeometry(w, h * 0.7, d, 0.08), [w, h, d]);
 
   if (profile3D === 'cylinder') {
-    // Can / Cake: solid red cylinder body with a distinct blue flat cap on top
-    const r = w / 2;
-    const capH = h * 0.15; // blue cap portion
-    const bodyH = h - capH;
     return (
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-          {/* Red body */}
-          <mesh position={[0, bodyH / 2, 0]} castShadow>
-            <cylinderGeometry args={[r, r, bodyH, 24]} />
+          <mesh position={[0, bodyH_cyl / 2, 0]} castShadow geometry={barrelBodyGeo}>
             <primitive object={matRed} attach="material" />
           </mesh>
-          {/* Blue cap on top */}
-          <mesh position={[0, bodyH + capH / 2, 0]} castShadow>
-            <cylinderGeometry args={[r * 1.02, r * 1.02, capH, 24]} />
+          <mesh position={[0, bodyH_cyl + capH_cyl / 2, 0]} castShadow geometry={barrelCapGeo}>
             <primitive object={matBlue} attach="material" />
           </mesh>
-          {/* Slight dome on very top */}
+          {/* Puffy dome on top */}
           <mesh position={[0, h, 0]}>
-            <sphereGeometry args={[r * 0.5, 16, 8, 0, Math.PI * 2, 0, Math.PI / 4]} />
+            <sphereGeometry args={[r * 0.6, 16, 12, 0, Math.PI * 2, 0, Math.PI / 3]} />
             <primitive object={matBlue} attach="material" />
           </mesh>
-          {/* White seam between body and cap */}
-          <mesh position={[0, bodyH, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[r * 1.01, 0.025, 6, 24]} />
+          <mesh position={[0, bodyH_cyl, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[r * 1.01, 0.03, 8, 24]} />
             <primitive object={seamMat} attach="material" />
           </mesh>
-          {/* Base ring */}
           <mesh position={[0, 0.01, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[r, 0.02, 6, 24]} />
+            <torusGeometry args={[r, 0.025, 8, 24]} />
             <primitive object={seamMat} attach="material" />
           </mesh>
         </group>
@@ -433,35 +604,29 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
   }
 
   if (profile3D === 'cone') {
-    // Cone bunker: solid red cone body, blue base band
-    const r = w / 2;
     return (
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-          {/* Full red cone */}
-          <mesh position={[0, h / 2, 0]} castShadow>
-            <coneGeometry args={[r, h, 24]} />
+          <mesh position={[0, h / 2, 0]} castShadow geometry={coneGeo}>
             <primitive object={matRed} attach="material" />
           </mesh>
-          {/* Blue band at base */}
+          {/* Blue band at base — barrel shaped */}
           <mesh position={[0, h * 0.1, 0]} castShadow>
             <cylinderGeometry args={[r * 0.98, r, h * 0.2, 24]} />
             <primitive object={matBlue} attach="material" />
           </mesh>
           {/* Rounded tip */}
           <mesh position={[0, h * 0.98, 0]}>
-            <sphereGeometry args={[r * 0.08, 10, 8]} />
+            <sphereGeometry args={[r * 0.1, 12, 10]} />
             <primitive object={matRed} attach="material" />
           </mesh>
-          {/* White seam above blue band */}
           <mesh position={[0, h * 0.2, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[r * 0.9, 0.02, 6, 20]} />
+            <torusGeometry args={[r * 0.9, 0.025, 8, 24]} />
             <primitive object={seamMat} attach="material" />
           </mesh>
-          {/* Base ring */}
           <mesh position={[0, 0.02, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[r, 0.025, 6, 20]} />
+            <torusGeometry args={[r, 0.025, 8, 24]} />
             <primitive object={seamMat} attach="material" />
           </mesh>
         </group>
@@ -470,73 +635,11 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
   }
 
   if (profile3D === 'prism-triangle') {
-    // Dorito: solid red tetrahedron/pyramid — chunky and opaque like the reference
-    const halfW = w / 2;
-    const thirdD = d / 3;
-    
-    const v0: [number, number, number] = [0, 0, -thirdD * 2];
-    const v1: [number, number, number] = [-halfW, 0, thirdD];
-    const v2: [number, number, number] = [halfW, 0, thirdD];
-    const apex: [number, number, number] = [0, h, 0];
-
-    const faceNormal = (a: [number,number,number], b: [number,number,number], c: [number,number,number]): [number,number,number] => {
-      const ux = b[0]-a[0], uy = b[1]-a[1], uz = b[2]-a[2];
-      const vx = c[0]-a[0], vy = c[1]-a[1], vz = c[2]-a[2];
-      const nx = uy*vz - uz*vy, ny = uz*vx - ux*vz, nz = ux*vy - uy*vx;
-      const len = Math.sqrt(nx*nx + ny*ny + nz*nz) || 1;
-      return [nx/len, ny/len, nz/len];
-    };
-
-    const faces: { verts: [number,number,number][] }[] = [
-      { verts: [v0, v1, apex] },
-      { verts: [v1, v2, apex] },
-      { verts: [v2, v0, apex] },
-    ];
-
     return (
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-          {/* All faces solid red */}
-          {faces.map((face, fi) => {
-            const [a, b, c] = face.verts;
-            const n = faceNormal(a, b, c);
-            return (
-              <mesh key={fi} castShadow>
-                <bufferGeometry>
-                  <bufferAttribute
-                    attach="attributes-position"
-                    array={new Float32Array([...a, ...b, ...c])}
-                    count={3}
-                    itemSize={3}
-                  />
-                  <bufferAttribute
-                    attach="attributes-normal"
-                    array={new Float32Array([...n, ...n, ...n])}
-                    count={3}
-                    itemSize={3}
-                  />
-                </bufferGeometry>
-                <primitive object={matRed} attach="material" />
-              </mesh>
-            );
-          })}
-          {/* Bottom face */}
-          <mesh>
-            <bufferGeometry>
-              <bufferAttribute
-                attach="attributes-position"
-                array={new Float32Array([...v0, ...v2, ...v1])}
-                count={3}
-                itemSize={3}
-              />
-              <bufferAttribute
-                attach="attributes-normal"
-                array={new Float32Array([0,-1,0, 0,-1,0, 0,-1,0])}
-                count={3}
-                itemSize={3}
-              />
-            </bufferGeometry>
+          <mesh castShadow geometry={doritoGeo}>
             <primitive object={matRed} attach="material" />
           </mesh>
         </group>
@@ -545,32 +648,27 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
   }
 
   if (profile3D === 'half-cylinder') {
-    // Snake beam: red cylinder lying on the ground, blue end caps
-    const r = w / 2;
     const tubeLen = d;
+    const sr = w / 2;
     return (
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-          {/* Red main cylinder body */}
-          <mesh position={[0, r, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-            <cylinderGeometry args={[r, r, tubeLen, 24, 1]} />
+          {/* Red barrel body */}
+          <mesh position={[0, sr, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow geometry={snakeGeo}>
             <primitive object={matRed} attach="material" />
           </mesh>
-          {/* Blue front end cap */}
-          <mesh position={[0, r, -tubeLen / 2]}>
-            <circleGeometry args={[r, 24]} />
+          {/* Blue hemisphere end caps */}
+          <mesh position={[0, sr, -tubeLen / 2]} rotation={[Math.PI / 2, 0, 0]} geometry={snakeCapGeo}>
             <primitive object={matBlue} attach="material" />
           </mesh>
-          {/* Blue back end cap */}
-          <mesh position={[0, r, tubeLen / 2]} rotation={[0, Math.PI, 0]}>
-            <circleGeometry args={[r, 24]} />
+          <mesh position={[0, sr, tubeLen / 2]} rotation={[-Math.PI / 2, 0, 0]} geometry={snakeCapGeo}>
             <primitive object={matBlue} attach="material" />
           </mesh>
-          {/* White seam rings near ends */}
+          {/* White seam rings */}
           {[-1, 1].map((sign) => (
-            <mesh key={sign} position={[0, r, sign * (tubeLen / 2 - 0.05)]} rotation={[Math.PI / 2, 0, 0]}>
-              <torusGeometry args={[r * 0.99, 0.015, 6, 24]} />
+            <mesh key={sign} position={[0, sr, sign * (tubeLen / 2 - 0.08)]} rotation={[Math.PI / 2, 0, 0]}>
+              <torusGeometry args={[sr * 0.99, 0.02, 8, 24]} />
               <primitive object={seamMat} attach="material" />
             </mesh>
           ))}
@@ -580,7 +678,6 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
   }
 
   if (profile3D === 'stepped-pyramid') {
-    // Temple / Temple Maya: red body tiers with blue top tier
     const tiers = obstacle.type === 'temple-maya' ? 4 : 3;
     return (
       <>
@@ -591,17 +688,15 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
             const tierH = h / tiers;
             const tw = w * scale;
             const td = d * scale;
-            // Top tier is blue, all others red
             const tierMat = i === tiers - 1 ? matBlue : matRed;
             return (
               <group key={i}>
                 <mesh position={[0, tierH * i + tierH / 2, 0]} castShadow>
-                  <boxGeometry args={[tw, tierH * 0.92, td]} />
+                  <boxGeometry args={[tw, tierH * 0.92, td, 6, 6, 6]} />
                   <primitive object={tierMat} attach="material" />
                 </mesh>
-                {/* White seam at top of each tier */}
                 <mesh position={[0, tierH * (i + 1) - tierH * 0.04, 0]}>
-                  <boxGeometry args={[tw * 1.01, 0.03, td * 1.01]} />
+                  <boxGeometry args={[tw * 1.01, 0.035, td * 1.01]} />
                   <primitive object={seamMat} attach="material" />
                 </mesh>
               </group>
@@ -613,24 +708,20 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
   }
 
   if (profile3D === 'flat-panel') {
-    // Wing / Mini Race: red body, blue rounded top
     return (
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-          {/* Red main body */}
-          <mesh position={[0, h * 0.35, 0]} castShadow>
-            <boxGeometry args={[w, h * 0.7, d]} />
+          <mesh position={[0, h * 0.35, 0]} castShadow geometry={inflatedFlatBody}>
             <primitive object={matRed} attach="material" />
           </mesh>
-          {/* Blue rounded top */}
+          {/* Blue puffy rounded top */}
           <mesh position={[0, h * 0.7, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
-            <cylinderGeometry args={[h * 0.3, h * 0.3, w, 12, 1, false, 0, Math.PI]} />
+            <cylinderGeometry args={[h * 0.3, h * 0.3, w, 16, 8, false, 0, Math.PI]} />
             <primitive object={matBlue} attach="material" />
           </mesh>
-          {/* White seam between body and top */}
           <mesh position={[0, h * 0.7, 0]}>
-            <boxGeometry args={[w * 1.01, 0.025, d * 1.01]} />
+            <boxGeometry args={[w * 1.01, 0.03, d * 1.01]} />
             <primitive object={seamMat} attach="material" />
           </mesh>
         </group>
@@ -638,42 +729,30 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
     );
   }
 
-  // Giant Plus: cross/plus shape made of two intersecting boxes
+  // Giant Plus
   if (def.birdEye === 'plus') {
-    const capH = h * 0.15;
-    const bodyH = h - capH;
-    const armW = w * 0.38; // width of each arm
     return (
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-          {/* Horizontal bar — red body */}
-          <mesh position={[0, bodyH / 2, 0]} castShadow>
-            <boxGeometry args={[w, bodyH, armW]} />
+          <mesh position={[0, bodyH_plus / 2, 0]} castShadow geometry={inflatedPlusHBody}>
             <primitive object={matRed} attach="material" />
           </mesh>
-          {/* Vertical bar — red body */}
-          <mesh position={[0, bodyH / 2, 0]} castShadow>
-            <boxGeometry args={[armW, bodyH, d]} />
+          <mesh position={[0, bodyH_plus / 2, 0]} castShadow geometry={inflatedPlusVBody}>
             <primitive object={matRed} attach="material" />
           </mesh>
-          {/* Horizontal bar — blue cap */}
-          <mesh position={[0, bodyH + capH / 2, 0]} castShadow>
-            <boxGeometry args={[w, capH, armW]} />
+          <mesh position={[0, bodyH_plus + capH_plus / 2, 0]} castShadow geometry={inflatedPlusHCap}>
             <primitive object={matBlue} attach="material" />
           </mesh>
-          {/* Vertical bar — blue cap */}
-          <mesh position={[0, bodyH + capH / 2, 0]} castShadow>
-            <boxGeometry args={[armW, capH, d]} />
+          <mesh position={[0, bodyH_plus + capH_plus / 2, 0]} castShadow geometry={inflatedPlusVCap}>
             <primitive object={matBlue} attach="material" />
           </mesh>
-          {/* White seams */}
-          <mesh position={[0, bodyH, 0]}>
-            <boxGeometry args={[w * 1.01, 0.03, armW * 1.01]} />
+          <mesh position={[0, bodyH_plus, 0]}>
+            <boxGeometry args={[w * 1.01, 0.035, armW_plus * 1.01]} />
             <primitive object={seamMat} attach="material" />
           </mesh>
-          <mesh position={[0, bodyH, 0]}>
-            <boxGeometry args={[armW * 1.01, 0.03, d * 1.01]} />
+          <mesh position={[0, bodyH_plus, 0]}>
+            <boxGeometry args={[armW_plus * 1.01, 0.035, d * 1.01]} />
             <primitive object={seamMat} attach="material" />
           </mesh>
         </group>
@@ -681,23 +760,19 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
     );
   }
 
-  // Default box fallback (brick, etc.) — red body, blue top cap
-  const capH = h * 0.2;
-  const bodyH = h - capH;
+  // Default box fallback (brick, etc.) — inflated body + cap
   return (
     <>
       {label}
       <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-        <mesh position={[0, bodyH / 2, 0]} castShadow>
-          <boxGeometry args={[w, bodyH, d]} />
+        <mesh position={[0, bodyH_box / 2, 0]} castShadow geometry={inflatedBoxBody}>
           <primitive object={matRed} attach="material" />
         </mesh>
-        <mesh position={[0, bodyH + capH / 2, 0]} castShadow>
-          <boxGeometry args={[w, capH, d]} />
+        <mesh position={[0, bodyH_box + capH_box / 2, 0]} castShadow geometry={inflatedBoxCap}>
           <primitive object={matBlue} attach="material" />
         </mesh>
-        <mesh position={[0, bodyH, 0]}>
-          <boxGeometry args={[w * 1.01, 0.03, d * 1.01]} />
+        <mesh position={[0, bodyH_box, 0]}>
+          <boxGeometry args={[w * 1.01, 0.035, d * 1.01]} />
           <primitive object={seamMat} attach="material" />
         </mesh>
       </group>
@@ -870,10 +945,11 @@ function Scene({ obstacles, viewPosition, onPositionChange, onStanceChange, joys
   return (
     <>
       <Sky sunPosition={[80, 60, 50]} turbidity={6} rayleigh={1.5} mieCoefficient={0.005} mieDirectionalG={0.8} />
-      <ambientLight intensity={0.7} />
+      <Environment preset="park" background={false} />
+      <ambientLight intensity={0.6} />
       <directionalLight 
         position={[25, 50, 30]} 
-        intensity={1.8} 
+        intensity={2.0} 
         castShadow
         shadow-mapSize-width={2048} 
         shadow-mapSize-height={2048}
@@ -882,8 +958,8 @@ function Scene({ obstacles, viewPosition, onPositionChange, onStanceChange, joys
         shadow-camera-top={25}
         shadow-camera-bottom={-25}
       />
-      <directionalLight position={[-20, 30, -15]} intensity={0.4} />
-      <hemisphereLight args={['#b4d7ff', '#3a8f29', 0.5]} />
+      <directionalLight position={[-20, 30, -15]} intensity={0.5} />
+      <hemisphereLight args={['#b4d7ff', '#3a8f29', 0.4]} />
 
       <FirstPersonCamera position={viewPosition} onPositionChange={onPositionChange} onStanceChange={onStanceChange} joystickRef={joystickRef} lookRef={lookRef} mobileStanceRef={mobileStanceRef} headingRef={headingRef} />
       <FieldGround />
