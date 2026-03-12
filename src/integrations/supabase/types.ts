@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      event_flags: {
+        Row: {
+          created_at: string
+          details: string | null
+          event_id: string
+          id: string
+          is_resolved: boolean
+          reason: Database["public"]["Enums"]["event_flag_reason"]
+          resolved_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          details?: string | null
+          event_id: string
+          id?: string
+          is_resolved?: boolean
+          reason: Database["public"]["Enums"]["event_flag_reason"]
+          resolved_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          details?: string | null
+          event_id?: string
+          id?: string
+          is_resolved?: boolean
+          reason?: Database["public"]["Enums"]["event_flag_reason"]
+          resolved_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_flags_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_submissions: {
         Row: {
           admin_notes: string | null
@@ -373,6 +411,12 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      event_flag_reason:
+        | "wrong_date"
+        | "cancelled"
+        | "does_not_exist"
+        | "wrong_venue"
+        | "other"
       event_type:
         | "walk_on"
         | "big_game"
@@ -511,6 +555,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      event_flag_reason: [
+        "wrong_date",
+        "cancelled",
+        "does_not_exist",
+        "wrong_venue",
+        "other",
+      ],
       event_type: [
         "walk_on",
         "big_game",
