@@ -25,6 +25,7 @@ interface EventDetailDialogProps {
 export function EventDetailDialog({ event, open, onOpenChange, onEdit }: EventDetailDialogProps) {
   const { data: venueDetails } = useVenueDetails();
   const { data: isAdmin } = useIsAdmin();
+  const [flagOpen, setFlagOpen] = useState(false);
   
   if (!event) return null;
 
