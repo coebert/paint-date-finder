@@ -478,7 +478,64 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
     color: '#dddddd', transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide,
   }), []);
 
-  // Pre-compute all geometries at top level (hooks can't be conditional)
+  // --- Seam line helpers ---
+  // Vertical seam strips on a cylinder (evenly spaced around circumference)
+  const CylinderSeams = ({ radius, height, count = 4, yOffset = 0 }: { radius: number; height: number; count?: number; yOffset?: number }) => (
+    <>
+      {Array.from({ length: count }).map((_, i) => {
+        const angle = (i / count) * Math.PI * 2;
+        return (
+          <mesh key={i} position={[Math.sin(angle) * (radius + 0.005), yOffset + height / 2, Math.cos(angle) * (radius + 0.005)]} rotation={[0, angle, 0]}>
+            <planeGeometry args={[0.02, height]} />
+            <primitive object={seamLineMat} attach="material" />
+          </mesh>
+        );
+      })}
+    </>
+  );
+
+  // Horizontal + vertical seam strips on a box face
+  const BoxSeams = ({ bw, bh, bd, yOffset = 0 }: { bw: number; bh: number; bd: number; yOffset?: number }) => (
+    <>
+      {/* Vertical center seam on front & back */}
+      <mesh position={[0, yOffset + bh / 2, bd / 2 + 0.005]}>
+        <planeGeometry args={[0.02, bh]} />
+        <primitive object={seamLineMat} attach="material" />
+      </mesh>
+      <mesh position={[0, yOffset + bh / 2, -(bd / 2 + 0.005)]}>
+        <planeGeometry args={[0.02, bh]} />
+        <primitive object={seamLineMat} attach="material" />
+      </mesh>
+      {/* Vertical center seam on left & right */}
+      <mesh position={[bw / 2 + 0.005, yOffset + bh / 2, 0]} rotation={[0, Math.PI / 2, 0]}>
+        <planeGeometry args={[0.02, bh]} />
+        <primitive object={seamLineMat} attach="material" />
+      </mesh>
+      <mesh position={[-(bw / 2 + 0.005), yOffset + bh / 2, 0]} rotation={[0, Math.PI / 2, 0]}>
+        <planeGeometry args={[0.02, bh]} />
+        <primitive object={seamLineMat} attach="material" />
+      </mesh>
+      {/* Horizontal mid-height seam on front & back */}
+      <mesh position={[0, yOffset + bh / 2, bd / 2 + 0.005]}>
+        <planeGeometry args={[bw, 0.02]} />
+        <primitive object={seamLineMat} attach="material" />
+      </mesh>
+      <mesh position={[0, yOffset + bh / 2, -(bd / 2 + 0.005)]}>
+        <planeGeometry args={[bw, 0.02]} />
+        <primitive object={seamLineMat} attach="material" />
+      </mesh>
+      {/* Horizontal mid-height seam on left & right */}
+      <mesh position={[bw / 2 + 0.005, yOffset + bh / 2, 0]} rotation={[0, Math.PI / 2, 0]}>
+        <planeGeometry args={[bd, 0.02]} />
+        <primitive object={seamLineMat} attach="material" />
+      </mesh>
+      <mesh position={[-(bw / 2 + 0.005), yOffset + bh / 2, 0]} rotation={[0, Math.PI / 2, 0]}>
+        <planeGeometry args={[bd, 0.02]} />
+        <primitive object={seamLineMat} attach="material" />
+      </mesh>
+    </>
+  );
+
   const r = w / 2;
   const capH_cyl = h * 0.15;
   const bodyH_cyl = h - capH_cyl;
