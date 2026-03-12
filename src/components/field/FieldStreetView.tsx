@@ -367,6 +367,55 @@ function ObstacleLabel({ position, label, color }: { position: [number, number, 
 }
 
 // ---- Accurate 3D Obstacle shapes (NXL Tampa Bay style: red body, blue cap/top) ----
+// Creates an inflated (puffy) box geometry — subdivided box with vertices pushed outward
+function createInflatedBoxGeometry(w: number, h: number, d: number, inflate: number = 0.06): THREE.BufferGeometry {
+  const geo = new THREE.BoxGeometry(w, h, d, 8, 8, 8);
+  const pos = geo.attributes.position;
+  const cx = 0, cy = 0, cz = 0;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    // Normalize position relative to box center and inflate outward
+    const nx = (x - cx) / (w / 2);
+    const ny = (y - cy) / (h / 2);
+    const nz = (z - cz) / (d / 2);
+    // Inflation factor — strongest at face centers, zero at edges/corners
+    const onFaceX = Math.abs(nx) > 0.99 ? 1 : 0;
+    const onFaceY = Math.abs(ny) > 0.99 ? 1 : 0;
+    const onFaceZ = Math.abs(nz) > 0.99 ? 1 : 0;
+    // For face verts, inflate based on distance from face center
+    const faceFactor = onFaceX + onFaceY + onFaceZ; // 1 on face, 2 on edge, 3 on corner
+    if (faceFactor === 1) {
+      // On a face — inflate outward based on proximity to center of face
+      const distFromCenter = onFaceX ? Math.sqrt(ny*ny + nz*nz) : onFaceY ? Math.sqrt(nx*nx + nz*nz) : Math.sqrt(nx*nx + ny*ny);
+      const puff = inflate * Math.max(0, 1 - distFromCenter * distFromCenter);
+      pos.setX(i, x + (onFaceX ? Math.sign(nx) * puff * w : 0));
+      pos.setY(i, y + (onFaceY ? Math.sign(ny) * puff * h : 0));
+      pos.setZ(i, z + (onFaceZ ? Math.sign(nz) * puff * d : 0));
+    }
+  }
+  geo.computeVertexNormals();
+  return geo;
+}
+
+// Creates barrel-shaped cylinder (wider in middle) for inflatable look
+function createBarrelCylinderGeometry(rTop: number, rBottom: number, height: number, segments: number = 24, heightSegs: number = 12): THREE.BufferGeometry {
+  const geo = new THREE.CylinderGeometry(rTop, rBottom, height, segments, heightSegs);
+  const pos = geo.attributes.position;
+  const bulge = 0.08; // How much wider the middle is
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    const r = Math.sqrt(x * x + z * z);
+    if (r < 0.001) continue;
+    // t goes from 0 at ends to 1 at middle
+    const t = 1 - Math.abs(y / (height / 2));
+    const scale = 1 + bulge * Math.sin(t * Math.PI);
+    pos.setX(i, x * scale);
+    pos.setZ(i, z * scale);
+  }
+  geo.computeVertexNormals();
+  return geo;
+}
+
 function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showLabels?: boolean }) {
   const def = OBSTACLE_DEFINITIONS[obstacle.type];
   const worldX = (obstacle.x / 100 - 0.5) * FIELD_WIDTH_M;
