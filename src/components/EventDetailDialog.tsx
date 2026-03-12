@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { PaintballEvent } from '@/types/events';
 import { EventTypeBadge } from './EventTypeBadge';
+import { FlagEventDialog } from './FlagEventDialog';
 import {
   Dialog,
   DialogContent,
