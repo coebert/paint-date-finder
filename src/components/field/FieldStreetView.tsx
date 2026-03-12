@@ -381,16 +381,20 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
 
   const label = showLabels ? <ObstacleLabel position={[worldX, labelY, worldZ]} label={def.label} color={NXL_RED} /> : null;
 
-  const matRed = useMemo(() => new THREE.MeshStandardMaterial({ 
-    color: NXL_RED, roughness: 0.4, metalness: 0.05 
+  // Vinyl inflatable material — glossy clearcoat for that PVC shine
+  const matRed = useMemo(() => new THREE.MeshPhysicalMaterial({ 
+    color: NXL_RED, roughness: 0.35, metalness: 0.0,
+    clearcoat: 0.9, clearcoatRoughness: 0.15,
   }), []);
 
-  const matBlue = useMemo(() => new THREE.MeshStandardMaterial({ 
-    color: NXL_BLUE, roughness: 0.4, metalness: 0.05 
+  const matBlue = useMemo(() => new THREE.MeshPhysicalMaterial({ 
+    color: NXL_BLUE, roughness: 0.35, metalness: 0.0,
+    clearcoat: 0.9, clearcoatRoughness: 0.15,
   }), []);
 
-  const seamMat = useMemo(() => new THREE.MeshStandardMaterial({ 
-    color: '#ffffff', roughness: 0.5, metalness: 0.05 
+  const seamMat = useMemo(() => new THREE.MeshPhysicalMaterial({ 
+    color: '#eeeeee', roughness: 0.3, metalness: 0.0,
+    clearcoat: 1.0, clearcoatRoughness: 0.1,
   }), []);
 
   if (profile3D === 'cylinder') {
