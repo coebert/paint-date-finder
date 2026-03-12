@@ -54,6 +54,20 @@ export function EventDetailDialog({ event, open, onOpenChange, onEdit }: EventDe
         </DialogHeader>
 
         <div className="space-y-4">
+          {isFlagged && (
+            <div className="flex items-start gap-3 rounded-lg border border-destructive/40 bg-destructive/10 p-3">
+              <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-destructive">Accuracy Query Raised</p>
+                <p className="text-xs text-destructive/80 mt-0.5">
+                  A concern has been raised about the accuracy of this event's information. 
+                  Details such as the date, venue, or status may be incorrect. Please verify 
+                  with the venue directly before booking.
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center gap-2 text-foreground">
             <Calendar className="h-5 w-5 text-accent" />
             <span className="font-medium">{format(eventDate, 'EEEE, d MMMM yyyy')}</span>
