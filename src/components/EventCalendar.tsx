@@ -28,6 +28,7 @@ interface EventCalendarProps {
 export function EventCalendar({ events, onEventClick }: EventCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
+  const { data: flaggedIds } = useFlaggedEventIds();
 
   const eventsByDate = useMemo(() => {
     const map = new Map<string, PaintballEvent[]>();
