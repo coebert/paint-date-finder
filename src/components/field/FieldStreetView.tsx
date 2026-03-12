@@ -882,6 +882,8 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
             <boxGeometry args={[armW_plus * 1.01, 0.035, d * 1.01]} />
             <primitive object={seamMat} attach="material" />
           </mesh>
+          <BoxSeams bw={w} bh={bodyH_plus} bd={armW_plus} />
+          <BoxSeams bw={armW_plus} bh={bodyH_plus} bd={d} />
         </group>
       </>
     );
