@@ -38,6 +38,52 @@ export default function FieldLayout() {
   const fieldContainerRef = useRef<HTMLDivElement>(null);
   const streetViewContainerRef = useRef<HTMLDivElement>(null);
 
+  // Annotation state
+  const [annotations, setAnnotations] = useState<Annotation[]>([]);
+  const [annotationTool, setAnnotationTool] = useState<AnnotationTool>('select');
+  const [annotationColor, setAnnotationColor] = useState(TEAM_COLORS[0].value);
+  const [playerNumber, setPlayerNumber] = useState(1);
+  const [showAnnotations, setShowAnnotations] = useState(false);
+
+  const handleAddAnnotation = useCallback((ann: Annotation) => {
+    setAnnotations(prev => [...prev, ann]);
+  }, []);
+
+  const handleUpdateAnnotation = useCallback((id: string, partial: Partial<Annotation>) => {
+    setAnnotations(prev => prev.map(a => a.id === id ? { ...a, ...partial } as Annotation : a));
+  }, []);
+
+  const handleDeleteAnnotation = useCallback((id: string) => {
+    setAnnotations(prev => prev.filter(a => a.id !== id));
+    toast.success('Annotation removed');
+  }, []);
+
+  const handleUndoAnnotation = useCallback(() => {
+    setAnnotations(prev => prev.slice(0, -1));
+  }, []);
+
+  const handleClearAnnotations = useCallback(() => {
+    setAnnotations([]);
+    toast.success('All annotations cleared');
+  }, []);
+
+  const renderAnnotationOverlay = useCallback((dims: { width: number; height: number }) => {
+    if (!showAnnotations) return null;
+    return (
+      <AnnotationLayer
+        annotations={annotations}
+        activeTool={annotationTool}
+        activeColor={annotationColor}
+        playerNumber={playerNumber}
+        onAdd={handleAddAnnotation}
+        onUpdate={handleUpdateAnnotation}
+        onDelete={handleDeleteAnnotation}
+        fieldWidth={dims.width}
+        fieldHeight={dims.height}
+      />
+    );
+  }, [showAnnotations, annotations, annotationTool, annotationColor, playerNumber, handleAddAnnotation, handleUpdateAnnotation, handleDeleteAnnotation]);
+
   const toggleFullscreen = useCallback((ref: React.RefObject<HTMLDivElement | null>, setFn: (v: boolean) => void) => {
     if (!ref.current) return;
     if (document.fullscreenElement) {
