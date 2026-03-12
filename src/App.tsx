@@ -64,6 +64,14 @@ const App = () => (
               </AdminRoute>
             }
           />
+          <Route
+            path="/admin/flags"
+            element={
+              <AdminRoute>
+                <AdminFlags />
+              </AdminRoute>
+            }
+          />
           
           {/* Legacy route redirect */}
           <Route
