@@ -1,6 +1,6 @@
 import { useRef, useMemo, useEffect, useCallback, useState } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
-import { Sky, Text, Billboard } from '@react-three/drei';
+import { Sky, Text, Billboard, Environment } from '@react-three/drei';
 import * as THREE from 'three';
 import { Tag, EyeOff, Zap, ArrowDownToLine, Compass } from 'lucide-react';
 import { Obstacle, OBSTACLE_DEFINITIONS, FIELD_WIDTH_M, FIELD_HEIGHT_M } from '@/types/fieldLayout';
