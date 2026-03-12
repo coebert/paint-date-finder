@@ -9,6 +9,12 @@ interface FieldCanvasProps {
   selectedId?: string | null;
   onSelect?: (id: string | null) => void;
   showLabels?: boolean;
+  /** Second set of obstacles rendered as an overlay with a color tint */
+  overlayObstacles?: Obstacle[];
+  /** Hue-rotate filter for the overlay layer (CSS degrees, default 180 for cyan tint) */
+  overlayHue?: number;
+  /** Opacity of the overlay layer 0-1 (default 0.55) */
+  overlayOpacity?: number;
 }
 
 export const CALLOUT_PREFIX: Record<string, string> = {
@@ -48,6 +54,9 @@ export function FieldCanvas({
   selectedId,
   onSelect,
   showLabels = false,
+  overlayObstacles,
+  overlayHue = 180,
+  overlayOpacity = 0.55,
 }: FieldCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dims, setDims] = useState({ width: 800, height: 640 });
@@ -131,6 +140,13 @@ export function FieldCanvas({
         onPointerUp={handlePointerUp}
         style={{ touchAction: 'none' }}
       >
+        {/* SVG filter for overlay hue shift */}
+        <defs>
+          <filter id="overlay-hue">
+            <feColorMatrix type="hueRotate" values={String(overlayHue)} />
+          </filter>
+        </defs>
+
         {/* Field background - grass green */}
         <rect width={dims.width} height={dims.height} fill="hsl(120, 35%, 20%)" rx={4} />
         
@@ -297,7 +313,20 @@ export function FieldCanvas({
           />
         ))}
 
-        {/* Callout labels */}
+        {/* Overlay obstacles (second layout for comparison) */}
+        {overlayObstacles && overlayObstacles.length > 0 && (
+          <g style={{ opacity: overlayOpacity }} filter="url(#overlay-hue)">
+            {overlayObstacles.map((obs) => (
+              <ObstacleSVG
+                key={`overlay-${obs.id}`}
+                obstacle={obs}
+                fieldWidth={dims.width}
+                fieldHeight={dims.height}
+              />
+            ))}
+          </g>
+        )}
+
         {showLabels && (() => {
           const labels = generateCalloutLabels(obstacles);
           return obstacles.map((obs) => {
