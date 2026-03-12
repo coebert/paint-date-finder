@@ -945,10 +945,11 @@ function Scene({ obstacles, viewPosition, onPositionChange, onStanceChange, joys
   return (
     <>
       <Sky sunPosition={[80, 60, 50]} turbidity={6} rayleigh={1.5} mieCoefficient={0.005} mieDirectionalG={0.8} />
-      <ambientLight intensity={0.7} />
+      <Environment preset="park" background={false} />
+      <ambientLight intensity={0.6} />
       <directionalLight 
         position={[25, 50, 30]} 
-        intensity={1.8} 
+        intensity={2.0} 
         castShadow
         shadow-mapSize-width={2048} 
         shadow-mapSize-height={2048}
@@ -957,8 +958,8 @@ function Scene({ obstacles, viewPosition, onPositionChange, onStanceChange, joys
         shadow-camera-top={25}
         shadow-camera-bottom={-25}
       />
-      <directionalLight position={[-20, 30, -15]} intensity={0.4} />
-      <hemisphereLight args={['#b4d7ff', '#3a8f29', 0.5]} />
+      <directionalLight position={[-20, 30, -15]} intensity={0.5} />
+      <hemisphereLight args={['#b4d7ff', '#3a8f29', 0.4]} />
 
       <FirstPersonCamera position={viewPosition} onPositionChange={onPositionChange} onStanceChange={onStanceChange} joystickRef={joystickRef} lookRef={lookRef} mobileStanceRef={mobileStanceRef} headingRef={headingRef} />
       <FieldGround />
