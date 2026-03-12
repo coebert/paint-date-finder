@@ -140,6 +140,13 @@ export function FieldCanvas({
         onPointerUp={handlePointerUp}
         style={{ touchAction: 'none' }}
       >
+        {/* SVG filter for overlay hue shift */}
+        <defs>
+          <filter id="overlay-hue">
+            <feColorMatrix type="hueRotate" values={String(overlayHue)} />
+          </filter>
+        </defs>
+
         {/* Field background - grass green */}
         <rect width={dims.width} height={dims.height} fill="hsl(120, 35%, 20%)" rx={4} />
         
