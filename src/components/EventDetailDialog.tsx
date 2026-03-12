@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Calendar, MapPin, Clock, ExternalLink, Globe, Pencil, CheckCircle, AlertCircle } from 'lucide-react';
+import { Calendar, MapPin, Clock, ExternalLink, Globe, Pencil, CheckCircle, AlertCircle, Flag } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useVenueDetails } from '@/hooks/useVenueDetails';
 import { useIsAdmin } from '@/hooks/useAuth';
