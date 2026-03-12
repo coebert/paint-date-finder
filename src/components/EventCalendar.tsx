@@ -159,6 +159,9 @@ export function EventCalendar({ events, onEventClick }: EventCalendarProps) {
                         !event.is_verified && 'opacity-60 border border-dashed border-current'
                       )}
                     >
+                      {flaggedIds?.has(event.id) && (
+                        <AlertTriangle className="h-3 w-3 text-destructive shrink-0" />
+                      )}
                       <span className="truncate">{event.title}</span>
                     </div>
                   </button>
