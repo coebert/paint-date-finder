@@ -243,7 +243,12 @@ export function EventCalendar({ events, onEventClick }: EventCalendarProps) {
                   )}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <EventTypeBadge type={event.event_type} />
+                    <div className="flex items-center gap-1.5">
+                      <EventTypeBadge type={event.event_type} />
+                      {flaggedIds?.has(event.id) && (
+                        <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0" />
+                      )}
+                    </div>
                     {event.is_verified ? (
                       <ShieldCheck className="h-3.5 w-3.5 text-primary shrink-0" />
                     ) : (
