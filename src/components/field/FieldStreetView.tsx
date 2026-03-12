@@ -722,6 +722,16 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
             <torusGeometry args={[r, 0.025, 8, 24]} />
             <primitive object={seamMat} attach="material" />
           </mesh>
+          {/* Vertical panel seams tapering with cone */}
+          {Array.from({ length: 6 }).map((_, i) => {
+            const angle = (i / 6) * Math.PI * 2;
+            return (
+              <mesh key={i} position={[Math.sin(angle) * (r * 0.5 + 0.005), h * 0.5, Math.cos(angle) * (r * 0.5 + 0.005)]} rotation={[0, angle, 0]}>
+                <planeGeometry args={[0.015, h * 0.8]} />
+                <primitive object={seamLineMat} attach="material" />
+              </mesh>
+            );
+          })}
         </group>
       </>
     );
