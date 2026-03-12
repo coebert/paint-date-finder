@@ -143,7 +143,15 @@ export function EventDetailDialog({ event, open, onOpenChange, onEdit }: EventDe
                 </a>
               </Button>
             )}
-            {/* Only show edit button to admins */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setFlagOpen(true)}
+              className="text-muted-foreground hover:text-destructive gap-1"
+            >
+              <Flag className="h-4 w-4" />
+              Report
+            </Button>
             {isAdmin && (
               <Button
                 variant="outline"
@@ -159,6 +167,13 @@ export function EventDetailDialog({ event, open, onOpenChange, onEdit }: EventDe
             )}
           </div>
         </div>
+
+        <FlagEventDialog
+          eventId={event.id}
+          eventTitle={event.title}
+          open={flagOpen}
+          onOpenChange={setFlagOpen}
+        />
       </DialogContent>
     </Dialog>
   );
