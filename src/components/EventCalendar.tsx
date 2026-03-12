@@ -2,7 +2,8 @@ import { useState, useMemo } from 'react';
 import { PaintballEvent, EVENT_TYPE_LABELS, EventType } from '@/types/events';
 import { EventTypeBadge } from './EventTypeBadge';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, X, Calendar, Clock, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Calendar, Clock, ShieldCheck, ShieldAlert, AlertTriangle } from 'lucide-react';
+import { useFlaggedEventIds } from '@/hooks/useEventFlags';
 import {
   format,
   startOfMonth,
@@ -27,6 +28,7 @@ interface EventCalendarProps {
 export function EventCalendar({ events, onEventClick }: EventCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
+  const { data: flaggedIds } = useFlaggedEventIds();
 
   const eventsByDate = useMemo(() => {
     const map = new Map<string, PaintballEvent[]>();
@@ -157,6 +159,9 @@ export function EventCalendar({ events, onEventClick }: EventCalendarProps) {
                         !event.is_verified && 'opacity-60 border border-dashed border-current'
                       )}
                     >
+                      {flaggedIds?.has(event.id) && (
+                        <AlertTriangle className="h-3 w-3 text-destructive shrink-0" />
+                      )}
                       <span className="truncate">{event.title}</span>
                     </div>
                   </button>
@@ -238,7 +243,12 @@ export function EventCalendar({ events, onEventClick }: EventCalendarProps) {
                   )}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <EventTypeBadge type={event.event_type} />
+                    <div className="flex items-center gap-1.5">
+                      <EventTypeBadge type={event.event_type} />
+                      {flaggedIds?.has(event.id) && (
+                        <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0" />
+                      )}
+                    </div>
                     {event.is_verified ? (
                       <ShieldCheck className="h-3.5 w-3.5 text-primary shrink-0" />
                     ) : (
