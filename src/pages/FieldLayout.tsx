@@ -429,6 +429,7 @@ export default function FieldLayout() {
                         Double-click an annotation in Select mode to delete it. Drag player markers & text labels to reposition.
                       </p>
                     )}
+                  </CardContent>
                 </Card>
 
                 {/* Selection controls */}
