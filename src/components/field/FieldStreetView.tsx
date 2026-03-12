@@ -787,6 +787,13 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
               <primitive object={seamMat} attach="material" />
             </mesh>
           ))}
+          {/* Longitudinal seam lines along snake body */}
+          {[0, Math.PI / 2, Math.PI, Math.PI * 1.5].map((angle, i) => (
+            <mesh key={`ls${i}`} position={[Math.sin(angle) * (sr + 0.005), sr, Math.cos(angle) * 0]} rotation={[0, 0, angle]}>
+              <planeGeometry args={[0.015, tubeLen * 0.85]} />
+              <meshBasicMaterial color="#dddddd" transparent opacity={0.3} depthWrite={false} side={THREE.DoubleSide} />
+            </mesh>
+          ))}
         </group>
       </>
     );
