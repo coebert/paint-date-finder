@@ -2,7 +2,8 @@ import { useState, useMemo } from 'react';
 import { PaintballEvent, EVENT_TYPE_LABELS, EventType } from '@/types/events';
 import { EventTypeBadge } from './EventTypeBadge';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, X, Calendar, Clock, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Calendar, Clock, ShieldCheck, ShieldAlert, AlertTriangle } from 'lucide-react';
+import { useFlaggedEventIds } from '@/hooks/useEventFlags';
 import {
   format,
   startOfMonth,
