@@ -13,6 +13,7 @@ import AdminOverview from "./pages/admin/AdminOverview";
 import AdminSubmissions from "./pages/admin/AdminSubmissions";
 import AdminEvents from "./pages/admin/AdminEvents";
 import AdminTeams from "./pages/admin/AdminTeams";
+import AdminFlags from "./pages/admin/AdminFlags";
 import FieldLayout from "./pages/FieldLayout";
 
 const queryClient = new QueryClient();
@@ -60,6 +61,14 @@ const App = () => (
             element={
               <AdminRoute>
                 <AdminTeams />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/flags"
+            element={
+              <AdminRoute>
+                <AdminFlags />
               </AdminRoute>
             }
           />
