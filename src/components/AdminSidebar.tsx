@@ -1,4 +1,4 @@
-import { BarChart3, Calendar, FileText, Home, Settings, Users } from "lucide-react";
+import { BarChart3, Calendar, FileText, Flag, Home, Settings, Users } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 
