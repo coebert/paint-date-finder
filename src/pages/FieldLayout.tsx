@@ -11,8 +11,11 @@ import { FieldCanvas, CALLOUT_PREFIX } from '@/components/field/FieldCanvas';
 import { ObstaclePalette } from '@/components/field/ObstaclePalette';
 import { FieldStreetView } from '@/components/field/FieldStreetView';
 import { FieldCompare } from '@/components/field/FieldCompare';
+import { AnnotationToolbar } from '@/components/field/AnnotationToolbar';
+import { AnnotationLayer } from '@/components/field/AnnotationLayer';
 import { CPPS_FIELD_LAYOUT, NXL_TAMPA_BAY_LAYOUT, Obstacle, ObstacleType, OBSTACLE_DEFINITIONS } from '@/types/fieldLayout';
 import { NXL_LAS_VEGAS_LAYOUT, NXL_WINDY_CITY_LAYOUT, NXL_WORLD_CUP_LAYOUT, NXL_PRESETS, NxlPresetId } from '@/data/nxlLayouts';
+import { Annotation, AnnotationTool, TEAM_COLORS } from '@/types/annotations';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 
