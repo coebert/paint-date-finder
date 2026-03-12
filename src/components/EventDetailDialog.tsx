@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { PaintballEvent } from '@/types/events';
 import { EventTypeBadge } from './EventTypeBadge';
+import { FlagEventDialog } from './FlagEventDialog';
 import {
   Dialog,
   DialogContent,
@@ -8,7 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Calendar, MapPin, Clock, ExternalLink, Globe, Pencil, CheckCircle, AlertCircle } from 'lucide-react';
+import { Calendar, MapPin, Clock, ExternalLink, Globe, Pencil, CheckCircle, AlertCircle, Flag } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useVenueDetails } from '@/hooks/useVenueDetails';
 import { useIsAdmin } from '@/hooks/useAuth';
@@ -23,6 +25,7 @@ interface EventDetailDialogProps {
 export function EventDetailDialog({ event, open, onOpenChange, onEdit }: EventDetailDialogProps) {
   const { data: venueDetails } = useVenueDetails();
   const { data: isAdmin } = useIsAdmin();
+  const [flagOpen, setFlagOpen] = useState(false);
   
   if (!event) return null;
 
@@ -140,7 +143,15 @@ export function EventDetailDialog({ event, open, onOpenChange, onEdit }: EventDe
                 </a>
               </Button>
             )}
-            {/* Only show edit button to admins */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setFlagOpen(true)}
+              className="text-muted-foreground hover:text-destructive gap-1"
+            >
+              <Flag className="h-4 w-4" />
+              Report
+            </Button>
             {isAdmin && (
               <Button
                 variant="outline"
@@ -156,6 +167,13 @@ export function EventDetailDialog({ event, open, onOpenChange, onEdit }: EventDe
             )}
           </div>
         </div>
+
+        <FlagEventDialog
+          eventId={event.id}
+          eventTitle={event.title}
+          open={flagOpen}
+          onOpenChange={setFlagOpen}
+        />
       </DialogContent>
     </Dialog>
   );
