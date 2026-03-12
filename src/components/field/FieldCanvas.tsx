@@ -133,7 +133,7 @@ export function FieldCanvas({
   const gridLinesY = Math.floor(FIELD_HEIGHT_M / gridSpacingM);
 
   return (
-    <div ref={containerRef} className="w-full">
+    <div ref={containerRef} className="w-full relative">
       <svg
         width={dims.width}
         height={dims.height}
