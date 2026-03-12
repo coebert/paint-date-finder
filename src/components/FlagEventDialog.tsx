@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Flag, AlertTriangle, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { storeFlagToken } from '@/hooks/useEventFlags';
 
 const FLAG_REASONS = [
   { value: 'wrong_date', label: 'Date is incorrect', description: 'The event exists but the date shown is wrong' },
@@ -44,13 +45,18 @@ export function FlagEventDialog({ eventId, eventTitle, open, onOpenChange }: Fla
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.from('event_flags' as any).insert({
+      const { data, error } = await supabase.from('event_flags' as any).insert({
         event_id: eventId,
         reason,
         details: details.trim() || null,
-      });
+      }).select('id, delete_token').single();
 
       if (error) throw error;
+
+      // Store the delete token so the user can withdraw their flag
+      if (data) {
+        storeFlagToken(eventId, (data as any).id, (data as any).delete_token);
+      }
 
       toast.success('Thank you! Your report has been submitted for review.');
       queryClient.invalidateQueries({ queryKey: ['flagged-event-ids'] });

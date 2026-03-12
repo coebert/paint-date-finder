@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { PaintballEvent } from '@/types/events';
 import { EventTypeBadge } from './EventTypeBadge';
 import { FlagEventDialog } from './FlagEventDialog';
@@ -10,11 +10,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Calendar, MapPin, Clock, ExternalLink, Globe, Pencil, CheckCircle, AlertCircle, Flag, AlertTriangle } from 'lucide-react';
+import { Calendar, MapPin, Clock, ExternalLink, Globe, Pencil, CheckCircle, AlertCircle, Flag, AlertTriangle, Undo2, Loader2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useVenueDetails } from '@/hooks/useVenueDetails';
 import { useIsAdmin } from '@/hooks/useAuth';
-import { useFlaggedEventIds } from '@/hooks/useEventFlags';
+import { useFlaggedEventIds, useWithdrawFlag, getStoredFlagForEvent } from '@/hooks/useEventFlags';
 
 interface EventDetailDialogProps {
   event: PaintballEvent | null;
@@ -27,14 +27,25 @@ export function EventDetailDialog({ event, open, onOpenChange, onEdit }: EventDe
   const { data: venueDetails } = useVenueDetails();
   const { data: isAdmin } = useIsAdmin();
   const { data: flaggedIds } = useFlaggedEventIds();
+  const withdrawFlag = useWithdrawFlag();
   const [flagOpen, setFlagOpen] = useState(false);
   
   if (!event) return null;
 
   const isFlagged = flaggedIds?.has(event.id) ?? false;
+  const storedFlag = getStoredFlagForEvent(event.id);
 
   const eventDate = parseISO(event.event_date);
   const venueWebsite = venueDetails?.get(event.venue_name)?.website ?? null;
+
+  const handleWithdraw = () => {
+    if (!storedFlag) return;
+    withdrawFlag.mutate({
+      eventId: event.id,
+      flagId: storedFlag.flagId,
+      deleteToken: storedFlag.deleteToken,
+    });
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -57,13 +68,29 @@ export function EventDetailDialog({ event, open, onOpenChange, onEdit }: EventDe
           {isFlagged && (
             <div className="flex items-start gap-3 rounded-lg border border-destructive/40 bg-destructive/10 p-3">
               <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
-              <div>
+              <div className="flex-1">
                 <p className="text-sm font-semibold text-destructive">Accuracy Query Raised</p>
                 <p className="text-xs text-destructive/80 mt-0.5">
                   A concern has been raised about the accuracy of this event's information. 
                   Details such as the date, venue, or status may be incorrect. Please verify 
                   with the venue directly before booking.
                 </p>
+                {storedFlag && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleWithdraw}
+                    disabled={withdrawFlag.isPending}
+                    className="mt-2 h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 gap-1 px-2"
+                  >
+                    {withdrawFlag.isPending ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Undo2 className="h-3 w-3" />
+                    )}
+                    Withdraw my report
+                  </Button>
+                )}
               </div>
             </div>
           )}
