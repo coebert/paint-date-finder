@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tag } from 'lucide-react';
+import { Tag, Layers } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
 import { FieldCanvas, CALLOUT_PREFIX } from '@/components/field/FieldCanvas';
 import { CPPS_FIELD_LAYOUT, Obstacle, OBSTACLE_DEFINITIONS } from '@/types/fieldLayout';
 import { NXL_LAS_VEGAS_LAYOUT, NXL_WINDY_CITY_LAYOUT, NXL_WORLD_CUP_LAYOUT, NXL_PRESETS, NxlPresetId } from '@/data/nxlLayouts';
@@ -27,6 +28,8 @@ export function FieldCompare() {
   const [leftPreset, setLeftPreset] = useState<PresetKey>('cpps');
   const [rightPreset, setRightPreset] = useState<PresetKey>('nxl-tampa');
   const [showLabels, setShowLabels] = useState(false);
+  const [overlayMode, setOverlayMode] = useState(false);
+  const [overlayOpacity, setOverlayOpacity] = useState(55);
 
   const leftMeta = ALL_PRESETS.find(p => p.id === leftPreset)!;
   const rightMeta = ALL_PRESETS.find(p => p.id === rightPreset)!;
@@ -37,33 +40,121 @@ export function FieldCompare() {
         <p className="text-sm text-muted-foreground">
           Select a layout for each side to compare them head-to-head.
         </p>
-        <Button
-          variant={showLabels ? 'default' : 'outline'}
-          size="sm"
-          className="h-8 gap-1 text-xs"
-          onClick={() => setShowLabels(v => !v)}
-        >
-          <Tag className="w-3.5 h-3.5" /> Callouts
-        </Button>
+        <div className="flex gap-1.5">
+          <Button
+            variant={overlayMode ? 'default' : 'outline'}
+            size="sm"
+            className="h-8 gap-1 text-xs"
+            onClick={() => setOverlayMode(v => !v)}
+          >
+            <Layers className="w-3.5 h-3.5" /> Overlay
+          </Button>
+          <Button
+            variant={showLabels ? 'default' : 'outline'}
+            size="sm"
+            className="h-8 gap-1 text-xs"
+            onClick={() => setShowLabels(v => !v)}
+          >
+            <Tag className="w-3.5 h-3.5" /> Callouts
+          </Button>
+        </div>
       </div>
 
+      {/* Layout selectors — always visible */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Left side */}
-        <ComparePanel
+        <PresetSelector
           preset={leftPreset}
           setPreset={setLeftPreset}
-          meta={leftMeta}
-          showLabels={showLabels}
+          colorLabel="Base"
+          colorClass="text-red-400"
         />
-
-        {/* Right side */}
-        <ComparePanel
+        <PresetSelector
           preset={rightPreset}
           setPreset={setRightPreset}
-          meta={rightMeta}
-          showLabels={showLabels}
+          colorLabel="Overlay"
+          colorClass="text-cyan-400"
         />
       </div>
+
+      {overlayMode ? (
+        /* ===== OVERLAY MODE ===== */
+        <div className="space-y-3">
+          {/* Opacity slider */}
+          <Card className="bg-card border-border/50">
+            <CardContent className="py-3 px-4">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 min-w-fit">
+                  <div className="w-3 h-3 rounded-sm bg-red-500" />
+                  <span className="text-xs text-muted-foreground">{leftMeta.shortLabel}</span>
+                </div>
+                <Slider
+                  value={[overlayOpacity]}
+                  onValueChange={([v]) => setOverlayOpacity(v)}
+                  min={10}
+                  max={90}
+                  step={5}
+                  className="flex-1"
+                />
+                <div className="flex items-center gap-2 min-w-fit">
+                  <div className="w-3 h-3 rounded-sm bg-cyan-500" />
+                  <span className="text-xs text-muted-foreground">{rightMeta.shortLabel}</span>
+                </div>
+              </div>
+              <p className="text-[10px] text-muted-foreground text-center mt-1">
+                Overlay opacity: {overlayOpacity}%
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Overlaid field */}
+          <Card className="bg-card border-border/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="font-display tracking-wider text-sm flex items-center gap-2">
+                <span className="text-red-400">{leftMeta.shortLabel}</span>
+                <span className="text-muted-foreground">vs</span>
+                <span className="text-cyan-400">{rightMeta.shortLabel}</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <FieldCanvas
+                obstacles={LAYOUT_MAP[leftPreset]}
+                showLabels={showLabels}
+                overlayObstacles={LAYOUT_MAP[rightPreset]}
+                overlayHue={180}
+                overlayOpacity={overlayOpacity / 100}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Legend */}
+          <div className="flex gap-4 justify-center text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-sm bg-red-500" />
+              <span>{leftMeta.shortLabel} (base layer)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-sm bg-cyan-500" />
+              <span>{rightMeta.shortLabel} (overlay)</span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* ===== SIDE-BY-SIDE MODE ===== */
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <ComparePanel
+            preset={leftPreset}
+            setPreset={setLeftPreset}
+            meta={leftMeta}
+            showLabels={showLabels}
+          />
+          <ComparePanel
+            preset={rightPreset}
+            setPreset={setRightPreset}
+            meta={rightMeta}
+            showLabels={showLabels}
+          />
+        </div>
+      )}
 
       {/* Obstacle count comparison */}
       <Card className="bg-card border-border/50">
@@ -119,6 +210,37 @@ export function FieldCompare() {
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function PresetSelector({
+  preset,
+  setPreset,
+  colorLabel,
+  colorClass,
+}: {
+  preset: PresetKey;
+  setPreset: (p: PresetKey) => void;
+  colorLabel: string;
+  colorClass: string;
+}) {
+  return (
+    <div>
+      <p className={`text-xs font-medium mb-1.5 ${colorClass}`}>{colorLabel}</p>
+      <div className="flex flex-wrap gap-1.5">
+        {ALL_PRESETS.map(p => (
+          <Button
+            key={p.id}
+            variant={preset === p.id ? 'default' : 'outline'}
+            size="sm"
+            className="text-[10px] h-7 px-2"
+            onClick={() => setPreset(p.id)}
+          >
+            {p.shortLabel}
+          </Button>
+        ))}
+      </div>
     </div>
   );
 }
