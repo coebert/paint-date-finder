@@ -798,7 +798,8 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
   return (
     <>
       {label}
-      <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+        <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+          <GroundShadow width={w} depth={d} />
         <mesh position={[0, bodyH_box / 2, 0]} castShadow geometry={inflatedBoxBody}>
           <primitive object={matRed} attach="material" />
         </mesh>
