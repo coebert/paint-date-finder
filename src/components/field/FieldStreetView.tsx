@@ -668,6 +668,7 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+          <GroundShadow width={w} depth={d} />
           <mesh castShadow geometry={doritoGeo}>
             <primitive object={matRed} attach="material" />
           </mesh>
