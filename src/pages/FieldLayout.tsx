@@ -401,16 +401,34 @@ export default function FieldLayout() {
                       Drag obstacles to reposition them. Select one to rotate, duplicate or delete it.
                     </p>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="space-y-3">
+                    {showAnnotations && (
+                      <AnnotationToolbar
+                        activeTool={annotationTool}
+                        onToolChange={setAnnotationTool}
+                        activeColor={annotationColor}
+                        onColorChange={setAnnotationColor}
+                        playerNumber={playerNumber}
+                        onPlayerNumberChange={setPlayerNumber}
+                        onUndo={handleUndoAnnotation}
+                        onClearAll={handleClearAnnotations}
+                        annotationCount={annotations.length}
+                      />
+                    )}
                     <FieldCanvas
                       obstacles={designObstacles}
                       onObstaclesChange={setDesignObstacles}
-                      interactive
-                      selectedId={selectedId}
-                      onSelect={setSelectedId}
+                      interactive={!showAnnotations}
+                      selectedId={showAnnotations ? null : selectedId}
+                      onSelect={showAnnotations ? undefined : setSelectedId}
                       showLabels={showLabels}
+                      renderOverlay={renderAnnotationOverlay}
                     />
-                  </CardContent>
+                    {showAnnotations && (
+                      <p className="text-[10px] text-muted-foreground text-center">
+                        Double-click an annotation in Select mode to delete it. Drag player markers & text labels to reposition.
+                      </p>
+                    )}
                 </Card>
 
                 {/* Selection controls */}
