@@ -11,8 +11,11 @@ import { FieldCanvas, CALLOUT_PREFIX } from '@/components/field/FieldCanvas';
 import { ObstaclePalette } from '@/components/field/ObstaclePalette';
 import { FieldStreetView } from '@/components/field/FieldStreetView';
 import { FieldCompare } from '@/components/field/FieldCompare';
+import { AnnotationToolbar } from '@/components/field/AnnotationToolbar';
+import { AnnotationLayer } from '@/components/field/AnnotationLayer';
 import { CPPS_FIELD_LAYOUT, NXL_TAMPA_BAY_LAYOUT, Obstacle, ObstacleType, OBSTACLE_DEFINITIONS } from '@/types/fieldLayout';
 import { NXL_LAS_VEGAS_LAYOUT, NXL_WINDY_CITY_LAYOUT, NXL_WORLD_CUP_LAYOUT, NXL_PRESETS, NxlPresetId } from '@/data/nxlLayouts';
+import { Annotation, AnnotationTool, TEAM_COLORS } from '@/types/annotations';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -34,6 +37,52 @@ export default function FieldLayout() {
   const [showLabels, setShowLabels] = useState(false);
   const fieldContainerRef = useRef<HTMLDivElement>(null);
   const streetViewContainerRef = useRef<HTMLDivElement>(null);
+
+  // Annotation state
+  const [annotations, setAnnotations] = useState<Annotation[]>([]);
+  const [annotationTool, setAnnotationTool] = useState<AnnotationTool>('select');
+  const [annotationColor, setAnnotationColor] = useState(TEAM_COLORS[0].value);
+  const [playerNumber, setPlayerNumber] = useState(1);
+  const [showAnnotations, setShowAnnotations] = useState(false);
+
+  const handleAddAnnotation = useCallback((ann: Annotation) => {
+    setAnnotations(prev => [...prev, ann]);
+  }, []);
+
+  const handleUpdateAnnotation = useCallback((id: string, partial: Partial<Annotation>) => {
+    setAnnotations(prev => prev.map(a => a.id === id ? { ...a, ...partial } as Annotation : a));
+  }, []);
+
+  const handleDeleteAnnotation = useCallback((id: string) => {
+    setAnnotations(prev => prev.filter(a => a.id !== id));
+    toast.success('Annotation removed');
+  }, []);
+
+  const handleUndoAnnotation = useCallback(() => {
+    setAnnotations(prev => prev.slice(0, -1));
+  }, []);
+
+  const handleClearAnnotations = useCallback(() => {
+    setAnnotations([]);
+    toast.success('All annotations cleared');
+  }, []);
+
+  const renderAnnotationOverlay = useCallback((dims: { width: number; height: number }) => {
+    if (!showAnnotations) return null;
+    return (
+      <AnnotationLayer
+        annotations={annotations}
+        activeTool={annotationTool}
+        activeColor={annotationColor}
+        playerNumber={playerNumber}
+        onAdd={handleAddAnnotation}
+        onUpdate={handleUpdateAnnotation}
+        onDelete={handleDeleteAnnotation}
+        fieldWidth={dims.width}
+        fieldHeight={dims.height}
+      />
+    );
+  }, [showAnnotations, annotations, annotationTool, annotationColor, playerNumber, handleAddAnnotation, handleUpdateAnnotation, handleDeleteAnnotation]);
 
   const toggleFullscreen = useCallback((ref: React.RefObject<HTMLDivElement | null>, setFn: (v: boolean) => void) => {
     if (!ref.current) return;
@@ -219,6 +268,9 @@ export default function FieldLayout() {
                       </Badge>
                     </CardTitle>
                     <div className="flex gap-1">
+                      <Button variant={showAnnotations ? 'default' : 'outline'} size="sm" className="h-8 gap-1 text-xs" onClick={() => setShowAnnotations(v => !v)}>
+                        <PenTool className="w-3.5 h-3.5" /> Annotate
+                      </Button>
                       <Button variant={showLabels ? 'default' : 'outline'} size="sm" className="h-8 gap-1 text-xs" onClick={() => setShowLabels(v => !v)}>
                         <Tag className="w-3.5 h-3.5" /> Callouts
                       </Button>
@@ -231,8 +283,30 @@ export default function FieldLayout() {
                     {getPresetMeta(currentPreset).description}
                   </p>
                 </CardHeader>
-                <CardContent>
-                  <FieldCanvas obstacles={getPresetLayout(currentPreset)} showLabels={showLabels} />
+                <CardContent className="space-y-3">
+                  {showAnnotations && (
+                    <AnnotationToolbar
+                      activeTool={annotationTool}
+                      onToolChange={setAnnotationTool}
+                      activeColor={annotationColor}
+                      onColorChange={setAnnotationColor}
+                      playerNumber={playerNumber}
+                      onPlayerNumberChange={setPlayerNumber}
+                      onUndo={handleUndoAnnotation}
+                      onClearAll={handleClearAnnotations}
+                      annotationCount={annotations.length}
+                    />
+                  )}
+                  <FieldCanvas
+                    obstacles={getPresetLayout(currentPreset)}
+                    showLabels={showLabels}
+                    renderOverlay={renderAnnotationOverlay}
+                  />
+                  {showAnnotations && (
+                    <p className="text-[10px] text-muted-foreground text-center">
+                      Double-click an annotation in Select mode to delete it. Drag player markers & text labels to reposition.
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -321,21 +395,45 @@ export default function FieldLayout() {
                         <Button variant="outline" size="sm" onClick={handleClearAll} className="text-xs gap-1 text-destructive hover:text-destructive">
                           <Trash2 className="w-3 h-3" /> Clear All
                         </Button>
+                        <Button variant={showAnnotations ? 'default' : 'outline'} size="sm" className="text-xs gap-1" onClick={() => setShowAnnotations(v => !v)}>
+                          <PenTool className="w-3 h-3" /> Annotate
+                        </Button>
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Drag obstacles to reposition them. Select one to rotate, duplicate or delete it.
+                      {showAnnotations
+                        ? 'Annotation mode active — obstacle dragging is paused.'
+                        : 'Drag obstacles to reposition them. Select one to rotate, duplicate or delete it.'}
                     </p>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="space-y-3">
+                    {showAnnotations && (
+                      <AnnotationToolbar
+                        activeTool={annotationTool}
+                        onToolChange={setAnnotationTool}
+                        activeColor={annotationColor}
+                        onColorChange={setAnnotationColor}
+                        playerNumber={playerNumber}
+                        onPlayerNumberChange={setPlayerNumber}
+                        onUndo={handleUndoAnnotation}
+                        onClearAll={handleClearAnnotations}
+                        annotationCount={annotations.length}
+                      />
+                    )}
                     <FieldCanvas
                       obstacles={designObstacles}
                       onObstaclesChange={setDesignObstacles}
-                      interactive
-                      selectedId={selectedId}
-                      onSelect={setSelectedId}
+                      interactive={!showAnnotations}
+                      selectedId={showAnnotations ? null : selectedId}
+                      onSelect={showAnnotations ? undefined : setSelectedId}
                       showLabels={showLabels}
+                      renderOverlay={renderAnnotationOverlay}
                     />
+                    {showAnnotations && (
+                      <p className="text-[10px] text-muted-foreground text-center">
+                        Double-click an annotation in Select mode to delete it. Drag player markers & text labels to reposition.
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
 

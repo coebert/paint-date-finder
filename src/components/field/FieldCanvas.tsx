@@ -15,6 +15,8 @@ interface FieldCanvasProps {
   overlayHue?: number;
   /** Opacity of the overlay layer 0-1 (default 0.55) */
   overlayOpacity?: number;
+  /** Render an overlay on top of the SVG, receives pixel dimensions */
+  renderOverlay?: (dims: { width: number; height: number }) => React.ReactNode;
 }
 
 export const CALLOUT_PREFIX: Record<string, string> = {
@@ -57,6 +59,7 @@ export function FieldCanvas({
   overlayObstacles,
   overlayHue = 180,
   overlayOpacity = 0.55,
+  renderOverlay,
 }: FieldCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dims, setDims] = useState({ width: 800, height: 640 });
@@ -130,7 +133,7 @@ export function FieldCanvas({
   const gridLinesY = Math.floor(FIELD_HEIGHT_M / gridSpacingM);
 
   return (
-    <div ref={containerRef} className="w-full">
+    <div ref={containerRef} className="w-full relative">
       <svg
         width={dims.width}
         height={dims.height}
@@ -354,6 +357,7 @@ export function FieldCanvas({
           });
         })()}
       </svg>
+      {renderOverlay?.(dims)}
     </div>
   );
 }
