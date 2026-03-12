@@ -746,6 +746,16 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
           <mesh castShadow geometry={doritoGeo}>
             <primitive object={matRed} attach="material" />
           </mesh>
+          {/* Edge seam lines on dorito faces */}
+          {[0, 1, 2].map(i => {
+            const angle = (i / 3) * Math.PI * 2 - Math.PI / 2;
+            return (
+              <mesh key={i} position={[Math.sin(angle) * w * 0.25, h * 0.4, Math.cos(angle) * d * 0.25]} rotation={[0, angle, 0]}>
+                <planeGeometry args={[0.015, h * 0.7]} />
+                <primitive object={seamLineMat} attach="material" />
+              </mesh>
+            );
+          })}
         </group>
       </>
     );
