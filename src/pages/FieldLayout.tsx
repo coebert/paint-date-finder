@@ -395,10 +395,15 @@ export default function FieldLayout() {
                         <Button variant="outline" size="sm" onClick={handleClearAll} className="text-xs gap-1 text-destructive hover:text-destructive">
                           <Trash2 className="w-3 h-3" /> Clear All
                         </Button>
+                        <Button variant={showAnnotations ? 'default' : 'outline'} size="sm" className="text-xs gap-1" onClick={() => setShowAnnotations(v => !v)}>
+                          <PenTool className="w-3 h-3" /> Annotate
+                        </Button>
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Drag obstacles to reposition them. Select one to rotate, duplicate or delete it.
+                      {showAnnotations
+                        ? 'Annotation mode active — obstacle dragging is paused.'
+                        : 'Drag obstacles to reposition them. Select one to rotate, duplicate or delete it.'}
                     </p>
                   </CardHeader>
                   <CardContent className="space-y-3">
