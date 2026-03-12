@@ -688,6 +688,8 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
             <torusGeometry args={[r, 0.025, 8, 24]} />
             <primitive object={seamMat} attach="material" />
           </mesh>
+          {/* Vertical panel seams */}
+          <CylinderSeams radius={r} height={h} count={6} />
         </group>
       </>
     );
