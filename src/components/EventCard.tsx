@@ -55,6 +55,15 @@ export function EventCard({ event, onEdit }: EventCardProps) {
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
+        {isFlagged && (
+          <div className="flex items-center gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2">
+            <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
+            <p className="text-xs text-destructive">
+              Accuracy query raised — please verify details with the venue before booking.
+            </p>
+          </div>
+        )}
+
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Calendar className="h-4 w-4 text-accent" />
           <span>{format(eventDate, 'EEEE, d MMMM yyyy')}</span>
