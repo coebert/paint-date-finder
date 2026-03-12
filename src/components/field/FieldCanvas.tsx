@@ -15,6 +15,8 @@ interface FieldCanvasProps {
   overlayHue?: number;
   /** Opacity of the overlay layer 0-1 (default 0.55) */
   overlayOpacity?: number;
+  /** Render an overlay on top of the SVG, receives pixel dimensions */
+  renderOverlay?: (dims: { width: number; height: number }) => React.ReactNode;
 }
 
 export const CALLOUT_PREFIX: Record<string, string> = {
