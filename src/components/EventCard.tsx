@@ -16,6 +16,8 @@ interface EventCardProps {
 export function EventCard({ event, onEdit }: EventCardProps) {
   const eventDate = parseISO(event.event_date);
   const { data: isAdmin } = useIsAdmin();
+  const { data: flaggedIds } = useFlaggedEventIds();
+  const isFlagged = flaggedIds?.has(event.id) ?? false;
 
   return (
     <Card className={cn(
