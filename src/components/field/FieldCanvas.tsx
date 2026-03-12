@@ -59,6 +59,7 @@ export function FieldCanvas({
   overlayObstacles,
   overlayHue = 180,
   overlayOpacity = 0.55,
+  renderOverlay,
 }: FieldCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dims, setDims] = useState({ width: 800, height: 640 });
