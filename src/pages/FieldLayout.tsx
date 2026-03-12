@@ -268,6 +268,9 @@ export default function FieldLayout() {
                       </Badge>
                     </CardTitle>
                     <div className="flex gap-1">
+                      <Button variant={showAnnotations ? 'default' : 'outline'} size="sm" className="h-8 gap-1 text-xs" onClick={() => setShowAnnotations(v => !v)}>
+                        <PenTool className="w-3.5 h-3.5" /> Annotate
+                      </Button>
                       <Button variant={showLabels ? 'default' : 'outline'} size="sm" className="h-8 gap-1 text-xs" onClick={() => setShowLabels(v => !v)}>
                         <Tag className="w-3.5 h-3.5" /> Callouts
                       </Button>
@@ -280,8 +283,30 @@ export default function FieldLayout() {
                     {getPresetMeta(currentPreset).description}
                   </p>
                 </CardHeader>
-                <CardContent>
-                  <FieldCanvas obstacles={getPresetLayout(currentPreset)} showLabels={showLabels} />
+                <CardContent className="space-y-3">
+                  {showAnnotations && (
+                    <AnnotationToolbar
+                      activeTool={annotationTool}
+                      onToolChange={setAnnotationTool}
+                      activeColor={annotationColor}
+                      onColorChange={setAnnotationColor}
+                      playerNumber={playerNumber}
+                      onPlayerNumberChange={setPlayerNumber}
+                      onUndo={handleUndoAnnotation}
+                      onClearAll={handleClearAnnotations}
+                      annotationCount={annotations.length}
+                    />
+                  )}
+                  <FieldCanvas
+                    obstacles={getPresetLayout(currentPreset)}
+                    showLabels={showLabels}
+                    renderOverlay={renderAnnotationOverlay}
+                  />
+                  {showAnnotations && (
+                    <p className="text-[10px] text-muted-foreground text-center">
+                      Double-click an annotation in Select mode to delete it. Drag player markers & text labels to reposition.
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             </div>
