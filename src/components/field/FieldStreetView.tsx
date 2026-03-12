@@ -714,6 +714,7 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+          <GroundShadow width={w} depth={d} />
           {Array.from({ length: tiers }).map((_, i) => {
             const scale = 1 - (i * 0.18);
             const tierH = h / tiers;
