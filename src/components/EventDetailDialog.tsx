@@ -26,9 +26,12 @@ interface EventDetailDialogProps {
 export function EventDetailDialog({ event, open, onOpenChange, onEdit }: EventDetailDialogProps) {
   const { data: venueDetails } = useVenueDetails();
   const { data: isAdmin } = useIsAdmin();
+  const { data: flaggedIds } = useFlaggedEventIds();
   const [flagOpen, setFlagOpen] = useState(false);
   
   if (!event) return null;
+
+  const isFlagged = flaggedIds?.has(event.id) ?? false;
 
   const eventDate = parseISO(event.event_date);
   const venueWebsite = venueDetails?.get(event.venue_name)?.website ?? null;
