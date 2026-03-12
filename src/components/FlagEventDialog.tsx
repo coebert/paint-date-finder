@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Dialog,
   DialogContent,
@@ -33,6 +34,7 @@ export function FlagEventDialog({ eventId, eventTitle, open, onOpenChange }: Fla
   const [reason, setReason] = useState<string>('');
   const [details, setDetails] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
 
   const handleSubmit = async () => {
     if (!reason) {
@@ -51,6 +53,7 @@ export function FlagEventDialog({ eventId, eventTitle, open, onOpenChange }: Fla
       if (error) throw error;
 
       toast.success('Thank you! Your report has been submitted for review.');
+      queryClient.invalidateQueries({ queryKey: ['flagged-event-ids'] });
       setReason('');
       setDetails('');
       onOpenChange(false);
