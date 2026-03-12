@@ -473,7 +473,69 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
     clearcoat: 1.0, clearcoatRoughness: 0.1,
   }), []);
 
-  // Pre-compute all geometries at top level (hooks can't be conditional)
+  // Seam line material — slightly translucent so it's subtle
+  const seamLineMat = useMemo(() => new THREE.MeshBasicMaterial({
+    color: '#dddddd', transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide,
+  }), []);
+
+  // --- Seam line helpers ---
+  // Vertical seam strips on a cylinder (evenly spaced around circumference)
+  const CylinderSeams = ({ radius, height, count = 4, yOffset = 0 }: { radius: number; height: number; count?: number; yOffset?: number }) => (
+    <>
+      {Array.from({ length: count }).map((_, i) => {
+        const angle = (i / count) * Math.PI * 2;
+        return (
+          <mesh key={i} position={[Math.sin(angle) * (radius + 0.005), yOffset + height / 2, Math.cos(angle) * (radius + 0.005)]} rotation={[0, angle, 0]}>
+            <planeGeometry args={[0.02, height]} />
+            <primitive object={seamLineMat} attach="material" />
+          </mesh>
+        );
+      })}
+    </>
+  );
+
+  // Horizontal + vertical seam strips on a box face
+  const BoxSeams = ({ bw, bh, bd, yOffset = 0 }: { bw: number; bh: number; bd: number; yOffset?: number }) => (
+    <>
+      {/* Vertical center seam on front & back */}
+      <mesh position={[0, yOffset + bh / 2, bd / 2 + 0.005]}>
+        <planeGeometry args={[0.02, bh]} />
+        <primitive object={seamLineMat} attach="material" />
+      </mesh>
+      <mesh position={[0, yOffset + bh / 2, -(bd / 2 + 0.005)]}>
+        <planeGeometry args={[0.02, bh]} />
+        <primitive object={seamLineMat} attach="material" />
+      </mesh>
+      {/* Vertical center seam on left & right */}
+      <mesh position={[bw / 2 + 0.005, yOffset + bh / 2, 0]} rotation={[0, Math.PI / 2, 0]}>
+        <planeGeometry args={[0.02, bh]} />
+        <primitive object={seamLineMat} attach="material" />
+      </mesh>
+      <mesh position={[-(bw / 2 + 0.005), yOffset + bh / 2, 0]} rotation={[0, Math.PI / 2, 0]}>
+        <planeGeometry args={[0.02, bh]} />
+        <primitive object={seamLineMat} attach="material" />
+      </mesh>
+      {/* Horizontal mid-height seam on front & back */}
+      <mesh position={[0, yOffset + bh / 2, bd / 2 + 0.005]}>
+        <planeGeometry args={[bw, 0.02]} />
+        <primitive object={seamLineMat} attach="material" />
+      </mesh>
+      <mesh position={[0, yOffset + bh / 2, -(bd / 2 + 0.005)]}>
+        <planeGeometry args={[bw, 0.02]} />
+        <primitive object={seamLineMat} attach="material" />
+      </mesh>
+      {/* Horizontal mid-height seam on left & right */}
+      <mesh position={[bw / 2 + 0.005, yOffset + bh / 2, 0]} rotation={[0, Math.PI / 2, 0]}>
+        <planeGeometry args={[bd, 0.02]} />
+        <primitive object={seamLineMat} attach="material" />
+      </mesh>
+      <mesh position={[-(bw / 2 + 0.005), yOffset + bh / 2, 0]} rotation={[0, Math.PI / 2, 0]}>
+        <planeGeometry args={[bd, 0.02]} />
+        <primitive object={seamLineMat} attach="material" />
+      </mesh>
+    </>
+  );
+
   const r = w / 2;
   const capH_cyl = h * 0.15;
   const bodyH_cyl = h - capH_cyl;
@@ -626,6 +688,8 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
             <torusGeometry args={[r, 0.025, 8, 24]} />
             <primitive object={seamMat} attach="material" />
           </mesh>
+          {/* Vertical panel seams */}
+          <CylinderSeams radius={r} height={h} count={6} />
         </group>
       </>
     );
@@ -658,6 +722,16 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
             <torusGeometry args={[r, 0.025, 8, 24]} />
             <primitive object={seamMat} attach="material" />
           </mesh>
+          {/* Vertical panel seams tapering with cone */}
+          {Array.from({ length: 6 }).map((_, i) => {
+            const angle = (i / 6) * Math.PI * 2;
+            return (
+              <mesh key={i} position={[Math.sin(angle) * (r * 0.5 + 0.005), h * 0.5, Math.cos(angle) * (r * 0.5 + 0.005)]} rotation={[0, angle, 0]}>
+                <planeGeometry args={[0.015, h * 0.8]} />
+                <primitive object={seamLineMat} attach="material" />
+              </mesh>
+            );
+          })}
         </group>
       </>
     );
@@ -672,6 +746,16 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
           <mesh castShadow geometry={doritoGeo}>
             <primitive object={matRed} attach="material" />
           </mesh>
+          {/* Edge seam lines on dorito faces */}
+          {[0, 1, 2].map(i => {
+            const angle = (i / 3) * Math.PI * 2 - Math.PI / 2;
+            return (
+              <mesh key={i} position={[Math.sin(angle) * w * 0.25, h * 0.4, Math.cos(angle) * d * 0.25]} rotation={[0, angle, 0]}>
+                <planeGeometry args={[0.015, h * 0.7]} />
+                <primitive object={seamLineMat} attach="material" />
+              </mesh>
+            );
+          })}
         </group>
       </>
     );
@@ -703,6 +787,13 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
               <primitive object={seamMat} attach="material" />
             </mesh>
           ))}
+          {/* Longitudinal seam lines along snake body */}
+          {[0, Math.PI / 2, Math.PI, Math.PI * 1.5].map((angle, i) => (
+            <mesh key={`ls${i}`} position={[Math.sin(angle) * (sr + 0.005), sr, Math.cos(angle) * 0]} rotation={[0, 0, angle]}>
+              <planeGeometry args={[0.015, tubeLen * 0.85]} />
+              <meshBasicMaterial color="#dddddd" transparent opacity={0.3} depthWrite={false} side={THREE.DoubleSide} />
+            </mesh>
+          ))}
         </group>
       </>
     );
@@ -731,6 +822,7 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
                   <boxGeometry args={[tw * 1.01, 0.035, td * 1.01]} />
                   <primitive object={seamMat} attach="material" />
                 </mesh>
+                <BoxSeams bw={tw} bh={tierH * 0.92} bd={td} yOffset={tierH * i} />
               </group>
             );
           })}
@@ -757,6 +849,7 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
             <boxGeometry args={[w * 1.01, 0.03, d * 1.01]} />
             <primitive object={seamMat} attach="material" />
           </mesh>
+          <BoxSeams bw={w} bh={h * 0.7} bd={d} />
         </group>
       </>
     );
@@ -789,6 +882,8 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
             <boxGeometry args={[armW_plus * 1.01, 0.035, d * 1.01]} />
             <primitive object={seamMat} attach="material" />
           </mesh>
+          <BoxSeams bw={w} bh={bodyH_plus} bd={armW_plus} />
+          <BoxSeams bw={armW_plus} bh={bodyH_plus} bd={d} />
         </group>
       </>
     );
@@ -810,6 +905,7 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
           <boxGeometry args={[w * 1.01, 0.035, d * 1.01]} />
           <primitive object={seamMat} attach="material" />
         </mesh>
+        <BoxSeams bw={w} bh={bodyH_box} bd={d} />
       </group>
     </>
   );
