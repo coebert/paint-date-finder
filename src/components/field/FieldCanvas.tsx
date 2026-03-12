@@ -357,6 +357,7 @@ export function FieldCanvas({
           });
         })()}
       </svg>
+      {renderOverlay?.(dims)}
     </div>
   );
 }
