@@ -2,9 +2,10 @@ import { PaintballEvent } from '@/types/events';
 import { EventTypeBadge } from './EventTypeBadge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, MapPin, Clock, ExternalLink, Pencil, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { Calendar, MapPin, Clock, ExternalLink, Pencil, ShieldCheck, ShieldAlert, AlertTriangle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useIsAdmin } from '@/hooks/useAuth';
+import { useFlaggedEventIds } from '@/hooks/useEventFlags';
 import { cn } from '@/lib/utils';
 
 interface EventCardProps {
