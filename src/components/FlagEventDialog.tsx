@@ -53,6 +53,7 @@ export function FlagEventDialog({ eventId, eventTitle, open, onOpenChange }: Fla
       if (error) throw error;
 
       toast.success('Thank you! Your report has been submitted for review.');
+      queryClient.invalidateQueries({ queryKey: ['flagged-event-ids'] });
       setReason('');
       setDetails('');
       onOpenChange(false);
