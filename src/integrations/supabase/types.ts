@@ -17,6 +17,7 @@ export type Database = {
       event_flags: {
         Row: {
           created_at: string
+          delete_token: string | null
           details: string | null
           event_id: string
           id: string
@@ -26,6 +27,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          delete_token?: string | null
           details?: string | null
           event_id: string
           id?: string
@@ -35,6 +37,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          delete_token?: string | null
           details?: string | null
           event_id?: string
           id?: string
@@ -389,6 +392,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_event_flag: {
+        Args: { _id: string; _token: string }
+        Returns: boolean
+      }
       delete_field_layout: {
         Args: { _id: string; _token: string }
         Returns: boolean
