@@ -34,6 +34,7 @@ export function FlagEventDialog({ eventId, eventTitle, open, onOpenChange }: Fla
   const [reason, setReason] = useState<string>('');
   const [details, setDetails] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
 
   const handleSubmit = async () => {
     if (!reason) {
