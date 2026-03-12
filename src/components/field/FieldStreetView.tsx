@@ -416,6 +416,33 @@ function createBarrelCylinderGeometry(rTop: number, rBottom: number, height: num
   return geo;
 }
 
+// Ground-contact ambient occlusion shadow
+const groundShadowTexture = (() => {
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  const grad = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  grad.addColorStop(0, 'rgba(0,0,0,0.45)');
+  grad.addColorStop(0.5, 'rgba(0,0,0,0.2)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.needsUpdate = true;
+  return tex;
+})();
+
+function GroundShadow({ width, depth }: { width: number; depth: number }) {
+  return (
+    <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <planeGeometry args={[width * 1.5, depth * 1.5]} />
+      <meshBasicMaterial map={groundShadowTexture} transparent depthWrite={false} opacity={1} />
+    </mesh>
+  );
+}
+
 function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showLabels?: boolean }) {
   const def = OBSTACLE_DEFINITIONS[obstacle.type];
   const worldX = (obstacle.x / 100 - 0.5) * FIELD_WIDTH_M;
@@ -579,6 +606,7 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+          <GroundShadow width={w} depth={d} />
           <mesh position={[0, bodyH_cyl / 2, 0]} castShadow geometry={barrelBodyGeo}>
             <primitive object={matRed} attach="material" />
           </mesh>
@@ -608,6 +636,7 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+          <GroundShadow width={w} depth={d} />
           <mesh position={[0, h / 2, 0]} castShadow geometry={coneGeo}>
             <primitive object={matRed} attach="material" />
           </mesh>
@@ -639,6 +668,7 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+          <GroundShadow width={w} depth={d} />
           <mesh castShadow geometry={doritoGeo}>
             <primitive object={matRed} attach="material" />
           </mesh>
@@ -654,6 +684,7 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+          <GroundShadow width={w} depth={d} />
           {/* Red barrel body */}
           <mesh position={[0, sr, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow geometry={snakeGeo}>
             <primitive object={matRed} attach="material" />
@@ -683,6 +714,7 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+          <GroundShadow width={w} depth={d} />
           {Array.from({ length: tiers }).map((_, i) => {
             const scale = 1 - (i * 0.18);
             const tierH = h / tiers;
@@ -712,6 +744,7 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+          <GroundShadow width={w} depth={d} />
           <mesh position={[0, h * 0.35, 0]} castShadow geometry={inflatedFlatBody}>
             <primitive object={matRed} attach="material" />
           </mesh>
@@ -735,6 +768,7 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+          <GroundShadow width={w} depth={d} />
           <mesh position={[0, bodyH_plus / 2, 0]} castShadow geometry={inflatedPlusHBody}>
             <primitive object={matRed} attach="material" />
           </mesh>
@@ -764,7 +798,8 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
   return (
     <>
       {label}
-      <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+        <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+          <GroundShadow width={w} depth={d} />
         <mesh position={[0, bodyH_box / 2, 0]} castShadow geometry={inflatedBoxBody}>
           <primitive object={matRed} attach="material" />
         </mesh>
