@@ -9,6 +9,12 @@ interface FieldCanvasProps {
   selectedId?: string | null;
   onSelect?: (id: string | null) => void;
   showLabels?: boolean;
+  /** Second set of obstacles rendered as an overlay with a color tint */
+  overlayObstacles?: Obstacle[];
+  /** Hue-rotate filter for the overlay layer (CSS degrees, default 180 for cyan tint) */
+  overlayHue?: number;
+  /** Opacity of the overlay layer 0-1 (default 0.55) */
+  overlayOpacity?: number;
 }
 
 export const CALLOUT_PREFIX: Record<string, string> = {
