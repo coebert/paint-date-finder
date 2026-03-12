@@ -447,37 +447,36 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
   }), []);
 
   if (profile3D === 'cylinder') {
-    // Can / Cake: solid red cylinder body with a distinct blue flat cap on top
     const r = w / 2;
-    const capH = h * 0.15; // blue cap portion
+    const capH = h * 0.15;
     const bodyH = h - capH;
+    const bodyGeo = useMemo(() => createBarrelCylinderGeometry(r, r, bodyH, 24, 12), [r, bodyH]);
+    const capGeo = useMemo(() => createBarrelCylinderGeometry(r * 1.02, r * 1.02, capH, 24, 6), [r, capH]);
     return (
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
-          {/* Red body */}
-          <mesh position={[0, bodyH / 2, 0]} castShadow>
-            <cylinderGeometry args={[r, r, bodyH, 24]} />
+          {/* Red body — barrel shaped */}
+          <mesh position={[0, bodyH / 2, 0]} castShadow geometry={bodyGeo}>
             <primitive object={matRed} attach="material" />
           </mesh>
-          {/* Blue cap on top */}
-          <mesh position={[0, bodyH + capH / 2, 0]} castShadow>
-            <cylinderGeometry args={[r * 1.02, r * 1.02, capH, 24]} />
+          {/* Blue cap on top — barrel shaped */}
+          <mesh position={[0, bodyH + capH / 2, 0]} castShadow geometry={capGeo}>
             <primitive object={matBlue} attach="material" />
           </mesh>
-          {/* Slight dome on very top */}
+          {/* Puffy dome on very top */}
           <mesh position={[0, h, 0]}>
-            <sphereGeometry args={[r * 0.5, 16, 8, 0, Math.PI * 2, 0, Math.PI / 4]} />
+            <sphereGeometry args={[r * 0.6, 16, 12, 0, Math.PI * 2, 0, Math.PI / 3]} />
             <primitive object={matBlue} attach="material" />
           </mesh>
           {/* White seam between body and cap */}
           <mesh position={[0, bodyH, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[r * 1.01, 0.025, 6, 24]} />
+            <torusGeometry args={[r * 1.01, 0.03, 8, 24]} />
             <primitive object={seamMat} attach="material" />
           </mesh>
           {/* Base ring */}
           <mesh position={[0, 0.01, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[r, 0.02, 6, 24]} />
+            <torusGeometry args={[r, 0.025, 8, 24]} />
             <primitive object={seamMat} attach="material" />
           </mesh>
         </group>
