@@ -684,6 +684,7 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
       <>
         {label}
         <group position={[worldX, 0, worldZ]} rotation={[0, rotRad, 0]}>
+          <GroundShadow width={w} depth={d} />
           {/* Red barrel body */}
           <mesh position={[0, sr, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow geometry={snakeGeo}>
             <primitive object={matRed} attach="material" />
