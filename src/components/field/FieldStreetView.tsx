@@ -473,6 +473,11 @@ function Obstacle3D({ obstacle, showLabels = true }: { obstacle: Obstacle; showL
     clearcoat: 1.0, clearcoatRoughness: 0.1,
   }), []);
 
+  // Seam line material — slightly translucent so it's subtle
+  const seamLineMat = useMemo(() => new THREE.MeshBasicMaterial({
+    color: '#dddddd', transparent: true, opacity: 0.35, depthWrite: false, side: THREE.DoubleSide,
+  }), []);
+
   // Pre-compute all geometries at top level (hooks can't be conditional)
   const r = w / 2;
   const capH_cyl = h * 0.15;
