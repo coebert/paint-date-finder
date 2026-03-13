@@ -69,7 +69,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
     }
   };
 
-  const onResetSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const onResetSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const trimmedEmail = resetEmail.trim();
