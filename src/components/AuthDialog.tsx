@@ -48,12 +48,6 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
     },
   });
 
-  const resetForm = useForm<ResetFormData>({
-    resolver: zodResolver(resetSchema),
-    defaultValues: {
-      email: '',
-    },
-  });
 
   const onLoginSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
