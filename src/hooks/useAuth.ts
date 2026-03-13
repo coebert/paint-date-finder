@@ -113,11 +113,15 @@ export async function signOut() {
 }
 
 export async function resetPassword(email: string) {
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+  // Use PKCE client so the recovery redirect uses ?code= query params
+  // instead of #access_token= hash fragments (which iOS Mail strips)
+  const { error } = await pkceClient.auth.resetPasswordForEmail(email, {
     redirectTo: `${window.location.origin}/reset-password`,
   });
   if (error) throw error;
 }
+
+export { pkceClient };
 
 export async function updatePassword(newPassword: string) {
   const { error } = await supabase.auth.updateUser({
