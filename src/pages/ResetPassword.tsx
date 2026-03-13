@@ -35,6 +35,7 @@ export default function ResetPassword() {
   const [isValidSession, setIsValidSession] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [recoveryAccessToken, setRecoveryAccessToken] = useState<string | null>(null);
 
   const form = useForm<ResetPasswordFormData>({
     resolver: zodResolver(resetPasswordSchema),
@@ -102,7 +103,17 @@ export default function ResetPassword() {
       const refreshToken = getParam('refresh_token', searchParams, hashParams);
       const type = getParam('type', searchParams, hashParams);
 
-      if (accessToken && refreshToken && type === 'recovery') {
+      if (accessToken && type === 'recovery') {
+        setRecoveryAccessToken(accessToken);
+
+        // Some clients provide access token without refresh token.
+        // Allow password form and use token-based fallback update on submit.
+        if (!refreshToken) {
+          setIsValidSession(true);
+          setIsChecking(false);
+          return;
+        }
+
         try {
           const { data, error } = await supabase.auth.setSession({
             access_token: accessToken,
@@ -168,7 +179,28 @@ export default function ResetPassword() {
   const onSubmit = async (data: ResetPasswordFormData) => {
     setIsLoading(true);
     try {
-      await updatePassword(data.password);
+      try {
+        await updatePassword(data.password);
+      } catch (error: any) {
+        // Fallback for recovery links that provide access token without full session
+        if (!recoveryAccessToken) throw error;
+
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/auth/v1/user`, {
+          method: 'PUT',
+          headers: {
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${recoveryAccessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ password: data.password }),
+        });
+
+        if (!response.ok) {
+          const payload = await response.json().catch(() => ({}));
+          throw new Error(payload?.msg || payload?.error_description || payload?.error || 'Failed to update password');
+        }
+      }
+
       setIsSuccess(true);
       toast.success('Password updated successfully!');
       setTimeout(() => {
