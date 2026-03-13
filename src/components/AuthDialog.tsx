@@ -169,14 +169,15 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
               <FormField
                 control={loginForm.control}
                 name="email"
-                render={({ field }) => (
+                render={({ field: { ref, ...fieldProps } }) => (
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
                       <Input
                         type="email"
                         placeholder="admin@example.com"
-                        {...field}
+                        ref={ref}
+                        {...fieldProps}
                       />
                     </FormControl>
                     <FormMessage />
@@ -187,7 +188,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
               <FormField
                 control={loginForm.control}
                 name="password"
-                render={({ field }) => (
+                render={({ field: { ref, ...fieldProps } }) => (
                   <FormItem>
                     <div className="flex items-center justify-between">
                       <FormLabel>Password</FormLabel>
@@ -205,7 +206,8 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                       <Input
                         type="password"
                         placeholder="••••••••"
-                        {...field}
+                        ref={ref}
+                        {...fieldProps}
                       />
                     </FormControl>
                     <FormMessage />
