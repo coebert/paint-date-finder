@@ -69,13 +69,23 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
     }
   };
 
-  const onResetSubmit = async (data: ResetFormData) => {
+  const onResetSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const trimmedEmail = resetEmail.trim();
+    const isValidEmail = z.string().email().safeParse(trimmedEmail).success;
+
+    if (!isValidEmail) {
+      toast.error('Valid email required');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      await resetPassword(data.email);
+      await resetPassword(trimmedEmail);
       toast.success('Password reset email sent! Check your inbox.');
       setMode('login');
-      resetForm.reset();
+      setResetEmail('');
     } catch (error: any) {
       toast.error(error.message || 'Failed to send reset email');
     } finally {
@@ -86,7 +96,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
   const switchMode = (newMode: 'login' | 'signup' | 'forgot') => {
     setMode(newMode);
     loginForm.reset();
-    resetForm.reset();
+    setResetEmail('');
   };
 
   return (
