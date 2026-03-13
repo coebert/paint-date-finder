@@ -1,7 +1,23 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { createClient } from '@supabase/supabase-js';
 import { Session, User } from '@supabase/supabase-js';
+
+// PKCE client for password reset flow - uses query params instead of hash fragments
+// which fixes iOS Mail stripping hash fragments on redirect
+const pkceClient = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+  {
+    auth: {
+      flowType: 'pkce',
+      storage: localStorage,
+      persistSession: true,
+      autoRefreshToken: true,
+    },
+  }
+);
 
 export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);
