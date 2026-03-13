@@ -1,7 +1,23 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { createClient } from '@supabase/supabase-js';
 import { Session, User } from '@supabase/supabase-js';
+
+// PKCE client for password reset flow - uses query params instead of hash fragments
+// which fixes iOS Mail stripping hash fragments on redirect
+const pkceClient = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+  {
+    auth: {
+      flowType: 'pkce',
+      storage: localStorage,
+      persistSession: true,
+      autoRefreshToken: true,
+    },
+  }
+);
 
 export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);
@@ -97,11 +113,15 @@ export async function signOut() {
 }
 
 export async function resetPassword(email: string) {
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+  // Use PKCE client so the recovery redirect uses ?code= query params
+  // instead of #access_token= hash fragments (which iOS Mail strips)
+  const { error } = await pkceClient.auth.resetPasswordForEmail(email, {
     redirectTo: `${window.location.origin}/reset-password`,
   });
   if (error) throw error;
 }
+
+export { pkceClient };
 
 export async function updatePassword(newPassword: string) {
   const { error } = await supabase.auth.updateUser({
