@@ -56,22 +56,62 @@ export default function ResetPassword() {
       }
     });
 
-    // Check for existing session (user may already be authenticated via the recovery link)
-    const checkSession = async () => {
-      // Give Supabase time to process the URL hash/tokens
+    const handleRecovery = async () => {
+      // 1. Check for PKCE code in URL query params (modern Supabase flow)
+      const url = new URL(window.location.href);
+      const code = url.searchParams.get('code');
+      
+      if (code) {
+        try {
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          if (!error && data.session) {
+            setIsValidSession(true);
+            setIsChecking(false);
+            // Clean the URL
+            window.history.replaceState({}, '', window.location.pathname);
+            return;
+          }
+        } catch (e) {
+          console.error('Code exchange failed:', e);
+        }
+      }
+
+      // 2. Check for hash fragment tokens (legacy/implicit flow)
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get('access_token');
+      const type = hashParams.get('type');
+      
+      if (accessToken && type === 'recovery') {
+        try {
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: hashParams.get('refresh_token') || '',
+          });
+          if (!error && data.session) {
+            setIsValidSession(true);
+            setIsChecking(false);
+            window.history.replaceState({}, '', window.location.pathname);
+            return;
+          }
+        } catch (e) {
+          console.error('Hash token session failed:', e);
+        }
+      }
+
+      // 3. Check for existing session
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         setIsValidSession(true);
         setIsChecking(false);
       } else {
-        // Wait a bit longer for the token exchange to complete before giving up
+        // Wait for potential async token exchange
         redirectTimer = setTimeout(() => {
           setIsChecking(false);
-        }, 3000);
+        }, 4000);
       }
     };
 
-    checkSession();
+    handleRecovery();
 
     return () => {
       subscription.unsubscribe();
