@@ -128,6 +128,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                       <Input
                         type="email"
                         placeholder="admin@example.com"
+                        autoFocus
                         ref={ref}
                         {...fieldProps}
                       />
