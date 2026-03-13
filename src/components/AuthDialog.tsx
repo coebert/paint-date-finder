@@ -43,14 +43,6 @@ interface AuthDialogProps {
 export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
   const [isLoading, setIsLoading] = useState(false);
-  const resetEmailRef = useRef<HTMLInputElement>(null);
-
-  // Focus the reset email input when switching to forgot mode
-  useEffect(() => {
-    if (mode === 'forgot') {
-      setTimeout(() => resetEmailRef.current?.focus(), 100);
-    }
-  }, [mode]);
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
