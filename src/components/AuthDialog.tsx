@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -43,14 +43,6 @@ interface AuthDialogProps {
 export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
   const [isLoading, setIsLoading] = useState(false);
-  const resetEmailRef = useRef<HTMLInputElement>(null);
-
-  // Focus the reset email input when switching to forgot mode
-  useEffect(() => {
-    if (mode === 'forgot') {
-      setTimeout(() => resetEmailRef.current?.focus(), 100);
-    }
-  }, [mode]);
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -109,7 +101,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-card border-border max-w-md" onOpenAutoFocus={(e) => e.preventDefault()}>
+      <DialogContent className="bg-card border-border max-w-md">
         <DialogHeader>
           <DialogTitle className="font-display text-2xl tracking-wide">
             {mode === 'login' ? 'ADMIN LOGIN' : mode === 'signup' ? 'CREATE ACCOUNT' : 'RESET PASSWORD'}
@@ -129,18 +121,15 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
               <FormField
                 control={resetForm.control}
                 name="email"
-                render={({ field: { ref: _ref, ...fieldProps } }) => (
+                render={({ field: { ref, ...fieldProps } }) => (
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
                       <Input
                         type="email"
                         placeholder="admin@example.com"
-                        ref={(el) => {
-                          resetEmailRef.current = el;
-                          if (typeof _ref === 'function') _ref(el);
-                          else if (_ref) (_ref as React.MutableRefObject<HTMLInputElement | null>).current = el;
-                        }}
+                        autoFocus
+                        ref={ref}
                         {...fieldProps}
                       />
                     </FormControl>
