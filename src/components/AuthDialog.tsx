@@ -116,53 +116,45 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
         </DialogHeader>
 
         {mode === 'forgot' ? (
-          <Form {...resetForm}>
-            <form onSubmit={resetForm.handleSubmit(onResetSubmit)} className="space-y-4">
-              <FormField
-                control={resetForm.control}
-                name="email"
-                render={({ field: { ref, ...fieldProps } }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="admin@example.com"
-                        autoFocus
-                        ref={ref}
-                        {...fieldProps}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+          <form onSubmit={onResetSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="reset-email" className="text-sm font-medium leading-none">
+                Email
+              </label>
+              <Input
+                id="reset-email"
+                type="email"
+                placeholder="admin@example.com"
+                autoFocus
+                value={resetEmail}
+                onChange={(event) => setResetEmail(event.target.value)}
               />
+            </div>
 
-              <Button
-                type="submit"
-                className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
-                disabled={isLoading}
+            <Button
+              type="submit"
+              className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <KeyRound className="h-4 w-4 mr-2" />
+              )}
+              Send Reset Link
+            </Button>
+
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => switchMode('login')}
+                className="text-sm text-muted-foreground hover:text-accent inline-flex items-center gap-1"
               >
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <KeyRound className="h-4 w-4 mr-2" />
-                )}
-                Send Reset Link
-              </Button>
-
-              <div className="text-center">
-                <button
-                  type="button"
-                  onClick={() => switchMode('login')}
-                  className="text-sm text-muted-foreground hover:text-accent inline-flex items-center gap-1"
-                >
-                  <ArrowLeft className="h-3 w-3" />
-                  Back to login
-                </button>
-              </div>
-            </form>
-          </Form>
+                <ArrowLeft className="h-3 w-3" />
+                Back to login
+              </button>
+            </div>
+          </form>
         ) : (
           <Form {...loginForm}>
             <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
