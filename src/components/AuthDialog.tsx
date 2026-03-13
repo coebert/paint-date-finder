@@ -109,7 +109,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-card border-border max-w-md">
+      <DialogContent className="bg-card border-border max-w-md" onOpenAutoFocus={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="font-display text-2xl tracking-wide">
             {mode === 'login' ? 'ADMIN LOGIN' : mode === 'signup' ? 'CREATE ACCOUNT' : 'RESET PASSWORD'}
