@@ -129,15 +129,18 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
               <FormField
                 control={resetForm.control}
                 name="email"
-                render={({ field: { ref, ...fieldProps } }) => (
+                render={({ field: { ref: _ref, ...fieldProps } }) => (
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
                       <Input
                         type="email"
                         placeholder="admin@example.com"
-                        autoFocus
-                        ref={ref}
+                        ref={(el) => {
+                          resetEmailRef.current = el;
+                          if (typeof _ref === 'function') _ref(el);
+                          else if (_ref) (_ref as React.MutableRefObject<HTMLInputElement | null>).current = el;
+                        }}
                         {...fieldProps}
                       />
                     </FormControl>
