@@ -47,27 +47,48 @@ export default function ResetPassword() {
   useEffect(() => {
     let redirectTimer: ReturnType<typeof setTimeout>;
 
+    const markSessionValid = () => {
+      setIsValidSession(true);
+      setIsChecking(false);
+      clearTimeout(redirectTimer);
+    };
+
     // Listen for auth state changes FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session)) {
-        setIsValidSession(true);
-        setIsChecking(false);
-        clearTimeout(redirectTimer);
+      if (
+        event === 'PASSWORD_RECOVERY' ||
+        event === 'SIGNED_IN' ||
+        event === 'INITIAL_SESSION'
+      ) {
+        if (session) {
+          markSessionValid();
+        }
       }
     });
 
+    const getParam = (name: string, searchParams: URLSearchParams, hashParams: URLSearchParams) => {
+      return searchParams.get(name) || hashParams.get(name);
+    };
+
     const handleRecovery = async () => {
-      // 1. Check for PKCE code in URL query params (modern Supabase flow)
       const url = new URL(window.location.href);
-      const code = url.searchParams.get('code');
-      
+      const searchParams = url.searchParams;
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+
+      // 1) Handle auth errors from redirect params
+      const authError = getParam('error', searchParams, hashParams);
+      if (authError) {
+        setIsChecking(false);
+        return;
+      }
+
+      // 2) PKCE flow: exchange code for session
+      const code = searchParams.get('code');
       if (code) {
         try {
           const { data, error } = await supabase.auth.exchangeCodeForSession(code);
           if (!error && data.session) {
-            setIsValidSession(true);
-            setIsChecking(false);
-            // Clean the URL
+            markSessionValid();
             window.history.replaceState({}, '', window.location.pathname);
             return;
           }
@@ -76,39 +97,64 @@ export default function ResetPassword() {
         }
       }
 
-      // 2. Check for hash fragment tokens (legacy/implicit flow)
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const accessToken = hashParams.get('access_token');
-      const type = hashParams.get('type');
-      
-      if (accessToken && type === 'recovery') {
+      // 3) Direct token flow: support both query + hash tokens
+      const accessToken = getParam('access_token', searchParams, hashParams);
+      const refreshToken = getParam('refresh_token', searchParams, hashParams);
+      const type = getParam('type', searchParams, hashParams);
+
+      if (accessToken && refreshToken && type === 'recovery') {
         try {
           const { data, error } = await supabase.auth.setSession({
             access_token: accessToken,
-            refresh_token: hashParams.get('refresh_token') || '',
+            refresh_token: refreshToken,
           });
+
           if (!error && data.session) {
-            setIsValidSession(true);
-            setIsChecking(false);
+            markSessionValid();
             window.history.replaceState({}, '', window.location.pathname);
             return;
           }
         } catch (e) {
-          console.error('Hash token session failed:', e);
+          console.error('Token session failed:', e);
         }
       }
 
-      // 3. Check for existing session
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        setIsValidSession(true);
-        setIsChecking(false);
-      } else {
-        // Wait for potential async token exchange
-        redirectTimer = setTimeout(() => {
-          setIsChecking(false);
-        }, 4000);
+      // 4) Token-hash flow fallback
+      const tokenHash = searchParams.get('token_hash') || hashParams.get('token_hash');
+      if (tokenHash && type === 'recovery') {
+        try {
+          const { data, error } = await supabase.auth.verifyOtp({
+            type: 'recovery',
+            token_hash: tokenHash,
+          });
+
+          if (!error && data.session) {
+            markSessionValid();
+            window.history.replaceState({}, '', window.location.pathname);
+            return;
+          }
+        } catch (e) {
+          console.error('Token hash verification failed:', e);
+        }
       }
+
+      // 5) Poll for session briefly in case auth initialization is delayed in mobile browsers
+      const start = Date.now();
+      const poll = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          markSessionValid();
+          return;
+        }
+
+        if (Date.now() - start < 12000) {
+          redirectTimer = setTimeout(poll, 500);
+        } else {
+          setIsChecking(false);
+        }
+      };
+
+      poll();
     };
 
     handleRecovery();
