@@ -28,12 +28,7 @@ const loginSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
-const resetSchema = z.object({
-  email: z.string().email('Valid email required'),
-});
-
 type LoginFormData = z.infer<typeof loginSchema>;
-type ResetFormData = z.infer<typeof resetSchema>;
 
 interface AuthDialogProps {
   open: boolean;
