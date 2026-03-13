@@ -33,6 +33,7 @@ export default function ResetPassword() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [isValidSession, setIsValidSession] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
   const [isSuccess, setIsSuccess] = useState(false);
 
   const form = useForm<ResetPasswordFormData>({
@@ -44,28 +45,39 @@ export default function ResetPassword() {
   });
 
   useEffect(() => {
-    // Check if we have a valid recovery session
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        setIsValidSession(true);
-      } else {
-        toast.error('Invalid or expired reset link');
-        navigate('/');
-      }
-    };
+    let redirectTimer: ReturnType<typeof setTimeout>;
 
-    // Listen for password recovery event
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
+    // Listen for auth state changes FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session)) {
         setIsValidSession(true);
+        setIsChecking(false);
+        clearTimeout(redirectTimer);
       }
     });
 
+    // Check for existing session (user may already be authenticated via the recovery link)
+    const checkSession = async () => {
+      // Give Supabase time to process the URL hash/tokens
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setIsValidSession(true);
+        setIsChecking(false);
+      } else {
+        // Wait a bit longer for the token exchange to complete before giving up
+        redirectTimer = setTimeout(() => {
+          setIsChecking(false);
+        }, 3000);
+      }
+    };
+
     checkSession();
 
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(redirectTimer);
+    };
+  }, []);
 
   const onSubmit = async (data: ResetPasswordFormData) => {
     setIsLoading(true);
@@ -83,7 +95,7 @@ export default function ResetPassword() {
     }
   };
 
-  if (!isValidSession) {
+  if (isChecking) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="w-full max-w-md bg-card border-border">
@@ -92,6 +104,30 @@ export default function ResetPassword() {
               <Loader2 className="h-8 w-8 animate-spin text-accent" />
             </div>
             <p className="text-center text-muted-foreground mt-4">Validating reset link...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!isValidSession) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md bg-card border-border">
+          <CardContent className="pt-6">
+            <div className="flex flex-col items-center gap-4">
+              <KeyRound className="h-12 w-12 text-destructive" />
+              <h2 className="font-display text-xl tracking-wide">INVALID OR EXPIRED LINK</h2>
+              <p className="text-muted-foreground text-center text-sm">
+                This password reset link is invalid or has expired. Please request a new one.
+              </p>
+              <Button
+                onClick={() => navigate('/')}
+                className="bg-accent text-accent-foreground hover:bg-accent/90"
+              >
+                Back to Home
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
