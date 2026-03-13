@@ -83,18 +83,35 @@ export default function ResetPassword() {
         return;
       }
 
-      // 2) PKCE flow: exchange code for session
+      // 2) PKCE flow: exchange code for session using PKCE client
       const code = searchParams.get('code');
       if (code) {
         try {
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          // Try PKCE client first (has the code_verifier from the reset request)
+          const { data, error } = await pkceClient.auth.exchangeCodeForSession(code);
           if (!error && data.session) {
+            // Also set the session on the main client
+            await supabase.auth.setSession({
+              access_token: data.session.access_token,
+              refresh_token: data.session.refresh_token,
+            });
             markSessionValid();
             window.history.replaceState({}, '', window.location.pathname);
             return;
           }
         } catch (e) {
-          console.error('Code exchange failed:', e);
+          console.error('PKCE code exchange failed:', e);
+          // Fallback: try main client
+          try {
+            const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+            if (!error && data.session) {
+              markSessionValid();
+              window.history.replaceState({}, '', window.location.pathname);
+              return;
+            }
+          } catch (e2) {
+            console.error('Fallback code exchange failed:', e2);
+          }
         }
       }
 
