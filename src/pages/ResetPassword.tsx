@@ -131,14 +131,16 @@ export default function ResetPassword() {
               <FormField
                 control={form.control}
                 name="password"
-                render={({ field }) => (
+                render={({ field: { ref, ...fieldProps } }) => (
                   <FormItem>
                     <FormLabel>New Password</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
                         placeholder="••••••••"
-                        {...field}
+                        autoFocus
+                        ref={ref}
+                        {...fieldProps}
                       />
                     </FormControl>
                     <FormMessage />
@@ -149,14 +151,15 @@ export default function ResetPassword() {
               <FormField
                 control={form.control}
                 name="confirmPassword"
-                render={({ field }) => (
+                render={({ field: { ref, ...fieldProps } }) => (
                   <FormItem>
                     <FormLabel>Confirm Password</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
                         placeholder="••••••••"
-                        {...field}
+                        ref={ref}
+                        {...fieldProps}
                       />
                     </FormControl>
                     <FormMessage />
