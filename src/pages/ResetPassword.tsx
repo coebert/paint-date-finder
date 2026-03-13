@@ -103,7 +103,17 @@ export default function ResetPassword() {
       const refreshToken = getParam('refresh_token', searchParams, hashParams);
       const type = getParam('type', searchParams, hashParams);
 
-      if (accessToken && refreshToken && type === 'recovery') {
+      if (accessToken && type === 'recovery') {
+        setRecoveryAccessToken(accessToken);
+
+        // Some clients provide access token without refresh token.
+        // Allow password form and use token-based fallback update on submit.
+        if (!refreshToken) {
+          setIsValidSession(true);
+          setIsChecking(false);
+          return;
+        }
+
         try {
           const { data, error } = await supabase.auth.setSession({
             access_token: accessToken,
