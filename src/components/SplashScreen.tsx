@@ -170,15 +170,17 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
             {/* Arms */}
             {(phase === 'walk') ? (
               <>
-                {/* Walking arms with tuxedo sleeves */}
-                <path d="M42,74 Q22,90 26,120" stroke="hsl(220, 15%, 8%)" strokeWidth="14" fill="none" strokeLinecap="round" />
-                <path d="M88,74 Q108,86 100,115" stroke="hsl(220, 15%, 8%)" strokeWidth="14" fill="none" strokeLinecap="round" />
-                {/* Hands */}
-                <circle cx="26" cy="122" r="6" fill="hsl(30, 60%, 75%)" />
-                <circle cx="100" cy="117" r="6" fill="hsl(30, 60%, 75%)" />
-                {/* Cufflinks */}
-                <circle cx="30" cy="114" r="2" fill="hsl(45, 80%, 60%)" />
-                <circle cx="96" cy="109" r="2" fill="hsl(45, 80%, 60%)" />
+                {/* Walking arms with tuxedo sleeves - animated swing */}
+                <g style={{ animation: 'arm-swing-left 0.6s ease-in-out infinite alternate' }}>
+                  <path d="M42,74 Q22,90 26,120" stroke="hsl(220, 15%, 8%)" strokeWidth="14" fill="none" strokeLinecap="round" />
+                  <circle cx="26" cy="122" r="6" fill="hsl(30, 60%, 75%)" />
+                  <circle cx="30" cy="114" r="2" fill="hsl(45, 80%, 60%)" />
+                </g>
+                <g style={{ animation: 'arm-swing-right 0.6s ease-in-out infinite alternate' }}>
+                  <path d="M88,74 Q108,86 100,115" stroke="hsl(220, 15%, 8%)" strokeWidth="14" fill="none" strokeLinecap="round" />
+                  <circle cx="100" cy="117" r="6" fill="hsl(30, 60%, 75%)" />
+                  <circle cx="96" cy="109" r="2" fill="hsl(45, 80%, 60%)" />
+                </g>
               </>
             ) : (
               <>
