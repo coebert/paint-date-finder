@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Crosshair, Calendar, List, Plus, Map, Send, Settings, LogIn, Users, LayoutGrid } from 'lucide-react';
+import { Calendar, List, Plus, Map, Send, Settings, LogIn, Users, LayoutGrid } from 'lucide-react';
+import logo from '@/assets/logo.png';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
