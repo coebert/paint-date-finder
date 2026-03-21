@@ -213,37 +213,37 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
               </>
             )}
 
-            {/* Tuxedo trousers */}
-            <path d={phase === 'walk'
-              ? "M48,133 Q44,175 36,235 L30,235 Q40,178 46,140"
-              : "M48,133 Q46,175 44,235 L38,235 Q42,178 46,140"
-            } fill="hsl(220, 15%, 8%)" />
-            <path d={phase === 'walk'
-              ? "M82,133 Q88,175 98,235 L104,235 Q92,178 84,140"
-              : "M82,133 Q86,175 88,235 L94,235 Q88,178 84,140"
-            } fill="hsl(220, 15%, 8%)" />
-            {/* Tuxedo stripe on trousers */}
-            <path d={phase === 'walk'
-              ? "M46,133 Q42,175 34,235"
-              : "M46,133 Q44,175 42,235"
-            } stroke="hsl(220, 10%, 18%)" strokeWidth="1.5" fill="none" />
-            <path d={phase === 'walk'
-              ? "M84,133 Q90,175 100,235"
-              : "M84,133 Q88,175 90,235"
-            } stroke="hsl(220, 10%, 18%)" strokeWidth="1.5" fill="none" />
-
-            {/* Dress shoes */}
-            <path d={phase === 'walk'
-              ? "M20,233 Q22,228 32,228 Q38,228 38,233 Q38,240 28,240 Q18,240 20,233 Z"
-              : "M30,233 Q32,228 42,228 Q48,228 48,233 Q48,240 38,240 Q28,240 30,233 Z"
-            } fill="hsl(220, 15%, 6%)" />
-            <path d={phase === 'walk'
-              ? "M94,233 Q96,228 106,228 Q112,228 112,233 Q112,240 102,240 Q92,240 94,233 Z"
-              : "M84,233 Q86,228 96,228 Q102,228 102,233 Q102,240 92,240 Q82,240 84,233 Z"
-            } fill="hsl(220, 15%, 6%)" />
-            {/* Shoe shine */}
-            <ellipse cx={phase === 'walk' ? "28" : "38"} cy="234" rx="6" ry="2" fill="hsl(220, 10%, 14%)" opacity="0.4" />
-            <ellipse cx={phase === 'walk' ? "102" : "92"} cy="234" rx="6" ry="2" fill="hsl(220, 10%, 14%)" opacity="0.4" />
+            {/* Tuxedo trousers - animated during walk */}
+            <g style={phase === 'walk' ? { animation: 'leg-stride-left 0.6s ease-in-out infinite alternate' } : undefined}>
+              <path d={phase === 'walk'
+                ? "M48,133 Q44,175 36,235 L30,235 Q40,178 46,140"
+                : "M48,133 Q46,175 44,235 L38,235 Q42,178 46,140"
+              } fill="hsl(220, 15%, 8%)" />
+              <path d={phase === 'walk'
+                ? "M46,133 Q42,175 34,235"
+                : "M46,133 Q44,175 42,235"
+              } stroke="hsl(220, 10%, 18%)" strokeWidth="1.5" fill="none" />
+              <path d={phase === 'walk'
+                ? "M20,233 Q22,228 32,228 Q38,228 38,233 Q38,240 28,240 Q18,240 20,233 Z"
+                : "M30,233 Q32,228 42,228 Q48,228 48,233 Q48,240 38,240 Q28,240 30,233 Z"
+              } fill="hsl(220, 15%, 6%)" />
+              <ellipse cx={phase === 'walk' ? "28" : "38"} cy="234" rx="6" ry="2" fill="hsl(220, 10%, 14%)" opacity="0.4" />
+            </g>
+            <g style={phase === 'walk' ? { animation: 'leg-stride-right 0.6s ease-in-out infinite alternate' } : undefined}>
+              <path d={phase === 'walk'
+                ? "M82,133 Q88,175 98,235 L104,235 Q92,178 84,140"
+                : "M82,133 Q86,175 88,235 L94,235 Q88,178 84,140"
+              } fill="hsl(220, 15%, 8%)" />
+              <path d={phase === 'walk'
+                ? "M84,133 Q90,175 100,235"
+                : "M84,133 Q88,175 90,235"
+              } stroke="hsl(220, 10%, 18%)" strokeWidth="1.5" fill="none" />
+              <path d={phase === 'walk'
+                ? "M94,233 Q96,228 106,228 Q112,228 112,233 Q112,240 102,240 Q92,240 94,233 Z"
+                : "M84,233 Q86,228 96,228 Q102,228 102,233 Q102,240 92,240 Q82,240 84,233 Z"
+              } fill="hsl(220, 15%, 6%)" />
+              <ellipse cx={phase === 'walk' ? "102" : "92"} cy="234" rx="6" ry="2" fill="hsl(220, 10%, 14%)" opacity="0.4" />
+            </g>
           </g>
         </svg>
       </div>
@@ -398,6 +398,14 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
         @keyframes bond-fade-out {
           0% { opacity: 1; }
           100% { opacity: 0; }
+        }
+        @keyframes leg-stride-left {
+          0% { transform: rotate(-8deg); transform-origin: 48px 133px; }
+          100% { transform: rotate(8deg); transform-origin: 48px 133px; }
+        }
+        @keyframes leg-stride-right {
+          0% { transform: rotate(8deg); transform-origin: 82px 133px; }
+          100% { transform: rotate(-8deg); transform-origin: 82px 133px; }
         }
       `}</style>
     </div>
