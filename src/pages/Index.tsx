@@ -17,6 +17,8 @@ import { AlertCircle } from 'lucide-react';
 import { useVisitTracking } from '@/hooks/useVisitTracking';
 
 export default function Index() {
+  const [showSplash, setShowSplash] = useState(true);
+  const handleSplashComplete = useCallback(() => setShowSplash(false), []);
   const [view, setView] = useState<'calendar' | 'list' | 'map'>('calendar');
   const [eventType, setEventType] = useState<EventType | undefined>();
   const [venue, setVenue] = useState('');
