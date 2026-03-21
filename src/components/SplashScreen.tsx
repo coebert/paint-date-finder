@@ -109,59 +109,141 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
         }}
       >
         <svg
-          viewBox="0 0 120 300"
+          viewBox="0 0 140 320"
           className="h-[55vmin]"
           style={{
-            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+            filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.5))',
           }}
         >
-          {/* Paintball player silhouette */}
-          <g fill="hsl(220, 15%, 8%)" style={{
+          {/* Tuxedo paintball player silhouette */}
+          <g style={{
             transform: phase === 'turn' || phase === 'fire' || phase === 'splat'
-              ? 'scaleX(-1) translateX(-120px)'
+              ? 'scaleX(-1) translateX(-140px)'
               : undefined,
           }}>
-            {/* Head with mask */}
-            <ellipse cx="55" cy="38" rx="22" ry="25" />
-            {/* Mask visor detail */}
-            <rect x="35" y="28" width="30" height="12" rx="4" fill="hsl(220, 10%, 18%)" />
-
-            {/* Body / torso */}
-            <path d="M35,60 Q30,80 32,120 L78,120 Q80,80 75,60 Z" />
+            {/* Head base */}
+            <ellipse cx="65" cy="38" rx="20" ry="23" fill="hsl(220, 15%, 8%)" />
             
-            {/* Arms - walking pose vs firing pose */}
+            {/* Paintball mask - full face coverage */}
+            <path d="M45,28 Q44,18 55,14 Q65,11 75,14 Q86,18 85,28 L86,42 Q86,52 75,55 Q65,57 55,55 Q44,52 44,42 Z" fill="hsl(220, 8%, 22%)" />
+            {/* Mask visor - reflective goggle lens */}
+            <path d="M48,24 Q48,20 58,18 Q65,17 72,18 Q82,20 82,24 L82,36 Q82,40 72,42 Q65,43 58,42 Q48,40 48,36 Z" fill="hsl(200, 15%, 12%)" />
+            {/* Visor shine/reflection */}
+            <path d="M52,22 Q56,20 64,20 Q68,20 70,22 L69,30 Q65,31 58,31 Q54,30 52,28 Z" fill="hsl(200, 20%, 28%)" opacity="0.5" />
+            {/* Mask ventilation/mouth guard */}
+            <path d="M50,42 Q57,48 65,49 Q73,48 80,42 L78,50 Q72,54 65,55 Q58,54 52,50 Z" fill="hsl(220, 10%, 16%)" />
+            {/* Vent holes */}
+            {[0,1,2,3,4].map(i => (
+              <circle key={i} cx={55 + i * 5} cy={46} r="1.2" fill="hsl(220, 8%, 10%)" />
+            ))}
+            {/* Mask strap */}
+            <path d="M44,32 Q38,32 36,35 Q35,38 36,42" stroke="hsl(220, 8%, 18%)" strokeWidth="3" fill="none" />
+            <path d="M86,32 Q92,32 94,35 Q95,38 94,42" stroke="hsl(220, 8%, 18%)" strokeWidth="3" fill="none" />
+
+            {/* Neck */}
+            <rect x="57" y="55" width="16" height="8" rx="3" fill="hsl(30, 60%, 75%)" />
+
+            {/* Tuxedo collar / bow tie area */}
+            {/* White dress shirt collar */}
+            <path d="M50,62 L58,58 L65,64 L72,58 L80,62 L78,72 L52,72 Z" fill="hsl(0, 0%, 92%)" />
+            {/* Bow tie */}
+            <path d="M58,66 L62,63 L62,69 Z" fill="hsl(220, 15%, 8%)" />
+            <path d="M72,66 L68,63 L68,69 Z" fill="hsl(220, 15%, 8%)" />
+            <circle cx="65" cy="66" r="2.5" fill="hsl(220, 15%, 8%)" />
+
+            {/* Tuxedo jacket */}
+            <path d="M42,70 Q38,85 36,110 L36,135 L94,135 L94,110 Q92,85 88,70 Z" fill="hsl(220, 15%, 8%)" />
+            {/* Jacket lapels */}
+            <path d="M50,70 L55,90 L48,100 L42,75 Z" fill="hsl(220, 12%, 14%)" />
+            <path d="M80,70 L75,90 L82,100 L88,75 Z" fill="hsl(220, 12%, 14%)" />
+            {/* Lapel satin sheen */}
+            <path d="M51,72 L54,86 L49,94 L44,76 Z" fill="hsl(220, 10%, 18%)" opacity="0.4" />
+            <path d="M79,72 L76,86 L81,94 L86,76 Z" fill="hsl(220, 10%, 18%)" opacity="0.4" />
+            {/* White shirt strip */}
+            <path d="M58,70 L60,135 L70,135 L72,70 Z" fill="hsl(0, 0%, 90%)" />
+            {/* Tuxedo buttons */}
+            <circle cx="65" cy="85" r="2" fill="hsl(220, 15%, 8%)" />
+            <circle cx="65" cy="100" r="2" fill="hsl(220, 15%, 8%)" />
+            {/* Pocket square */}
+            <path d="M78,78 L84,76 L83,84 L77,83 Z" fill="hsl(0, 0%, 92%)" />
+
+            {/* Arms */}
             {(phase === 'walk') ? (
               <>
-                {/* Walking arms */}
-                <path d="M35,65 Q15,85 20,110" stroke="hsl(220, 15%, 8%)" strokeWidth="12" fill="none" strokeLinecap="round" />
-                <path d="M75,65 Q95,80 85,105" stroke="hsl(220, 15%, 8%)" strokeWidth="12" fill="none" strokeLinecap="round" />
+                {/* Walking arms with tuxedo sleeves */}
+                <path d="M42,74 Q22,90 26,120" stroke="hsl(220, 15%, 8%)" strokeWidth="14" fill="none" strokeLinecap="round" />
+                <path d="M88,74 Q108,86 100,115" stroke="hsl(220, 15%, 8%)" strokeWidth="14" fill="none" strokeLinecap="round" />
+                {/* Hands */}
+                <circle cx="26" cy="122" r="6" fill="hsl(30, 60%, 75%)" />
+                <circle cx="100" cy="117" r="6" fill="hsl(30, 60%, 75%)" />
+                {/* Cufflinks */}
+                <circle cx="30" cy="114" r="2" fill="hsl(45, 80%, 60%)" />
+                <circle cx="96" cy="109" r="2" fill="hsl(45, 80%, 60%)" />
               </>
             ) : (
               <>
-                {/* Firing arms - holding marker */}
-                <path d="M38,70 Q20,65 5,55" stroke="hsl(220, 15%, 8%)" strokeWidth="11" fill="none" strokeLinecap="round" />
-                <path d="M72,68 Q55,55 15,50" stroke="hsl(220, 15%, 8%)" strokeWidth="11" fill="none" strokeLinecap="round" />
-                {/* Paintball marker */}
-                <rect x="-15" y="44" width="45" height="8" rx="3" fill="hsl(220, 10%, 15%)" />
-                <rect x="-20" y="42" width="12" height="12" rx="2" fill="hsl(220, 10%, 12%)" />
+                {/* Firing arms - holding paintball marker */}
+                <path d="M44,76 Q24,70 8,58" stroke="hsl(220, 15%, 8%)" strokeWidth="13" fill="none" strokeLinecap="round" />
+                <path d="M82,74 Q62,60 18,54" stroke="hsl(220, 15%, 8%)" strokeWidth="13" fill="none" strokeLinecap="round" />
+                {/* Hands gripping marker */}
+                <circle cx="8" cy="58" r="5" fill="hsl(30, 60%, 75%)" />
+                <circle cx="18" cy="54" r="5" fill="hsl(30, 60%, 75%)" />
+                {/* Cufflinks visible */}
+                <circle cx="14" cy="64" r="1.8" fill="hsl(45, 80%, 60%)" />
+                
+                {/* Paintball marker - detailed */}
+                <rect x="-18" y="48" width="50" height="9" rx="3" fill="hsl(220, 10%, 15%)" />
+                {/* Barrel */}
+                <rect x="-28" y="50" width="14" height="5" rx="2" fill="hsl(220, 8%, 20%)" />
+                {/* Barrel tip */}
+                <rect x="-32" y="51" width="5" height="3" rx="1" fill="hsl(220, 6%, 25%)" />
+                {/* Body grip */}
+                <rect x="8" y="56" width="8" height="14" rx="2" fill="hsl(220, 10%, 12%)" />
+                {/* Trigger guard */}
+                <path d="M12,58 Q16,62 12,68" stroke="hsl(220, 8%, 18%)" strokeWidth="1.5" fill="none" />
                 {/* Hopper on top */}
-                <ellipse cx="15" cy="38" rx="10" ry="8" fill="hsl(220, 10%, 15%)" />
+                <ellipse cx="18" cy="42" rx="12" ry="10" fill="hsl(220, 10%, 15%)" />
+                <ellipse cx="18" cy="42" rx="10" ry="8" fill="hsl(220, 8%, 20%)" />
+                {/* Paintballs visible in hopper */}
+                <circle cx="14" cy="40" r="3" fill="hsl(25, 90%, 50%)" opacity="0.6" />
+                <circle cx="20" cy="38" r="3" fill="hsl(25, 85%, 45%)" opacity="0.5" />
+                <circle cx="18" cy="44" r="3" fill="hsl(25, 95%, 55%)" opacity="0.5" />
+                {/* ASA / tank connector */}
+                <rect x="26" y="54" width="6" height="10" rx="2" fill="hsl(220, 6%, 25%)" />
               </>
             )}
 
-            {/* Legs - walking stride */}
+            {/* Tuxedo trousers */}
             <path d={phase === 'walk'
-              ? "M42,118 Q38,170 30,220 L25,220 Q35,170 40,130"
-              : "M42,118 Q40,170 38,220 L33,220 Q37,170 40,130"
+              ? "M48,133 Q44,175 36,235 L30,235 Q40,178 46,140"
+              : "M48,133 Q46,175 44,235 L38,235 Q42,178 46,140"
             } fill="hsl(220, 15%, 8%)" />
             <path d={phase === 'walk'
-              ? "M68,118 Q75,170 85,220 L90,220 Q78,170 70,130"
-              : "M68,118 Q72,170 75,220 L80,220 Q74,170 70,130"
+              ? "M82,133 Q88,175 98,235 L104,235 Q92,178 84,140"
+              : "M82,133 Q86,175 88,235 L94,235 Q88,178 84,140"
             } fill="hsl(220, 15%, 8%)" />
+            {/* Tuxedo stripe on trousers */}
+            <path d={phase === 'walk'
+              ? "M46,133 Q42,175 34,235"
+              : "M46,133 Q44,175 42,235"
+            } stroke="hsl(220, 10%, 18%)" strokeWidth="1.5" fill="none" />
+            <path d={phase === 'walk'
+              ? "M84,133 Q90,175 100,235"
+              : "M84,133 Q88,175 90,235"
+            } stroke="hsl(220, 10%, 18%)" strokeWidth="1.5" fill="none" />
 
-            {/* Feet */}
-            <ellipse cx={phase === 'walk' ? "27" : "35"} cy="222" rx="12" ry="5" />
-            <ellipse cx={phase === 'walk' ? "88" : "78"} cy="222" rx="12" ry="5" />
+            {/* Dress shoes */}
+            <path d={phase === 'walk'
+              ? "M20,233 Q22,228 32,228 Q38,228 38,233 Q38,240 28,240 Q18,240 20,233 Z"
+              : "M30,233 Q32,228 42,228 Q48,228 48,233 Q48,240 38,240 Q28,240 30,233 Z"
+            } fill="hsl(220, 15%, 6%)" />
+            <path d={phase === 'walk'
+              ? "M94,233 Q96,228 106,228 Q112,228 112,233 Q112,240 102,240 Q92,240 94,233 Z"
+              : "M84,233 Q86,228 96,228 Q102,228 102,233 Q102,240 92,240 Q82,240 84,233 Z"
+            } fill="hsl(220, 15%, 6%)" />
+            {/* Shoe shine */}
+            <ellipse cx={phase === 'walk' ? "28" : "38"} cy="234" rx="6" ry="2" fill="hsl(220, 10%, 14%)" opacity="0.4" />
+            <ellipse cx={phase === 'walk' ? "102" : "92"} cy="234" rx="6" ry="2" fill="hsl(220, 10%, 14%)" opacity="0.4" />
           </g>
         </svg>
       </div>
