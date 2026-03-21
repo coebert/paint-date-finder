@@ -150,6 +150,7 @@ export default function Index() {
         onOpenChange={setDetailDialogOpen}
         onEdit={handleEdit}
       />
+      </div>
     </div>
   );
 }
