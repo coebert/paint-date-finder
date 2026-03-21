@@ -15,6 +15,7 @@ import { SplashScreen } from '@/components/SplashScreen';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle } from 'lucide-react';
 import { useVisitTracking } from '@/hooks/useVisitTracking';
+import woodsballBg from '@/assets/woodsball-bg.jpg';
 
 export default function Index() {
   const [showSplash, setShowSplash] = useState(true);
@@ -65,7 +66,13 @@ export default function Index() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      <div 
+        className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${woodsballBg})` }}
+      />
+      <div className="fixed inset-0 z-0 bg-background/85" />
+      <div className="relative z-10">
       {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
       <Header 
         view={view} 
@@ -143,6 +150,7 @@ export default function Index() {
         onOpenChange={setDetailDialogOpen}
         onEdit={handleEdit}
       />
+      </div>
     </div>
   );
 }
