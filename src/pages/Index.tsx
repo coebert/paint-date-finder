@@ -84,7 +84,7 @@ export default function Index() {
         className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat will-change-transform"
         style={{ backgroundImage: `url(${woodsballBg})`, transform: 'translateY(0) scale(1.1)' }}
       />
-      <div className="fixed inset-0 z-0 bg-background/85" />
+      <div className="fixed inset-0 z-0 bg-background/60" />
       <div className="relative z-10">
       {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
       <Header 
