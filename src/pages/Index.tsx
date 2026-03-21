@@ -66,7 +66,12 @@ export default function Index() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      <div 
+        className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${woodsballBg})` }}
+      />
+      <div className="fixed inset-0 z-0 bg-background/85" />
       {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
       <Header 
         view={view} 
