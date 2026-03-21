@@ -20,6 +20,18 @@ import woodsballBg from '@/assets/woodsball-bg.jpg';
 export default function Index() {
   const [showSplash, setShowSplash] = useState(true);
   const handleSplashComplete = useCallback(() => setShowSplash(false), []);
+  const bgRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (bgRef.current) {
+        const offset = window.scrollY * 0.3;
+        bgRef.current.style.transform = `translateY(${offset}px) scale(1.1)`;
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
   const [view, setView] = useState<'calendar' | 'list' | 'map'>('calendar');
   const [eventType, setEventType] = useState<EventType | undefined>();
   const [venue, setVenue] = useState('');
