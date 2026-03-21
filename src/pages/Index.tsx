@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useEvents, useVenues } from '@/hooks/useEvents';
 import { useRegions } from '@/hooks/useRegions';
 import { EventType, PaintballEvent } from '@/types/events';
