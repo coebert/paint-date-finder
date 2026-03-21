@@ -25,12 +25,10 @@ export function Header({ view, onViewChange, onAddEvent, onSubmitEvent }: Header
       <div className="container mx-auto px-4 py-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-lg bg-accent flex items-center justify-center accent-glow">
-              <Crosshair className="w-7 h-7 text-accent-foreground" />
-            </div>
+            <img src={logo} alt="Find A Walk-On logo" className="w-12 h-12 rounded-lg" />
             <div>
               <h1 className="font-display text-3xl md:text-4xl tracking-wider text-foreground">
-                UK PAINTBALL EVENTS
+                FIND A WALK-ON
               </h1>
               <p className="text-sm text-muted-foreground">
                 Find and book paintball events across the United Kingdom
