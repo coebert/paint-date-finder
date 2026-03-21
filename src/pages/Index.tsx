@@ -68,9 +68,8 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-background relative">
       <div 
-        ref={bgRef}
-        className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat will-change-transform"
-        style={{ backgroundImage: `url(${woodsballBg})`, transform: 'translateY(0) scale(1.1)' }}
+        className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${woodsballBg})` }}
       />
       <div className="fixed inset-0 z-0 bg-background/35" />
       <div className="relative z-10">
