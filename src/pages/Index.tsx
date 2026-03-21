@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useEvents, useVenues } from '@/hooks/useEvents';
 import { useRegions } from '@/hooks/useRegions';
 import { EventType, PaintballEvent } from '@/types/events';
@@ -11,11 +11,14 @@ import { EventEditDialog } from '@/components/EventEditDialog';
 import { AddEventDialog } from '@/components/AddEventDialog';
 import { EventDetailDialog } from '@/components/EventDetailDialog';
 import { SubmitEventDialog } from '@/components/SubmitEventDialog';
+import { SplashScreen } from '@/components/SplashScreen';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle } from 'lucide-react';
 import { useVisitTracking } from '@/hooks/useVisitTracking';
 
 export default function Index() {
+  const [showSplash, setShowSplash] = useState(true);
+  const handleSplashComplete = useCallback(() => setShowSplash(false), []);
   const [view, setView] = useState<'calendar' | 'list' | 'map'>('calendar');
   const [eventType, setEventType] = useState<EventType | undefined>();
   const [venue, setVenue] = useState('');
@@ -63,6 +66,7 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background">
+      {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
       <Header 
         view={view} 
         onViewChange={setView} 
