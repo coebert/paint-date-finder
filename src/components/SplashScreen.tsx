@@ -409,6 +409,14 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
           0% { transform: rotate(8deg); transform-origin: 82px 133px; }
           100% { transform: rotate(-8deg); transform-origin: 82px 133px; }
         }
+        @keyframes arm-swing-left {
+          0% { transform: rotate(6deg); transform-origin: 42px 74px; }
+          100% { transform: rotate(-6deg); transform-origin: 42px 74px; }
+        }
+        @keyframes arm-swing-right {
+          0% { transform: rotate(-6deg); transform-origin: 88px 74px; }
+          100% { transform: rotate(6deg); transform-origin: 88px 74px; }
+        }
       `}</style>
     </div>
   );
