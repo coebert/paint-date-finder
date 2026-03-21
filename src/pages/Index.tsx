@@ -66,6 +66,7 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background">
+      {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
       <Header 
         view={view} 
         onViewChange={setView} 
