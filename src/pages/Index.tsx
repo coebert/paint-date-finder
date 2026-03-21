@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useEvents, useVenues } from '@/hooks/useEvents';
 import { useRegions } from '@/hooks/useRegions';
 import { EventType, PaintballEvent } from '@/types/events';
@@ -20,6 +20,18 @@ import woodsballBg from '@/assets/woodsball-bg.jpg';
 export default function Index() {
   const [showSplash, setShowSplash] = useState(true);
   const handleSplashComplete = useCallback(() => setShowSplash(false), []);
+  const bgRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (bgRef.current) {
+        const offset = window.scrollY * 0.3;
+        bgRef.current.style.transform = `translateY(${offset}px) scale(1.1)`;
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
   const [view, setView] = useState<'calendar' | 'list' | 'map'>('calendar');
   const [eventType, setEventType] = useState<EventType | undefined>();
   const [venue, setVenue] = useState('');
@@ -68,8 +80,9 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-background relative">
       <div 
-        className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${woodsballBg})` }}
+        ref={bgRef}
+        className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat will-change-transform"
+        style={{ backgroundImage: `url(${woodsballBg})`, transform: 'translateY(0) scale(1.1)' }}
       />
       <div className="fixed inset-0 z-0 bg-background/85" />
       <div className="relative z-10">
