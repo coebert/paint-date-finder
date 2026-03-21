@@ -399,6 +399,14 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
           0% { opacity: 1; }
           100% { opacity: 0; }
         }
+        @keyframes leg-stride-left {
+          0% { transform: rotate(-8deg); transform-origin: 48px 133px; }
+          100% { transform: rotate(8deg); transform-origin: 48px 133px; }
+        }
+        @keyframes leg-stride-right {
+          0% { transform: rotate(8deg); transform-origin: 82px 133px; }
+          100% { transform: rotate(-8deg); transform-origin: 82px 133px; }
+        }
       `}</style>
     </div>
   );
