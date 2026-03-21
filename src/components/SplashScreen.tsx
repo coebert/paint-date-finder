@@ -376,7 +376,7 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
                 } : {}),
               }}
             >
-              <Silhouette phase={phase} />
+              {phase === 'barrel' ? <WalkingSilhouette /> : <FacingSilhouette />}
             </div>
           )}
 
