@@ -18,8 +18,11 @@ import { useVisitTracking } from '@/hooks/useVisitTracking';
 import woodsballBg from '@/assets/woodsball-bg.jpg';
 
 export default function Index() {
-  const [showSplash, setShowSplash] = useState(true);
-  const handleSplashComplete = useCallback(() => setShowSplash(false), []);
+  const [showSplash, setShowSplash] = useState(() => !sessionStorage.getItem('splashShown'));
+  const handleSplashComplete = useCallback(() => {
+    sessionStorage.setItem('splashShown', '1');
+    setShowSplash(false);
+  }, []);
   const [view, setView] = useState<'calendar' | 'list' | 'map'>('calendar');
   const [eventType, setEventType] = useState<EventType | undefined>();
   const [venue, setVenue] = useState('');
