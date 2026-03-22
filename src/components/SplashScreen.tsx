@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import barrelBg from '@/assets/barrel-bg.jpg';
+import logo from '@/assets/logo.png';
 
 /**
  * James Bond gun barrel sequence parody for paintball.
@@ -462,6 +463,30 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
 
           {/* Paint splat */}
           {(phase === 'splat' || phase === 'collapse') && <PaintSplat />}
+
+          {/* Logo reveal on splat */}
+          {(phase === 'splat' || phase === 'collapse') && (
+            <div
+              className="absolute inset-0 flex flex-col items-center justify-center z-10"
+              style={{ animation: 'logo-reveal 0.6s 0.3s cubic-bezier(0.16, 1, 0.3, 1) both' }}
+            >
+              <img
+                src={logo}
+                alt="Find A Walk-On"
+                className="w-28 h-28 md:w-36 md:h-36 drop-shadow-2xl"
+                style={{ filter: 'drop-shadow(0 0 30px rgba(0,0,0,0.8))' }}
+              />
+              <h1
+                className="text-2xl md:text-3xl font-black tracking-wider text-white mt-3"
+                style={{
+                  textShadow: '0 2px 20px rgba(0,0,0,0.9), 0 0 40px rgba(0,0,0,0.5)',
+                  animation: 'logo-text-reveal 0.5s 0.5s cubic-bezier(0.16, 1, 0.3, 1) both',
+                }}
+              >
+                FIND A WALK-ON
+              </h1>
+            </div>
+          )}
         </>
       )}
 
@@ -597,6 +622,17 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
         @keyframes arm-swing-right {
           0% { transform: rotate(-8deg); transform-origin: 64px 68px; }
           100% { transform: rotate(8deg); transform-origin: 64px 68px; }
+        }
+
+        /* ── Logo reveal ── */
+        @keyframes logo-reveal {
+          0% { transform: scale(0) rotate(-15deg); opacity: 0; }
+          60% { transform: scale(1.15) rotate(3deg); opacity: 1; }
+          100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes logo-text-reveal {
+          0% { transform: translateY(20px); opacity: 0; letter-spacing: 0.5em; }
+          100% { transform: translateY(0); opacity: 1; letter-spacing: 0.15em; }
         }
 
         /* ── Dust particles ── */
