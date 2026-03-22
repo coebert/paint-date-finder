@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import barrelBg from '@/assets/barrel-bg.jpg';
+import logo from '@/assets/logo.png';
 
 /**
  * James Bond gun barrel sequence parody for paintball.
