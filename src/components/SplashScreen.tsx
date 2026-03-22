@@ -463,6 +463,30 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
 
           {/* Paint splat */}
           {(phase === 'splat' || phase === 'collapse') && <PaintSplat />}
+
+          {/* Logo reveal on splat */}
+          {(phase === 'splat' || phase === 'collapse') && (
+            <div
+              className="absolute inset-0 flex flex-col items-center justify-center z-10"
+              style={{ animation: 'logo-reveal 0.6s 0.3s cubic-bezier(0.16, 1, 0.3, 1) both' }}
+            >
+              <img
+                src={logo}
+                alt="Find A Walk-On"
+                className="w-28 h-28 md:w-36 md:h-36 drop-shadow-2xl"
+                style={{ filter: 'drop-shadow(0 0 30px rgba(0,0,0,0.8))' }}
+              />
+              <h1
+                className="text-2xl md:text-3xl font-black tracking-wider text-white mt-3"
+                style={{
+                  textShadow: '0 2px 20px rgba(0,0,0,0.9), 0 0 40px rgba(0,0,0,0.5)',
+                  animation: 'logo-text-reveal 0.5s 0.5s cubic-bezier(0.16, 1, 0.3, 1) both',
+                }}
+              >
+                FIND A WALK-ON
+              </h1>
+            </div>
+          )}
         </>
       )}
 
