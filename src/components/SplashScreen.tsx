@@ -624,6 +624,17 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
           100% { transform: rotate(8deg); transform-origin: 64px 68px; }
         }
 
+        /* ── Logo reveal ── */
+        @keyframes logo-reveal {
+          0% { transform: scale(0) rotate(-15deg); opacity: 0; }
+          60% { transform: scale(1.15) rotate(3deg); opacity: 1; }
+          100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes logo-text-reveal {
+          0% { transform: translateY(20px); opacity: 0; letter-spacing: 0.5em; }
+          100% { transform: translateY(0); opacity: 1; letter-spacing: 0.15em; }
+        }
+
         /* ── Dust particles ── */
         @keyframes dust-float {
           0% { opacity: 0; transform: translate(0, 0); }
