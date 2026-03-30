@@ -474,7 +474,7 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
                 src={logo}
                 alt="Find A Walk-On"
                 className="w-28 h-28 md:w-36 md:h-36 drop-shadow-2xl"
-                style={{ filter: 'drop-shadow(0 0 30px rgba(0,0,0,0.8))' }}
+                style={{ filter: 'drop-shadow(0 0 30px rgba(0,0,0,0.8))', animation: 'logo-pulse-glow 2s 0.9s ease-in-out infinite' }}
               />
               <h1
                 className="text-2xl md:text-3xl font-black tracking-wider text-white mt-3"
@@ -633,6 +633,10 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
         @keyframes logo-text-reveal {
           0% { transform: translateY(20px); opacity: 0; letter-spacing: 0.5em; }
           100% { transform: translateY(0); opacity: 1; letter-spacing: 0.15em; }
+        }
+        @keyframes logo-pulse-glow {
+          0%, 100% { filter: drop-shadow(0 0 30px rgba(0,0,0,0.8)); }
+          50% { filter: drop-shadow(0 0 45px rgba(255,165,0,0.6)) drop-shadow(0 0 80px rgba(255,165,0,0.3)); }
         }
 
         /* ── Dust particles ── */
