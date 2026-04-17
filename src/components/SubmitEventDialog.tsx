@@ -48,7 +48,12 @@ const formSchema = z.object({
   end_time: z.string().optional(),
   booking_url: safeOptionalUrlSchema,
   price_info: z.string().max(100).optional(),
-  source_url: safeOptionalUrlSchema,
+  source_url: z
+    .string()
+    .trim()
+    .min(1, 'Source link is required so we can verify the event')
+    .url('Must be a valid URL')
+    .refine((v) => /^https?:\/\//i.test(v), 'URL must start with http:// or https://'),
   submitter_email: z.string().email('Valid email required'),
   submitter_name: z.string().max(100).optional(),
 });
@@ -169,9 +174,9 @@ export function SubmitEventDialog({ open, onOpenChange }: SubmitEventDialogProps
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-card border-border max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="font-display text-2xl">Submit an Event</DialogTitle>
+          <DialogTitle className="font-display text-2xl">Suggest an Event</DialogTitle>
           <DialogDescription>
-            Know about a paintball event? Submit it here and we'll review it for the calendar.
+            Spotted a walk-on or big game? Share the details and a source link — we'll verify and add it to the calendar.
           </DialogDescription>
         </DialogHeader>
 
@@ -380,12 +385,12 @@ export function SubmitEventDialog({ open, onOpenChange }: SubmitEventDialogProps
               name="source_url"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Source URL</FormLabel>
+                  <FormLabel>Source Link *</FormLabel>
                   <FormControl>
-                    <Input type="url" placeholder="Link to event announcement" {...field} />
+                    <Input type="url" placeholder="https://facebook.com/... or venue site" {...field} />
                   </FormControl>
                   <FormDescription>
-                    Where did you find this event? (Facebook, venue website, etc.)
+                    Required — link to the Facebook post, venue page, or announcement so we can verify it.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

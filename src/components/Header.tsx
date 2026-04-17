@@ -98,11 +98,10 @@ export function Header({ view, onViewChange, onAddEvent, onSubmitEvent }: Header
 
             <Button
               onClick={onSubmitEvent}
-              variant="outline"
-              className="gap-2"
+              className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90 shadow-sm"
             >
               <Send className="h-4 w-4" />
-              Submit Event
+              Suggest an Event
             </Button>
 
             {/* Admin-only: Add Event button */}
