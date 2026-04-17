@@ -336,7 +336,10 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Dedupe: skip if same venue+date+title already in events or pending submissions
+        // Dedupe: skip if same venue+date+type already in events or pending/approved
+        // submissions. We intentionally ignore title because the AI returns slight
+        // title variations between runs ("Walk-on" vs "Walk on April"), which would
+        // otherwise create duplicate candidates for the same real event.
         const [{ data: existingEvent }, { data: existingSub }] =
           await Promise.all([
             supabase
@@ -344,7 +347,7 @@ Deno.serve(async (req) => {
               .select("id")
               .eq("venue_name", source.venue_name)
               .eq("event_date", c.event_date)
-              .ilike("title", c.title)
+              .eq("event_type", c.event_type)
               .limit(1)
               .maybeSingle(),
             supabase
@@ -352,7 +355,8 @@ Deno.serve(async (req) => {
               .select("id")
               .eq("venue_name", source.venue_name)
               .eq("event_date", c.event_date)
-              .ilike("title", c.title)
+              .eq("event_type", c.event_type)
+              .in("status", ["pending", "approved"])
               .limit(1)
               .maybeSingle(),
           ]);
