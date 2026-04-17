@@ -264,8 +264,14 @@ Deno.serve(async (req) => {
 
       for (const c of candidates) {
         // Validate date is today or future
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(c.event_date)) continue;
-        if (c.event_date < new Date().toISOString().slice(0, 10)) continue;
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(c.event_date)) {
+          invalidDate++;
+          continue;
+        }
+        if (c.event_date < new Date().toISOString().slice(0, 10)) {
+          invalidDate++;
+          continue;
+        }
 
         // Dedupe: skip if same venue+date+title already in events or pending submissions
         const [{ data: existingEvent }, { data: existingSub }] =
@@ -287,7 +293,10 @@ Deno.serve(async (req) => {
               .limit(1)
               .maybeSingle(),
           ]);
-        if (existingEvent || existingSub) continue;
+        if (existingEvent || existingSub) {
+          deduped++;
+          continue;
+        }
 
         const { error: insErr } = await supabase
           .from("event_submissions")
@@ -314,15 +323,24 @@ Deno.serve(async (req) => {
           });
         } else {
           candidatesCreated++;
+          inserted++;
         }
       }
     } catch (e) {
       sourceStatus = "error";
-      errors.push({
-        source: source.url,
-        message: e instanceof Error ? e.message : String(e),
-      });
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(
+        `[scrape] source="${source.venue_name}" ERROR ${msg}`,
+      );
+      errors.push({ source: source.url, message: msg });
     }
+
+    const elapsed = Date.now() - t0;
+    console.log(
+      `[scrape] source="${source.venue_name}" status=${sourceStatus} ` +
+        `chars=${textLen} returned=${returned} inserted=${inserted} ` +
+        `deduped=${deduped} invalid_date=${invalidDate} elapsed_ms=${elapsed}`,
+    );
 
     await supabase
       .from("trusted_venue_sources")
