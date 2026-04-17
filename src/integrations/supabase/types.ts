@@ -214,6 +214,39 @@ export type Database = {
         }
         Relationships: []
       }
+      scrape_runs: {
+        Row: {
+          candidates_created: number
+          errors: Json
+          finished_at: string | null
+          id: string
+          sources_processed: number
+          started_at: string
+          status: string
+          triggered_by: string
+        }
+        Insert: {
+          candidates_created?: number
+          errors?: Json
+          finished_at?: string | null
+          id?: string
+          sources_processed?: number
+          started_at?: string
+          status?: string
+          triggered_by?: string
+        }
+        Update: {
+          candidates_created?: number
+          errors?: Json
+          finished_at?: string | null
+          id?: string
+          sources_processed?: number
+          started_at?: string
+          status?: string
+          triggered_by?: string
+        }
+        Relationships: []
+      }
       team_roster: {
         Row: {
           created_at: string
@@ -312,6 +345,42 @@ export type Database = {
           social_media?: Json | null
           updated_at?: string
           website?: string | null
+        }
+        Relationships: []
+      }
+      trusted_venue_sources: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          last_scraped_at: string | null
+          last_status: string | null
+          notes: string | null
+          updated_at: string
+          url: string
+          venue_name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_scraped_at?: string | null
+          last_status?: string | null
+          notes?: string | null
+          updated_at?: string
+          url: string
+          venue_name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_scraped_at?: string | null
+          last_status?: string | null
+          notes?: string | null
+          updated_at?: string
+          url?: string
+          venue_name?: string
         }
         Relationships: []
       }
