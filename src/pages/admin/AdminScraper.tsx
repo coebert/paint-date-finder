@@ -194,6 +194,7 @@ export default function AdminScraper() {
                     <TableHead>Active</TableHead>
                     <TableHead>Last scraped</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Last run</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -228,7 +229,50 @@ export default function AdminScraper() {
                             })
                           : "never"}
                       </TableCell>
-                      <TableCell>{statusBadge(s.last_status)}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          {statusBadge(s.last_status)}
+                          {s.last_used_firecrawl ? (
+                            <Badge variant="outline" className="w-fit text-[10px]">
+                              firecrawl
+                            </Badge>
+                          ) : null}
+                          {s.last_error_message ? (
+                            <span
+                              className="max-w-[220px] truncate text-xs text-destructive"
+                              title={s.last_error_message}
+                            >
+                              {s.last_error_message}
+                            </span>
+                          ) : null}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {s.last_scraped_at ? (
+                          <div className="flex flex-col items-end text-xs">
+                            <span>
+                              <span className="text-muted-foreground">returned</span>{" "}
+                              <span className="font-medium">{s.last_returned ?? 0}</span>
+                              {" · "}
+                              <span className="text-muted-foreground">inserted</span>{" "}
+                              <span className="font-medium text-accent">
+                                {s.last_inserted ?? 0}
+                              </span>
+                            </span>
+                            <span className="text-muted-foreground">
+                              deduped {s.last_deduped ?? 0}
+                              {(s.last_invalid_date ?? 0) > 0
+                                ? ` · invalid ${s.last_invalid_date}`
+                                : ""}
+                              {s.last_chars != null
+                                ? ` · ${s.last_chars.toLocaleString()} chars`
+                                : ""}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">—</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
                           <SourceDialog

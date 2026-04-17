@@ -405,11 +405,23 @@ Deno.serve(async (req) => {
         `deduped=${deduped} invalid_date=${invalidDate} elapsed_ms=${elapsed}`,
     );
 
+    const lastErrorMessage = sourceStatus === "error"
+      ? errors.filter((e) => e.source === source.url).slice(-1)[0]?.message ??
+        null
+      : null;
+
     await supabase
       .from("trusted_venue_sources")
       .update({
         last_scraped_at: new Date().toISOString(),
         last_status: sourceStatus,
+        last_returned: returned,
+        last_inserted: inserted,
+        last_deduped: deduped,
+        last_invalid_date: invalidDate,
+        last_chars: textLen,
+        last_used_firecrawl: usedFirecrawl,
+        last_error_message: lastErrorMessage,
       })
       .eq("id", source.id);
   }

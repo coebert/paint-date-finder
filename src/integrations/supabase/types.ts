@@ -353,8 +353,15 @@ export type Database = {
           created_at: string
           id: string
           is_active: boolean
+          last_chars: number | null
+          last_deduped: number | null
+          last_error_message: string | null
+          last_inserted: number | null
+          last_invalid_date: number | null
+          last_returned: number | null
           last_scraped_at: string | null
           last_status: string | null
+          last_used_firecrawl: boolean | null
           notes: string | null
           updated_at: string
           url: string
@@ -364,8 +371,15 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          last_chars?: number | null
+          last_deduped?: number | null
+          last_error_message?: string | null
+          last_inserted?: number | null
+          last_invalid_date?: number | null
+          last_returned?: number | null
           last_scraped_at?: string | null
           last_status?: string | null
+          last_used_firecrawl?: boolean | null
           notes?: string | null
           updated_at?: string
           url: string
@@ -375,8 +389,15 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          last_chars?: number | null
+          last_deduped?: number | null
+          last_error_message?: string | null
+          last_inserted?: number | null
+          last_invalid_date?: number | null
+          last_returned?: number | null
           last_scraped_at?: string | null
           last_status?: string | null
+          last_used_firecrawl?: boolean | null
           notes?: string | null
           updated_at?: string
           url?: string
