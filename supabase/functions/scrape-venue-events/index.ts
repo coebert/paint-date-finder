@@ -51,6 +51,51 @@ async function fetchPageText(url: string): Promise<string> {
   return stripped.slice(0, 30_000);
 }
 
+// Firecrawl fallback: JS-renders the page and returns markdown.
+// Used when plain fetch yields too little text (SPA shells) or for known
+// JS-heavy hosts (e.g. facebook.com).
+async function fetchViaFirecrawl(
+  url: string,
+  apiKey: string,
+): Promise<string> {
+  const res = await fetch("https://api.firecrawl.dev/v2/scrape", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      url,
+      formats: ["markdown"],
+      onlyMainContent: true,
+      waitFor: 2000,
+    }),
+  });
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`Firecrawl ${res.status}: ${t.slice(0, 200)}`);
+  }
+  const data = await res.json();
+  const md: string = data?.data?.markdown ?? data?.markdown ?? "";
+  return md.replace(/\s+/g, " ").trim().slice(0, 30_000);
+}
+
+const FIRECRAWL_HOST_PATTERNS = [
+  /(^|\.)facebook\.com$/i,
+  /(^|\.)instagram\.com$/i,
+  /(^|\.)eventbrite\.co\.uk$/i,
+  /(^|\.)eventbrite\.com$/i,
+];
+
+function shouldUseFirecrawlFirst(url: string): boolean {
+  try {
+    const host = new URL(url).hostname;
+    return FIRECRAWL_HOST_PATTERNS.some((re) => re.test(host));
+  } catch {
+    return false;
+  }
+}
+
 async function extractCandidates(
   venueName: string,
   sourceUrl: string,
@@ -244,11 +289,29 @@ Deno.serve(async (req) => {
     let inserted = 0;
     let deduped = 0;
     let invalidDate = 0;
+    const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
+    let usedFirecrawl = false;
     try {
-      const text = await fetchPageText(source.url);
+      // Use Firecrawl up-front for known JS-heavy hosts (FB, Eventbrite, …)
+      let text: string;
+      if (FIRECRAWL_API_KEY && shouldUseFirecrawlFirst(source.url)) {
+        text = await fetchViaFirecrawl(source.url, FIRECRAWL_API_KEY);
+        usedFirecrawl = true;
+      } else {
+        text = await fetchPageText(source.url);
+        // Fallback: if plain fetch returned suspiciously little content,
+        // retry via Firecrawl (likely an SPA shell).
+        if (text.length < 300 && FIRECRAWL_API_KEY) {
+          console.log(
+            `[scrape] source="${source.venue_name}" plain_fetch=${text.length} chars — retrying via Firecrawl`,
+          );
+          text = await fetchViaFirecrawl(source.url, FIRECRAWL_API_KEY);
+          usedFirecrawl = true;
+        }
+      }
       textLen = text.length;
       console.log(
-        `[scrape] source="${source.venue_name}" url="${source.url}" fetched_chars=${textLen}`,
+        `[scrape] source="${source.venue_name}" url="${source.url}" fetched_chars=${textLen} firecrawl=${usedFirecrawl}`,
       );
 
       const candidates = await extractCandidates(
