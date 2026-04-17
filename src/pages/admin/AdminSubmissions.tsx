@@ -137,9 +137,11 @@ function SubmissionCard({ submission, onApprove, onReject, onDelete }: {
                 href={submission.source_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-accent hover:underline flex items-center gap-1"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-accent/10 border border-accent/30 text-accent hover:bg-accent/20 transition-colors text-sm font-medium"
               >
-                Source Link <ExternalLink className="w-3 h-3" />
+                <ShieldCheck className="w-3.5 h-3.5" />
+                Verify source
+                <ExternalLink className="w-3 h-3" />
               </a>
             )}
           </div>
