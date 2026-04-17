@@ -132,7 +132,7 @@ function statusBadge(status: string | null) {
   if (status === "ok" || status === "success")
     return <Badge className="bg-accent text-accent-foreground">{status}</Badge>;
   if (status === "partial")
-    return <Badge className="bg-yellow-600 text-white">{status}</Badge>;
+    return <Badge className="bg-secondary text-secondary-foreground">{status}</Badge>;
   return <Badge variant="destructive">{status}</Badge>;
 }
 
