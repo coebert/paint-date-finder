@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircle, Check, X, ExternalLink, Trash2, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { AlertCircle, Check, X, ExternalLink, Trash2, Clock, CheckCircle, XCircle, ShieldCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import { EventTypeBadge } from '@/components/EventTypeBadge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
