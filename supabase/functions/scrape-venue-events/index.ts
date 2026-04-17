@@ -51,6 +51,51 @@ async function fetchPageText(url: string): Promise<string> {
   return stripped.slice(0, 30_000);
 }
 
+// Firecrawl fallback: JS-renders the page and returns markdown.
+// Used when plain fetch yields too little text (SPA shells) or for known
+// JS-heavy hosts (e.g. facebook.com).
+async function fetchViaFirecrawl(
+  url: string,
+  apiKey: string,
+): Promise<string> {
+  const res = await fetch("https://api.firecrawl.dev/v2/scrape", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      url,
+      formats: ["markdown"],
+      onlyMainContent: true,
+      waitFor: 2000,
+    }),
+  });
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`Firecrawl ${res.status}: ${t.slice(0, 200)}`);
+  }
+  const data = await res.json();
+  const md: string = data?.data?.markdown ?? data?.markdown ?? "";
+  return md.replace(/\s+/g, " ").trim().slice(0, 30_000);
+}
+
+const FIRECRAWL_HOST_PATTERNS = [
+  /(^|\.)facebook\.com$/i,
+  /(^|\.)instagram\.com$/i,
+  /(^|\.)eventbrite\.co\.uk$/i,
+  /(^|\.)eventbrite\.com$/i,
+];
+
+function shouldUseFirecrawlFirst(url: string): boolean {
+  try {
+    const host = new URL(url).hostname;
+    return FIRECRAWL_HOST_PATTERNS.some((re) => re.test(host));
+  } catch {
+    return false;
+  }
+}
+
 async function extractCandidates(
   venueName: string,
   sourceUrl: string,
