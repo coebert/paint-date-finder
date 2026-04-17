@@ -238,13 +238,28 @@ Deno.serve(async (req) => {
   for (const source of sources ?? []) {
     processed++;
     let sourceStatus = "ok";
+    const t0 = Date.now();
+    let textLen = 0;
+    let returned = 0;
+    let inserted = 0;
+    let deduped = 0;
+    let invalidDate = 0;
     try {
       const text = await fetchPageText(source.url);
+      textLen = text.length;
+      console.log(
+        `[scrape] source="${source.venue_name}" url="${source.url}" fetched_chars=${textLen}`,
+      );
+
       const candidates = await extractCandidates(
         source.venue_name,
         source.url,
         text,
         LOVABLE_API_KEY,
+      );
+      returned = candidates.length;
+      console.log(
+        `[scrape] source="${source.venue_name}" ai_returned=${returned}`,
       );
 
       for (const c of candidates) {
