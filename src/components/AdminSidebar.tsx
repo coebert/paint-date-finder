@@ -1,4 +1,4 @@
-import { BarChart3, Calendar, FileText, Flag, Home, Settings, Users } from "lucide-react";
+import { BarChart3, Calendar, FileText, Flag, Home, Radar, Settings, Users } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 
@@ -23,6 +23,7 @@ const menuItems = [
   { title: "Events", url: "/admin/events", icon: Calendar },
   { title: "Flags", url: "/admin/flags", icon: Flag },
   { title: "Teams", url: "/admin/teams", icon: Users },
+  { title: "Auto-Scraper", url: "/admin/scraper", icon: Radar },
 ];
 
 export function AdminSidebar() {
