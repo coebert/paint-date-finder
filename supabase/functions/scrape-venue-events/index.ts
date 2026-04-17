@@ -289,11 +289,29 @@ Deno.serve(async (req) => {
     let inserted = 0;
     let deduped = 0;
     let invalidDate = 0;
+    const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
+    let usedFirecrawl = false;
     try {
-      const text = await fetchPageText(source.url);
+      // Use Firecrawl up-front for known JS-heavy hosts (FB, Eventbrite, …)
+      let text: string;
+      if (FIRECRAWL_API_KEY && shouldUseFirecrawlFirst(source.url)) {
+        text = await fetchViaFirecrawl(source.url, FIRECRAWL_API_KEY);
+        usedFirecrawl = true;
+      } else {
+        text = await fetchPageText(source.url);
+        // Fallback: if plain fetch returned suspiciously little content,
+        // retry via Firecrawl (likely an SPA shell).
+        if (text.length < 300 && FIRECRAWL_API_KEY) {
+          console.log(
+            `[scrape] source="${source.venue_name}" plain_fetch=${text.length} chars — retrying via Firecrawl`,
+          );
+          text = await fetchViaFirecrawl(source.url, FIRECRAWL_API_KEY);
+          usedFirecrawl = true;
+        }
+      }
       textLen = text.length;
       console.log(
-        `[scrape] source="${source.venue_name}" url="${source.url}" fetched_chars=${textLen}`,
+        `[scrape] source="${source.venue_name}" url="${source.url}" fetched_chars=${textLen} firecrawl=${usedFirecrawl}`,
       );
 
       const candidates = await extractCandidates(
