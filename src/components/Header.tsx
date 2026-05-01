@@ -13,9 +13,10 @@ interface HeaderProps {
   onViewChange: (view: 'calendar' | 'list' | 'map') => void;
   onAddEvent: () => void;
   onSubmitEvent: () => void;
+  onImportFlyer: () => void;
 }
 
-export function Header({ view, onViewChange, onAddEvent, onSubmitEvent }: HeaderProps) {
+export function Header({ view, onViewChange, onAddEvent, onSubmitEvent, onImportFlyer }: HeaderProps) {
   const { user, loading: authLoading } = useAuth();
   const { data: isAdmin } = useIsAdmin();
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
