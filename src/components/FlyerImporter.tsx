@@ -655,6 +655,31 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
 
       {candidates.length > 0 && (
         <div className="space-y-3 pt-2">
+          {restoredAt && (
+            <div className="flex items-center justify-between gap-2 rounded-md border border-accent/40 bg-accent/5 p-2 text-xs">
+              <span className="text-muted-foreground">
+                Restored draft from{' '}
+                {new Date(restoredAt).toLocaleString('en-GB', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: false,
+                })}
+                {' '}— continue reviewing or discard.
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={handleDiscardDraft}
+              >
+                Discard
+              </Button>
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <h3 className="font-display text-sm tracking-wider">
               Found {candidates.length} event{candidates.length === 1 ? '' : 's'} — review &amp; edit
@@ -663,6 +688,7 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
               {selectedCount} selected
             </span>
           </div>
+
 
           <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
             {candidates.map((c) => (
