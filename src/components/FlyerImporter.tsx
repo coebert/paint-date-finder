@@ -484,7 +484,36 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
       ...rest,
       _selected: true as const,
     }));
-    await onSave(payload, sourceUrl.trim() || null);
+
+    // If the user uploaded an image or PDF, persist it to the public
+    // flyer-images bucket so the original flyer can be attached to each
+    // saved event. Failure to upload should NOT block saving the events
+    // themselves — we just lose the image attachment.
+    let flyerImageUrl: string | null = null;
+    if (file && (tab === 'image' || tab === 'pdf')) {
+      try {
+        const ext = file.name.split('.').pop()?.toLowerCase() || (tab === 'pdf' ? 'pdf' : 'jpg');
+        const safeExt = ext.replace(/[^a-z0-9]/g, '').slice(0, 5) || 'bin';
+        const objectKey = `${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}.${safeExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('flyer-images')
+          .upload(objectKey, file, {
+            cacheControl: '31536000',
+            contentType: file.type || undefined,
+            upsert: false,
+          });
+        if (uploadError) throw uploadError;
+        const { data: pub } = supabase.storage
+          .from('flyer-images')
+          .getPublicUrl(objectKey);
+        flyerImageUrl = pub.publicUrl;
+      } catch (e) {
+        console.error('Flyer upload failed', e);
+        toast.warning('Could not attach the original flyer image — saving the events anyway.');
+      }
+    }
+
+    await onSave(payload, sourceUrl.trim() || null, flyerImageUrl);
     setCandidates([]);
     setFile(null);
     setPreviewUrl(null);
