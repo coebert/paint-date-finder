@@ -185,7 +185,17 @@ export function SubmitEventDialog({ open, onOpenChange }: SubmitEventDialogProps
       return;
     }
     try {
-      for (const c of candidates) {
+      const { unique, duplicates } = await dedupeCandidates(candidates, 'both');
+      if (duplicates.length > 0) {
+        toast.warning(
+          `Skipped ${duplicates.length} duplicate${duplicates.length === 1 ? '' : 's'} already on the calendar or awaiting review`,
+        );
+      }
+      if (unique.length === 0) {
+        toast.info('All of these events are already on the calendar or queued for review.');
+        return;
+      }
+      for (const c of unique) {
         await createSubmission.mutateAsync({
           title: c.title.slice(0, 200),
           description: c.description?.slice(0, 2000) ?? null,
