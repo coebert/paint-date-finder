@@ -15,6 +15,7 @@ import { format, parseISO } from 'date-fns';
 import { useVenueDetails } from '@/hooks/useVenueDetails';
 import { useIsAdmin } from '@/hooks/useAuth';
 import { useFlaggedEventIds, useWithdrawFlag, getStoredFlagForEvent } from '@/hooks/useEventFlags';
+import { EventSourceBadge } from './EventSourceBadge';
 
 interface EventDetailDialogProps {
   event: PaintballEvent | null;
