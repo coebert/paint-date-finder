@@ -36,6 +36,7 @@ import { useVenueDetails } from '@/hooks/useVenueDetails';
 import { Send, CheckCircle, Plus, Sparkles, Edit3 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FlyerImporter } from '@/components/FlyerImporter';
+import { dedupeCandidates } from '@/lib/flyerDedupe';
 import { toast } from 'sonner';
 
 const ADD_NEW_VENUE = '__add_new__';
