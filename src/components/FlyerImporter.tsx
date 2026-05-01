@@ -201,22 +201,27 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
   const [resumePrompt, setResumePrompt] = useState<InProgressMark | null>(initialResume);
   useEffect(() => {
     // Don't persist while extraction is in flight to avoid storing partial state.
+    // (handleExtract writes its own in-progress marker explicitly.)
     if (extracting) return;
     try {
-      // If everything is empty, just clear the draft.
-      if (!sourceUrl && !pastedText && candidates.length === 0) {
+      // If everything is empty AND there's no in-progress marker to preserve,
+      // just clear the draft.
+      const existing = loadDraft();
+      if (
+        !sourceUrl &&
+        !pastedText &&
+        candidates.length === 0 &&
+        !existing?.inProgress
+      ) {
         localStorage.removeItem(DRAFT_STORAGE_KEY);
         return;
       }
-      const draft: DraftV1 = {
-        v: 1,
-        savedAt: Date.now(),
+      saveDraftPartial({
         tab,
         sourceUrl,
         pastedText,
         candidates,
-      };
-      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+      });
     } catch {
       /* quota exceeded / private mode — silently ignore */
     }
@@ -228,9 +233,37 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
     setPastedText('');
     setFile(null);
     setPreviewUrl(null);
+    setResumePrompt(null);
     clearDraft();
     toast.success('Draft cleared');
   };
+
+  const handleDismissResume = () => {
+    setResumePrompt(null);
+    clearInProgress();
+  };
+
+  const handleResumeExtraction = () => {
+    if (!resumePrompt) return;
+    // For image/PDF runs we cannot recover the original binary — the user
+    // must re-select the file before we can resume. Switch to that tab and
+    // surface a toast; the resume banner stays so they can click again.
+    if ((resumePrompt.kind === 'image' || resumePrompt.kind === 'pdf') && !file) {
+      setTab(resumePrompt.kind);
+      toast.info(
+        `Re-select your ${resumePrompt.kind.toUpperCase()}${resumePrompt.fileName ? ` (${resumePrompt.fileName})` : ''} to resume`,
+        { description: 'Files can\'t be saved between sessions — pick the same file and we\'ll continue.' },
+      );
+      return;
+    }
+    setTab(resumePrompt.kind);
+    setResumePrompt(null);
+    // Defer so the tab switch + state updates settle before extraction starts.
+    setTimeout(() => {
+      void handleExtract();
+    }, 0);
+  };
+
 
 
   const buildStages = (kind: 'image' | 'pdf' | 'text' | 'url'): StageState[] => {
