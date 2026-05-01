@@ -40,6 +40,7 @@ import {
 } from "@/hooks/useScraper";
 import { Loader2, Play, Plus, Trash2, ExternalLink, Pencil } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { AdminFlyerImportCard } from "@/components/admin/AdminFlyerImportCard";
 
 function SourceDialog({
   trigger,
@@ -148,6 +149,7 @@ export default function AdminScraper() {
       description="Scrape trusted venue websites weekly and queue new candidate events for review."
     >
       <div className="space-y-6">
+        <AdminFlyerImportCard />
         <Card>
           <CardHeader className="flex flex-row items-start justify-between gap-4">
             <div>
