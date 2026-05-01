@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Sparkles } from 'lucide-react';
+import { dedupeCandidates } from '@/lib/flyerDedupe';
 
 export function AdminFlyerImportCard() {
   const qc = useQueryClient();
@@ -41,7 +42,17 @@ export function AdminFlyerImportCard() {
   ) => {
     setSaving(true);
     try {
-      const rows = candidates.map((c) => ({
+      const { unique, duplicates } = await dedupeCandidates(candidates, 'both');
+      if (duplicates.length > 0) {
+        toast.warning(
+          `Skipped ${duplicates.length} duplicate${duplicates.length === 1 ? '' : 's'} already in calendar/queue`,
+        );
+      }
+      if (unique.length === 0) {
+        toast.info('Nothing new to add — all candidates were duplicates.');
+        return;
+      }
+      const rows = unique.map((c) => ({
         title: c.title.slice(0, 200),
         description: c.description?.slice(0, 2000) ?? null,
         event_type: c.event_type,

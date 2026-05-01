@@ -36,6 +36,7 @@ import { useVenueDetails } from '@/hooks/useVenueDetails';
 import { Send, CheckCircle, Plus, Sparkles, Edit3 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FlyerImporter } from '@/components/FlyerImporter';
+import { dedupeCandidates } from '@/lib/flyerDedupe';
 import { toast } from 'sonner';
 
 const ADD_NEW_VENUE = '__add_new__';
@@ -184,7 +185,17 @@ export function SubmitEventDialog({ open, onOpenChange }: SubmitEventDialogProps
       return;
     }
     try {
-      for (const c of candidates) {
+      const { unique, duplicates } = await dedupeCandidates(candidates, 'both');
+      if (duplicates.length > 0) {
+        toast.warning(
+          `Skipped ${duplicates.length} duplicate${duplicates.length === 1 ? '' : 's'} already on the calendar or awaiting review`,
+        );
+      }
+      if (unique.length === 0) {
+        toast.info('All of these events are already on the calendar or queued for review.');
+        return;
+      }
+      for (const c of unique) {
         await createSubmission.mutateAsync({
           title: c.title.slice(0, 200),
           description: c.description?.slice(0, 2000) ?? null,
