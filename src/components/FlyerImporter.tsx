@@ -22,6 +22,8 @@ import {
   fileToDataUrl,
   FlyerTimeoutError,
   FLYER_TIMEOUTS_MS,
+  getFlyerEtaSeconds,
+  recordFlyerSample,
   type ExtractedCandidate,
   type FlyerInput,
 } from '@/lib/flyerExtraction';
@@ -121,18 +123,12 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
     return () => window.clearInterval(id);
   }, [extracting]);
 
-  // Rough per-tab time estimates (seconds), adjusted by file size for image/pdf
+  // Adaptive ETA — uses real timings from past extractions when available,
+  // falls back to a sensible per-tab default otherwise.
   const estimateSeconds = (
     kind: 'image' | 'pdf' | 'text' | 'url',
     f: File | null,
-  ): number => {
-    if (kind === 'text') return 6;
-    if (kind === 'url') return 18;
-    if (!f) return kind === 'pdf' ? 35 : 25;
-    const mb = f.size / 1024 / 1024;
-    const base = kind === 'pdf' ? 25 : 15;
-    return Math.round(base + mb * 4);
-  };
+  ): number => getFlyerEtaSeconds(kind, f?.size);
 
   const formatTime = (s: number) => {
     if (s <= 0) return '0s';
@@ -248,6 +244,19 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
       // delay so the user can see progress through the steps.
       currentStage = 'upload';
       setStage('upload', 'active');
+
+      // Live ETA refinement: once the request is in flight, the prepare phase
+      // is done. Re-anchor the estimate so the bar reflects the *remaining*
+      // server-side work (analyse), not the whole pipeline.
+      const prepareElapsedMs = Date.now() - startRef.current;
+      const remainingEstSec = Math.max(
+        3,
+        getFlyerEtaSeconds(tab, file?.size) -
+          Math.round(prepareElapsedMs / 1000),
+      );
+      // Push the deadline outwards so the bar tracks elapsed + remaining.
+      setEstimate(Math.round(prepareElapsedMs / 1000) + remainingEstSec);
+
       const analyseTimer = window.setTimeout(() => {
         setStage('upload', 'done');
         setStage('analyse', 'active');
@@ -256,17 +265,32 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
 
       let extracted: ExtractedCandidate[] = [];
       let total_extracted = 0;
+      let serverTimings: { scrape?: number; gemini?: number; total?: number } | undefined;
+      let resolvedVia: string | undefined;
       try {
         const res = await extractFlyer(input);
         extracted = res.candidates;
         total_extracted = res.total_extracted;
+        serverTimings = res.timings;
+        resolvedVia = res.resolved_via;
       } finally {
         window.clearTimeout(analyseTimer);
       }
 
-      // Make sure both upload & analyse are marked done before save
-      setStage('upload', 'done');
-      setStage('analyse', 'done', `${total_extracted} raw event${total_extracted === 1 ? '' : 's'} found`);
+      // Record the real total elapsed for next-run ETA learning.
+      const totalElapsedMs = Date.now() - startRef.current;
+      recordFlyerSample(tab, totalElapsedMs);
+
+      // Make sure both upload & analyse are marked done before save, with
+      // real server-side timings shown if present.
+      const uploadNote = serverTimings?.scrape
+        ? `Scraped in ${(serverTimings.scrape / 1000).toFixed(1)}s${resolvedVia ? ` via ${resolvedVia}` : ''}`
+        : undefined;
+      const analyseNote = serverTimings?.gemini
+        ? `AI analysed in ${(serverTimings.gemini / 1000).toFixed(1)}s — ${total_extracted} raw event${total_extracted === 1 ? '' : 's'}`
+        : `${total_extracted} raw event${total_extracted === 1 ? '' : 's'} found`;
+      setStage('upload', 'done', uploadNote);
+      setStage('analyse', 'done', analyseNote);
 
       // Stage 4: finalise
       currentStage = 'save';
@@ -534,7 +558,7 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
               {tab === 'pdf' && 'Parsing the PDF and extracting events — multi-page documents take longer.'}
               {tab === 'text' && 'Analysing the pasted text for dated events.'}
               {tab === 'url' && 'Fetching the page and analysing it — login-walled posts may fail.'}
-              {' '}Will auto-cancel after {Math.round(FLYER_TIMEOUTS_MS[tab] / 1000)}s.
+              {' '}ETA learns from your past runs. Will auto-cancel after {Math.round(FLYER_TIMEOUTS_MS[tab] / 1000)}s.
             </p>
           )}
           {failedStage && !extracting && (
