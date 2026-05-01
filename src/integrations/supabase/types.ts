@@ -366,6 +366,7 @@ export type Database = {
           last_status: string | null
           last_used_firecrawl: boolean | null
           notes: string | null
+          source_type: string
           updated_at: string
           url: string
           venue_name: string
@@ -384,6 +385,7 @@ export type Database = {
           last_status?: string | null
           last_used_firecrawl?: boolean | null
           notes?: string | null
+          source_type?: string
           updated_at?: string
           url: string
           venue_name: string
@@ -402,6 +404,7 @@ export type Database = {
           last_status?: string | null
           last_used_firecrawl?: boolean | null
           notes?: string | null
+          source_type?: string
           updated_at?: string
           url?: string
           venue_name?: string
