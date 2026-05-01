@@ -148,11 +148,54 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
       setPreviewUrl(null);
       return;
     }
-    const limit = kind === 'image' ? MAX_IMAGE_BYTES : MAX_PDF_BYTES;
-    if (f.size > limit) {
-      toast.error(`File too large. Max ${Math.round(limit / 1024 / 1024)}MB.`);
+
+    // MIME / extension check
+    const accepted = kind === 'image' ? ACCEPTED_IMAGE_TYPES : ACCEPTED_PDF_TYPES;
+    const okType =
+      accepted.includes(f.type) ||
+      (kind === 'pdf' && f.name.toLowerCase().endsWith('.pdf')) ||
+      (kind === 'image' && /\.(jpe?g|png|webp)$/i.test(f.name));
+    if (!okType) {
+      toast.error(
+        kind === 'image'
+          ? 'Unsupported image type. Use JPG, PNG or WebP.'
+          : 'Unsupported file. Please upload a PDF.',
+      );
       return;
     }
+
+    // Reject empty files
+    if (f.size === 0) {
+      toast.error('That file is empty. Please choose a different file.');
+      return;
+    }
+
+    // Hard size limit — block upload entirely
+    const limit = kind === 'image' ? MAX_IMAGE_BYTES : MAX_PDF_BYTES;
+    if (f.size > limit) {
+      const overBy = formatMB(f.size - limit);
+      toast.error(`File too large (${formatMB(f.size)})`, {
+        description:
+          kind === 'image'
+            ? `Max ${formatMB(limit)} — yours is ${overBy} over. Try compressing with TinyPNG/Squoosh, exporting at 1600px wide, or screenshotting just the flyer.`
+            : `Max ${formatMB(limit)} — yours is ${overBy} over. Try compressing with iLovePDF/Smallpdf, or splitting out the flyer page only.`,
+        duration: 8000,
+      });
+      return;
+    }
+
+    // Soft warning — accepted, but slow / timeout risk
+    const warn = kind === 'image' ? WARN_IMAGE_BYTES : WARN_PDF_BYTES;
+    if (f.size > warn) {
+      toast.warning(`Large ${kind} (${formatMB(f.size)}) — extraction may be slow`, {
+        description:
+          kind === 'image'
+            ? 'Consider compressing with TinyPNG or Squoosh, or resizing to ~1600px wide before uploading.'
+            : 'Consider compressing with iLovePDF or Smallpdf, or extracting just the flyer page.',
+        duration: 6000,
+      });
+    }
+
     setFile(f);
     if (kind === 'image') {
       setPreviewUrl(URL.createObjectURL(f));
