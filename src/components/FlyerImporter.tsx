@@ -20,7 +20,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import {
   extractFlyer,
-  fileToDataUrl,
+  // fileToDataUrl no longer needed — we upload to storage and send a URL instead
   FlyerTimeoutError,
   FLYER_TIMEOUTS_MS,
   getFlyerEtaSeconds,
@@ -150,6 +150,7 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
   );
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [uploadedFlyerUrl, setUploadedFlyerUrl] = useState<string | null>(null);
   const [pastedText, setPastedText] = useState(initialDraft?.pastedText ?? '');
   const [sourceUrl, setSourceUrl] = useState(initialDraft?.sourceUrl ?? '');
   const [extracting, setExtracting] = useState(false);
@@ -233,6 +234,7 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
     setPastedText('');
     setFile(null);
     setPreviewUrl(null);
+    setUploadedFlyerUrl(null);
     setResumePrompt(null);
     clearDraft();
     toast.success('Draft cleared');
@@ -344,6 +346,7 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
     if (!f) {
       setFile(null);
       setPreviewUrl(null);
+      setUploadedFlyerUrl(null);
       return;
     }
 
@@ -395,6 +398,7 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
     }
 
     setFile(f);
+    setUploadedFlyerUrl(null);
     if (kind === 'image') {
       setPreviewUrl(URL.createObjectURL(f));
     } else {
@@ -442,16 +446,32 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
       currentStage = 'prepare';
       setStage('prepare', 'active');
 
-      if (tab === 'image') {
-        if (!file) throw new Error('Choose an image first');
-        const dataUrl = await fileToDataUrl(file);
-        setStage('prepare', 'done', `${(file.size / 1024 / 1024).toFixed(1)} MB ready`);
-        input = { kind: 'image', data: dataUrl, sourceUrl: trimmedSource };
-      } else if (tab === 'pdf') {
-        if (!file) throw new Error('Choose a PDF first');
-        const dataUrl = await fileToDataUrl(file);
-        setStage('prepare', 'done', `${(file.size / 1024 / 1024).toFixed(1)} MB ready`);
-        input = { kind: 'pdf', data: dataUrl, sourceUrl: trimmedSource };
+      if (tab === 'image' || tab === 'pdf') {
+        if (!file) throw new Error(`Choose ${tab === 'image' ? 'an image' : 'a PDF'} first`);
+        // Upload to storage first so we send a small URL to the edge function
+        // instead of a multi-MB base64 payload (which routinely caused timeouts).
+        // The uploaded file is reused at save time as the attached flyer.
+        let publicUrl = uploadedFlyerUrl;
+        if (!publicUrl) {
+          const ext = file.name.split('.').pop()?.toLowerCase() || (tab === 'pdf' ? 'pdf' : 'jpg');
+          const safeExt = ext.replace(/[^a-z0-9]/g, '').slice(0, 5) || 'bin';
+          const objectKey = `${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}.${safeExt}`;
+          const { error: uploadError } = await supabase.storage
+            .from('flyer-images')
+            .upload(objectKey, file, {
+              cacheControl: '31536000',
+              contentType: file.type || undefined,
+              upsert: false,
+            });
+          if (uploadError) {
+            throw new Error(`Upload failed: ${uploadError.message}`);
+          }
+          const { data: pub } = supabase.storage.from('flyer-images').getPublicUrl(objectKey);
+          publicUrl = pub.publicUrl;
+          setUploadedFlyerUrl(publicUrl);
+        }
+        setStage('prepare', 'done', `${(file.size / 1024 / 1024).toFixed(1)} MB uploaded`);
+        input = { kind: tab, data: publicUrl, sourceUrl: trimmedSource };
       } else if (tab === 'text') {
         if (pastedText.trim().length < 10) throw new Error('Paste the post text first');
         setStage('prepare', 'done', `${pastedText.trim().length} characters`);
@@ -592,10 +612,11 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
 
     // If the user uploaded an image or PDF, persist it to the public
     // flyer-images bucket so the original flyer can be attached to each
-    // saved event. Failure to upload should NOT block saving the events
-    // themselves — we just lose the image attachment.
-    let flyerImageUrl: string | null = null;
-    if (file && (tab === 'image' || tab === 'pdf')) {
+    // saved event. The file is normally already uploaded during extraction —
+    // only upload here as a fallback (e.g. the user reviewed a draft from
+    // an earlier session and never re-ran extraction).
+    let flyerImageUrl: string | null = uploadedFlyerUrl;
+    if (!flyerImageUrl && file && (tab === 'image' || tab === 'pdf')) {
       try {
         const ext = file.name.split('.').pop()?.toLowerCase() || (tab === 'pdf' ? 'pdf' : 'jpg');
         const safeExt = ext.replace(/[^a-z0-9]/g, '').slice(0, 5) || 'bin';
@@ -622,6 +643,7 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
     setCandidates([]);
     setFile(null);
     setPreviewUrl(null);
+    setUploadedFlyerUrl(null);
     setPastedText('');
     setSourceUrl('');
     clearDraft();
