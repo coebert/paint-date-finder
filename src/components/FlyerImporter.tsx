@@ -284,6 +284,32 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
         )}
       </Button>
 
+      {extracting && (
+        <div className="space-y-2 rounded-md border border-border bg-card/40 p-3">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>Elapsed: {formatTime(elapsed)}</span>
+            <span>
+              {elapsed < estimate
+                ? `~${formatTime(estimate - elapsed)} remaining`
+                : 'Almost done — finishing up...'}
+            </span>
+          </div>
+          <Progress
+            value={
+              estimate > 0
+                ? Math.min(99, Math.round((elapsed / estimate) * 100))
+                : 0
+            }
+          />
+          <p className="text-[11px] text-muted-foreground">
+            {tab === 'image' && 'Reading the flyer image with AI vision — large or busy flyers can take longer.'}
+            {tab === 'pdf' && 'Parsing the PDF and extracting events — multi-page documents take longer.'}
+            {tab === 'text' && 'Analysing the pasted text for dated events.'}
+            {tab === 'url' && 'Fetching the page and analysing it — login-walled posts may fail.'}
+          </p>
+        </div>
+      )}
+
       {candidates.length > 0 && (
         <div className="space-y-3 pt-2">
           <div className="flex items-center justify-between">
