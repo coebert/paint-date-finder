@@ -13,13 +13,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle, CheckCircle2, XCircle, Layers, Filter } from 'lucide-react';
+import { EVENT_TYPE_LABELS } from '@/types/events';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { format, parseISO, isValid } from 'date-fns';
 import { dedupeCandidates } from '@/lib/flyerDedupe';
 
-type GroupBy = 'venue' | 'source';
+type GroupBy = 'venue' | 'source' | 'event_type';
 
 interface Issue {
   field: string;
@@ -81,7 +82,9 @@ export default function AdminBulkImport() {
       const key =
         groupBy === 'venue'
           ? (row.s.venue_name?.trim() || 'Unknown venue')
-          : (row.s.source_url?.trim() || 'No source');
+          : groupBy === 'source'
+            ? (row.s.source_url?.trim() || 'No source')
+            : (EVENT_TYPE_LABELS[row.s.event_type] || 'Other');
       const list = map.get(key) ?? [];
       list.push(row);
       map.set(key, list);
@@ -253,6 +256,7 @@ export default function AdminBulkImport() {
                   <SelectContent>
                     <SelectItem value="venue">Venue</SelectItem>
                     <SelectItem value="source">Source URL</SelectItem>
+                    <SelectItem value="event_type">Event type</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
