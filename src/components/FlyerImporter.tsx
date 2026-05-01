@@ -451,6 +451,7 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
               {tab === 'pdf' && 'Parsing the PDF and extracting events — multi-page documents take longer.'}
               {tab === 'text' && 'Analysing the pasted text for dated events.'}
               {tab === 'url' && 'Fetching the page and analysing it — login-walled posts may fail.'}
+              {' '}Will auto-cancel after {Math.round(FLYER_TIMEOUTS_MS[tab] / 1000)}s.
             </p>
           )}
           {failedStage && !extracting && (
