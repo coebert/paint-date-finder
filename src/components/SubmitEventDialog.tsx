@@ -514,7 +514,10 @@ export function SubmitEventDialog({ open, onOpenChange }: SubmitEventDialogProps
             </div>
           </form>
         </Form>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
 }
+
