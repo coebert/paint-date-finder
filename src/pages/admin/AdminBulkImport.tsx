@@ -394,7 +394,27 @@ export default function AdminBulkImport() {
                   <AlertTriangle className="h-3 w-3" /> {totalInvalid} need editing
                 </Badge>
               )}
-              <div className="ml-auto flex flex-wrap gap-2">
+              <div className="ml-auto flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  <Label htmlFor="chunk-size" className="text-xs whitespace-nowrap">
+                    Batch size
+                  </Label>
+                  <Select
+                    value={String(chunkSize)}
+                    onValueChange={(v) => setChunkSize(Number(v))}
+                    disabled={publishing}
+                  >
+                    <SelectTrigger id="chunk-size" className="h-8 w-[80px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="25">25</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                      <SelectItem value="100">100</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <Button variant="outline" size="sm" onClick={selectAllValid} disabled={publishing}>
                   Select all valid
                 </Button>
@@ -425,6 +445,39 @@ export default function AdminBulkImport() {
                 </Button>
               </div>
             </div>
+
+            {progress && (
+              <div className="space-y-2 rounded-md border border-border/60 bg-muted/30 p-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium">
+                    {publishing
+                      ? `Publishing batch ${progress.currentBatch} of ${progress.totalBatches}…`
+                      : 'Bulk publish complete'}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {progress.processed} / {progress.total}
+                  </span>
+                </div>
+                <Progress
+                  value={progress.total ? (progress.processed / progress.total) * 100 : 0}
+                />
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <Badge variant="secondary" className="gap-1">
+                    <CheckCircle2 className="h-3 w-3" /> {progress.published} published
+                  </Badge>
+                  {progress.duplicates > 0 && (
+                    <Badge variant="outline" className="gap-1">
+                      {progress.duplicates} duplicates skipped
+                    </Badge>
+                  )}
+                  {progress.failed > 0 && (
+                    <Badge variant="destructive" className="gap-1">
+                      <AlertTriangle className="h-3 w-3" /> {progress.failed} failed
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
