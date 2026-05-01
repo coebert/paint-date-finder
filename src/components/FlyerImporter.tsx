@@ -202,7 +202,17 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
 
   const setStage = (key: StageKey, status: StageStatus, note?: string) => {
     setStages((prev) =>
-      prev.map((s) => (s.key === key ? { ...s, status, note: note ?? s.note } : s)),
+      prev.map((s) => {
+        if (s.key !== key) return s;
+        const next: StageState = { ...s, status, note: note ?? s.note };
+        if (status === 'active' && !s.startedAt) {
+          next.startedAt = Date.now();
+        }
+        if ((status === 'done' || status === 'failed') && s.startedAt && !s.durationMs) {
+          next.durationMs = Date.now() - s.startedAt;
+        }
+        return next;
+      }),
     );
   };
 
