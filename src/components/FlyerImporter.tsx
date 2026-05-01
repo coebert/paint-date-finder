@@ -39,8 +39,16 @@ export interface FlyerImporterProps {
   saving?: boolean;
 }
 
+// Hard limits — files above these are rejected outright.
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024; // 8 MB
 const MAX_PDF_BYTES = 10 * 1024 * 1024; // 10 MB
+// Soft warning thresholds — accepted, but we suggest compressing to avoid timeouts.
+const WARN_IMAGE_BYTES = 4 * 1024 * 1024; // 4 MB
+const WARN_PDF_BYTES = 5 * 1024 * 1024; // 5 MB
+const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const ACCEPTED_PDF_TYPES = ['application/pdf'];
+
+const formatMB = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 
 type EditableCandidate = ExtractedCandidate & {
   _id: string;
