@@ -509,17 +509,29 @@ Deno.serve(async (req) => {
     `[flyer] kind=${body.kind} user=${userId ?? "anon"} src=${body.sourceUrl ?? "-"}`,
   );
 
+  // Per-stage timings, returned to the client to refine its ETA model.
+  const t0 = Date.now();
+  const timings: Record<string, number> = {};
+  const time = async <T>(stage: string, fn: () => Promise<T>): Promise<T> => {
+    const s = Date.now();
+    try {
+      return await fn();
+    } finally {
+      timings[stage] = Date.now() - s;
+    }
+  };
+
   try {
     let candidates: Candidate[] = [];
+    let resolvedVia: string | undefined;
 
     if (body.kind === "image") {
       if (!body.data) throw new Error("image data is required");
-      // Accept either a data URL or a public https URL — Gemini handles both.
       const url = body.data;
-      candidates = await extractFromImage(LOVABLE_API_KEY, url, body.sourceUrl);
+      candidates = await time("gemini", () =>
+        extractFromImage(LOVABLE_API_KEY, url, body.sourceUrl));
     } else if (body.kind === "pdf") {
       if (!body.data) throw new Error("pdf data is required");
-      // Gemini accepts PDFs as image_url with a data URL when the mime is application/pdf.
       const messages = [
         { role: "system", content: systemPrompt() },
         {
@@ -536,22 +548,22 @@ Deno.serve(async (req) => {
           ],
         },
       ];
-      candidates = await callGemini(LOVABLE_API_KEY, messages);
+      candidates = await time("gemini", () =>
+        callGemini(LOVABLE_API_KEY, messages));
     } else if (body.kind === "text") {
       if (!body.text || body.text.trim().length < 10) {
         throw new Error("text must be at least 10 characters");
       }
-      candidates = await extractFromText(
-        LOVABLE_API_KEY,
-        body.text,
-        body.sourceUrl,
-      );
+      candidates = await time("gemini", () =>
+        extractFromText(LOVABLE_API_KEY, body.text!, body.sourceUrl));
     } else if (body.kind === "url") {
       const url = (body.sourceUrl || body.text || "").trim();
       if (!/^https?:\/\//i.test(url)) {
         throw new Error("a valid http(s) URL is required");
       }
-      const { text, via } = await resolveUrlText(url, FIRECRAWL_API_KEY);
+      const { text, via } = await time("scrape", () =>
+        resolveUrlText(url, FIRECRAWL_API_KEY));
+      resolvedVia = via;
       console.log(`[flyer] url resolved via=${via} chars=${text.length}`);
       if (text.length < 30) {
         const social = isFacebook(url) || isInstagram(url);
@@ -561,7 +573,8 @@ Deno.serve(async (req) => {
             : "Couldn't read enough content from that URL. Try the Text tab and paste the post directly, or use a screenshot.",
         );
       }
-      candidates = await extractFromText(LOVABLE_API_KEY, text, url);
+      candidates = await time("gemini", () =>
+        extractFromText(LOVABLE_API_KEY, text, url));
     } else {
       throw new Error(`unsupported kind: ${body.kind}`);
     }
@@ -574,12 +587,18 @@ Deno.serve(async (req) => {
       return true;
     });
 
+    timings.total = Date.now() - t0;
     console.log(
-      `[flyer] extracted=${candidates.length} kept=${cleaned.length}`,
+      `[flyer] extracted=${candidates.length} kept=${cleaned.length} timings=${JSON.stringify(timings)}`,
     );
 
     return new Response(
-      JSON.stringify({ candidates: cleaned, total_extracted: candidates.length }),
+      JSON.stringify({
+        candidates: cleaned,
+        total_extracted: candidates.length,
+        timings,
+        resolved_via: resolvedVia,
+      }),
       {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
