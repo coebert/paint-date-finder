@@ -537,15 +537,47 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
       let total_extracted = 0;
       let serverTimings: { scrape?: number; gemini?: number; total?: number } | undefined;
       let resolvedVia: string | undefined;
+      // Auto-retry on timeout with exponential backoff. Only timeouts get
+      // retried automatically — other errors (validation, 4xx, etc.) are
+      // surfaced immediately so the user can fix them.
+      const MAX_AUTO_RETRIES = 2; // 3 attempts total
+      const BACKOFFS_MS = [1500, 4000];
+      let retryAttempt = 0;
       try {
-        const res = await extractFlyer(input);
-        extracted = res.candidates;
-        total_extracted = res.total_extracted;
-        serverTimings = res.timings;
-        resolvedVia = res.resolved_via;
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          try {
+            const res = await extractFlyer(input);
+            extracted = res.candidates;
+            total_extracted = res.total_extracted;
+            serverTimings = res.timings;
+            resolvedVia = res.resolved_via;
+            break;
+          } catch (err) {
+            const isTimeout = err instanceof FlyerTimeoutError;
+            if (!isTimeout || retryAttempt >= MAX_AUTO_RETRIES) throw err;
+            const delay = BACKOFFS_MS[retryAttempt] ?? 4000;
+            retryAttempt += 1;
+            attemptRef.current += 1;
+            // Surface the retry in the analyse stage + a toast so the user
+            // can see what's happening rather than a silent re-run.
+            setStage('analyse', 'active', `Timed out — retry ${retryAttempt}/${MAX_AUTO_RETRIES} in ${Math.round(delay / 1000)}s`);
+            toast.warning(
+              `Extraction timed out — retrying (${retryAttempt}/${MAX_AUTO_RETRIES})`,
+              { description: `Waiting ${Math.round(delay / 1000)}s before next attempt.` },
+            );
+            await new Promise((r) => setTimeout(r, delay));
+            // Reset elapsed/start so the progress bar restarts for the new attempt.
+            startRef.current = Date.now();
+            setElapsed(0);
+            setEstimate(getFlyerEtaSeconds(tab, file?.size));
+            setStage('analyse', 'active', `Retrying (attempt ${retryAttempt + 1})…`);
+          }
+        }
       } finally {
         window.clearTimeout(analyseTimer);
       }
+
 
       // Record the real total elapsed for next-run ETA learning.
       const totalElapsedMs = Date.now() - startRef.current;
