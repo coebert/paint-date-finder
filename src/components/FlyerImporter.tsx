@@ -119,9 +119,18 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
 
   type StageKey = 'prepare' | 'upload' | 'analyse' | 'save';
   type StageStatus = 'pending' | 'active' | 'done' | 'failed';
-  type StageState = { key: StageKey; label: string; status: StageStatus; note?: string };
+  type StageState = {
+    key: StageKey;
+    label: string;
+    status: StageStatus;
+    note?: string;
+    startedAt?: number;
+    durationMs?: number;
+  };
   const [stages, setStages] = useState<StageState[]>([]);
   const [failedStage, setFailedStage] = useState<StageKey | null>(null);
+  // Tick to drive per-stage live elapsed display
+  const [stageTick, setStageTick] = useState(0);
 
   // Persist draft whenever the meaningful fields change.
   useEffect(() => {
