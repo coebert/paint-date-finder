@@ -373,29 +373,78 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
         )}
       </Button>
 
-      {extracting && (
-        <div className="space-y-2 rounded-md border border-border bg-card/40 p-3">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Elapsed: {formatTime(elapsed)}</span>
-            <span>
-              {elapsed < estimate
-                ? `~${formatTime(estimate - elapsed)} remaining`
-                : 'Almost done — finishing up...'}
-            </span>
-          </div>
-          <Progress
-            value={
-              estimate > 0
-                ? Math.min(99, Math.round((elapsed / estimate) * 100))
-                : 0
-            }
-          />
-          <p className="text-[11px] text-muted-foreground">
-            {tab === 'image' && 'Reading the flyer image with AI vision — large or busy flyers can take longer.'}
-            {tab === 'pdf' && 'Parsing the PDF and extracting events — multi-page documents take longer.'}
-            {tab === 'text' && 'Analysing the pasted text for dated events.'}
-            {tab === 'url' && 'Fetching the page and analysing it — login-walled posts may fail.'}
-          </p>
+      {(extracting || failedStage) && stages.length > 0 && (
+        <div className="space-y-3 rounded-md border border-border bg-card/40 p-3">
+          {extracting && (
+            <>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>Elapsed: {formatTime(elapsed)}</span>
+                <span>
+                  {elapsed < estimate
+                    ? `~${formatTime(estimate - elapsed)} remaining`
+                    : 'Almost done — finishing up...'}
+                </span>
+              </div>
+              <Progress
+                value={
+                  estimate > 0
+                    ? Math.min(99, Math.round((elapsed / estimate) * 100))
+                    : 0
+                }
+              />
+            </>
+          )}
+
+          <ol className="space-y-1.5">
+            {stages.map((s, idx) => {
+              const isActive = s.status === 'active';
+              const isDone = s.status === 'done';
+              const isFailed = s.status === 'failed';
+              return (
+                <li
+                  key={s.key}
+                  className={cn(
+                    'flex items-start gap-2 text-xs',
+                    isActive && 'text-foreground',
+                    isDone && 'text-muted-foreground',
+                    isFailed && 'text-destructive',
+                    !isActive && !isDone && !isFailed && 'text-muted-foreground/60',
+                  )}
+                >
+                  <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center">
+                    {isDone && <Check className="h-3.5 w-3.5 text-accent" />}
+                    {isActive && <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />}
+                    {isFailed && <XIcon className="h-3.5 w-3.5" />}
+                    {!isActive && !isDone && !isFailed && (
+                      <Circle className="h-2 w-2" />
+                    )}
+                  </span>
+                  <span className="flex-1">
+                    <span className="font-medium">
+                      {idx + 1}. {s.label}
+                    </span>
+                    {s.note && (
+                      <span className="ml-2 text-[11px] opacity-80">— {s.note}</span>
+                    )}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+
+          {extracting && (
+            <p className="text-[11px] text-muted-foreground">
+              {tab === 'image' && 'Reading the flyer image with AI vision — large or busy flyers can take longer.'}
+              {tab === 'pdf' && 'Parsing the PDF and extracting events — multi-page documents take longer.'}
+              {tab === 'text' && 'Analysing the pasted text for dated events.'}
+              {tab === 'url' && 'Fetching the page and analysing it — login-walled posts may fail.'}
+            </p>
+          )}
+          {failedStage && !extracting && (
+            <p className="text-[11px] text-destructive">
+              Failed at the highlighted step. Adjust the input and try again.
+            </p>
+          )}
         </div>
       )}
 
