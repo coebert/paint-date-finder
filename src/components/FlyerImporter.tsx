@@ -22,6 +22,8 @@ import {
   fileToDataUrl,
   FlyerTimeoutError,
   FLYER_TIMEOUTS_MS,
+  getFlyerEtaSeconds,
+  recordFlyerSample,
   type ExtractedCandidate,
   type FlyerInput,
 } from '@/lib/flyerExtraction';
