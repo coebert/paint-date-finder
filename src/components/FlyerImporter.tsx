@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2, Sparkles, Upload, ImageIcon, Link2, FileText, FileType } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import {
   extractFlyer,
