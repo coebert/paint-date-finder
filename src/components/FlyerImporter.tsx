@@ -568,6 +568,9 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
       window.clearTimeout(warnTimer);
       setSlowWarning(false);
       setExtracting(false);
+      // Run finished (success or failure) — clear the in-progress marker so
+      // we don't keep prompting to resume on next mount.
+      clearInProgress();
     }
   };
 
