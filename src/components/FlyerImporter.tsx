@@ -624,6 +624,16 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
               const isActive = s.status === 'active';
               const isDone = s.status === 'done';
               const isFailed = s.status === 'failed';
+              // Per-stage elapsed (live while active, frozen when done/failed)
+              // stageTick is referenced so React re-renders this row each tick.
+              void stageTick;
+              const stageElapsedMs = isActive && s.startedAt
+                ? Date.now() - s.startedAt
+                : s.durationMs ?? 0;
+              const stageElapsedSec = stageElapsedMs > 0
+                ? (stageElapsedMs / 1000).toFixed(stageElapsedMs < 10000 ? 1 : 0)
+                : null;
+              const slow = isActive && stageElapsedMs > 8000;
               return (
                 <li
                   key={s.key}
@@ -644,11 +654,28 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
                     )}
                   </span>
                   <span className="flex-1">
-                    <span className="font-medium">
-                      {idx + 1}. {s.label}
+                    <span className="flex flex-wrap items-center gap-x-2">
+                      <span className="font-medium">
+                        {idx + 1}. {s.label}
+                      </span>
+                      {stageElapsedSec && (
+                        <span
+                          className={cn(
+                            'rounded bg-muted/40 px-1.5 py-0.5 font-mono text-[10px] tabular-nums',
+                            isActive ? 'text-foreground' : 'text-muted-foreground/70',
+                          )}
+                        >
+                          {stageElapsedSec}s
+                        </span>
+                      )}
                     </span>
                     {s.note && (
-                      <span className="ml-2 text-[11px] opacity-80">— {s.note}</span>
+                      <span className="block text-[11px] opacity-80">{s.note}</span>
+                    )}
+                    {slow && !s.note && (
+                      <span className="block text-[11px] text-muted-foreground/80">
+                        Still working on this step…
+                      </span>
                     )}
                   </span>
                 </li>
