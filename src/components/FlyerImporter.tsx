@@ -322,6 +322,14 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
     setEstimate(estimateSeconds(tab, file));
     setFailedStage(null);
     setStages(buildStages(tab));
+    setSlowWarning(false);
+    setLastFailure(null);
+    attemptRef.current += 1;
+    // Soft warning at 70% of the hard timeout — gives users a heads-up
+    // before we auto-cancel, so they can decide to wait or prepare a fallback.
+    const hardTimeoutMs = FLYER_TIMEOUTS_MS[tab];
+    const warnAt = Math.round(hardTimeoutMs * 0.7);
+    const warnTimer = window.setTimeout(() => setSlowWarning(true), warnAt);
     let currentStage: StageKey = 'prepare';
     try {
       let input: FlyerInput;
