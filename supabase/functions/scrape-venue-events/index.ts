@@ -287,7 +287,7 @@ Deno.serve(async (req) => {
 
   const { data: sources, error: srcErr } = await supabase
     .from("trusted_venue_sources")
-    .select("id, venue_name, url")
+    .select("id, venue_name, url, source_type")
     .eq("is_active", true);
 
   if (srcErr) {
