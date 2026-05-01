@@ -244,6 +244,19 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
       // delay so the user can see progress through the steps.
       currentStage = 'upload';
       setStage('upload', 'active');
+
+      // Live ETA refinement: once the request is in flight, the prepare phase
+      // is done. Re-anchor the estimate so the bar reflects the *remaining*
+      // server-side work (analyse), not the whole pipeline.
+      const prepareElapsedMs = Date.now() - startRef.current;
+      const remainingEstSec = Math.max(
+        3,
+        getFlyerEtaSeconds(tab, file?.size) -
+          Math.round(prepareElapsedMs / 1000),
+      );
+      // Push the deadline outwards so the bar tracks elapsed + remaining.
+      setEstimate(Math.round(prepareElapsedMs / 1000) + remainingEstSec);
+
       const analyseTimer = window.setTimeout(() => {
         setStage('upload', 'done');
         setStage('analyse', 'active');
@@ -252,17 +265,32 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
 
       let extracted: ExtractedCandidate[] = [];
       let total_extracted = 0;
+      let serverTimings: { scrape?: number; gemini?: number; total?: number } | undefined;
+      let resolvedVia: string | undefined;
       try {
         const res = await extractFlyer(input);
         extracted = res.candidates;
         total_extracted = res.total_extracted;
+        serverTimings = res.timings;
+        resolvedVia = res.resolved_via;
       } finally {
         window.clearTimeout(analyseTimer);
       }
 
-      // Make sure both upload & analyse are marked done before save
-      setStage('upload', 'done');
-      setStage('analyse', 'done', `${total_extracted} raw event${total_extracted === 1 ? '' : 's'} found`);
+      // Record the real total elapsed for next-run ETA learning.
+      const totalElapsedMs = Date.now() - startRef.current;
+      recordFlyerSample(tab, totalElapsedMs);
+
+      // Make sure both upload & analyse are marked done before save, with
+      // real server-side timings shown if present.
+      const uploadNote = serverTimings?.scrape
+        ? `Scraped in ${(serverTimings.scrape / 1000).toFixed(1)}s${resolvedVia ? ` via ${resolvedVia}` : ''}`
+        : undefined;
+      const analyseNote = serverTimings?.gemini
+        ? `AI analysed in ${(serverTimings.gemini / 1000).toFixed(1)}s — ${total_extracted} raw event${total_extracted === 1 ? '' : 's'}`
+        : `${total_extracted} raw event${total_extracted === 1 ? '' : 's'} found`;
+      setStage('upload', 'done', uploadNote);
+      setStage('analyse', 'done', analyseNote);
 
       // Stage 4: finalise
       currentStage = 'save';
