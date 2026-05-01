@@ -34,6 +34,7 @@ export interface FlyerImporterProps {
   onSave: (
     candidates: (ExtractedCandidate & { _selected: true })[],
     sourceUrl: string | null,
+    flyerImageUrl: string | null,
   ) => Promise<void> | void;
   /** Label for the save button. */
   saveLabel?: string;
