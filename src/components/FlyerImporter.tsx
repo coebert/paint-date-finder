@@ -61,6 +61,17 @@ type EditableCandidate = ExtractedCandidate & {
 
 const DRAFT_STORAGE_KEY = 'flyer-importer-draft-v1';
 const DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+// If a mid-extraction marker is older than this, we assume the previous run
+// crashed/was abandoned rather than is still legitimately running elsewhere.
+const IN_PROGRESS_STALE_MS = 10 * 60 * 1000; // 10 minutes
+
+type InProgressMark = {
+  kind: 'image' | 'pdf' | 'text' | 'url';
+  startedAt: number;
+  // Helpful UI hints captured at start so we can describe the abandoned run
+  hadFile?: boolean;
+  fileName?: string;
+};
 
 type DraftV1 = {
   v: 1;
@@ -69,6 +80,7 @@ type DraftV1 = {
   sourceUrl: string;
   pastedText: string;
   candidates: EditableCandidate[];
+  inProgress?: InProgressMark | null;
 };
 
 function loadDraft(): DraftV1 | null {
@@ -84,6 +96,38 @@ function loadDraft(): DraftV1 | null {
     return parsed;
   } catch {
     return null;
+  }
+}
+
+function saveDraftPartial(patch: Partial<DraftV1>) {
+  try {
+    const existing = loadDraft();
+    const merged: DraftV1 = {
+      v: 1,
+      savedAt: Date.now(),
+      tab: patch.tab ?? existing?.tab ?? 'image',
+      sourceUrl: patch.sourceUrl ?? existing?.sourceUrl ?? '',
+      pastedText: patch.pastedText ?? existing?.pastedText ?? '',
+      candidates: patch.candidates ?? existing?.candidates ?? [],
+      inProgress:
+        patch.inProgress === undefined ? existing?.inProgress ?? null : patch.inProgress,
+    };
+    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(merged));
+  } catch {
+    /* quota / private mode — ignore */
+  }
+}
+
+function clearInProgress() {
+  try {
+    const existing = loadDraft();
+    if (!existing) return;
+    if (existing.inProgress) {
+      const next: DraftV1 = { ...existing, inProgress: null, savedAt: Date.now() };
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(next));
+    }
+  } catch {
+    /* ignore */
   }
 }
 
@@ -145,25 +189,39 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
   } | null>(null);
   const attemptRef = useRef(0);
 
-  // Persist draft whenever the meaningful fields change.
+  // Auto-resume: detect a previous run that started extraction but never
+  // finished (no candidates set, in-progress marker present and not stale).
+  const initialResume: InProgressMark | null = (() => {
+    const ip = initialDraft?.inProgress;
+    if (!ip) return null;
+    if (initialDraft?.candidates && initialDraft.candidates.length > 0) return null;
+    if (Date.now() - ip.startedAt > IN_PROGRESS_STALE_MS) return null;
+    return ip;
+  })();
+  const [resumePrompt, setResumePrompt] = useState<InProgressMark | null>(initialResume);
   useEffect(() => {
     // Don't persist while extraction is in flight to avoid storing partial state.
+    // (handleExtract writes its own in-progress marker explicitly.)
     if (extracting) return;
     try {
-      // If everything is empty, just clear the draft.
-      if (!sourceUrl && !pastedText && candidates.length === 0) {
+      // If everything is empty AND there's no in-progress marker to preserve,
+      // just clear the draft.
+      const existing = loadDraft();
+      if (
+        !sourceUrl &&
+        !pastedText &&
+        candidates.length === 0 &&
+        !existing?.inProgress
+      ) {
         localStorage.removeItem(DRAFT_STORAGE_KEY);
         return;
       }
-      const draft: DraftV1 = {
-        v: 1,
-        savedAt: Date.now(),
+      saveDraftPartial({
         tab,
         sourceUrl,
         pastedText,
         candidates,
-      };
-      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+      });
     } catch {
       /* quota exceeded / private mode — silently ignore */
     }
@@ -175,9 +233,37 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
     setPastedText('');
     setFile(null);
     setPreviewUrl(null);
+    setResumePrompt(null);
     clearDraft();
     toast.success('Draft cleared');
   };
+
+  const handleDismissResume = () => {
+    setResumePrompt(null);
+    clearInProgress();
+  };
+
+  const handleResumeExtraction = () => {
+    if (!resumePrompt) return;
+    // For image/PDF runs we cannot recover the original binary — the user
+    // must re-select the file before we can resume. Switch to that tab and
+    // surface a toast; the resume banner stays so they can click again.
+    if ((resumePrompt.kind === 'image' || resumePrompt.kind === 'pdf') && !file) {
+      setTab(resumePrompt.kind);
+      toast.info(
+        `Re-select your ${resumePrompt.kind.toUpperCase()}${resumePrompt.fileName ? ` (${resumePrompt.fileName})` : ''} to resume`,
+        { description: 'Files can\'t be saved between sessions — pick the same file and we\'ll continue.' },
+      );
+      return;
+    }
+    setTab(resumePrompt.kind);
+    setResumePrompt(null);
+    // Defer so the tab switch + state updates settle before extraction starts.
+    setTimeout(() => {
+      void handleExtract();
+    }, 0);
+  };
+
 
 
   const buildStages = (kind: 'image' | 'pdf' | 'text' | 'url'): StageState[] => {
@@ -327,6 +413,21 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
     setSlowWarning(false);
     setLastFailure(null);
     attemptRef.current += 1;
+    // Mark this run as in-progress in localStorage so a refresh / accidental
+    // navigation can offer to resume from this exact tab + inputs.
+    saveDraftPartial({
+      tab,
+      sourceUrl,
+      pastedText,
+      candidates: [],
+      inProgress: {
+        kind: tab,
+        startedAt: Date.now(),
+        hadFile: !!file,
+        fileName: file?.name,
+      },
+    });
+    setResumePrompt(null);
     // Soft warning at 70% of the hard timeout — gives users a heads-up
     // before we auto-cancel, so they can decide to wait or prepare a fallback.
     const hardTimeoutMs = FLYER_TIMEOUTS_MS[tab];
@@ -467,6 +568,9 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
       window.clearTimeout(warnTimer);
       setSlowWarning(false);
       setExtracting(false);
+      // Run finished (success or failure) — clear the in-progress marker so
+      // we don't keep prompting to resume on next mount.
+      clearInProgress();
     }
   };
 
@@ -527,6 +631,61 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
 
   return (
     <div className="space-y-4">
+      {resumePrompt && !extracting && (
+        <div className="flex flex-wrap items-start justify-between gap-3 rounded-md border border-accent/40 bg-accent/5 p-3 text-xs">
+          <div className="flex items-start gap-2">
+            <RotateCw className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+            <div className="space-y-1">
+              <p className="font-medium text-foreground">
+                Unfinished extraction detected
+              </p>
+              <p className="text-muted-foreground">
+                A {resumePrompt.kind.toUpperCase()} extraction started{' '}
+                {new Date(resumePrompt.startedAt).toLocaleString('en-GB', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: false,
+                })}{' '}
+                didn't finish.
+                {(resumePrompt.kind === 'image' || resumePrompt.kind === 'pdf') && (
+                  <>
+                    {' '}You'll need to re-select{' '}
+                    {resumePrompt.fileName ? (
+                      <span className="font-medium">{resumePrompt.fileName}</span>
+                    ) : (
+                      'the same file'
+                    )}{' '}
+                    to continue.
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="default"
+              className="h-7 text-xs"
+              onClick={handleResumeExtraction}
+            >
+              <RotateCw className="mr-1.5 h-3 w-3" />
+              Resume
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2 text-xs"
+              onClick={handleDismissResume}
+            >
+              Dismiss
+            </Button>
+          </div>
+        </div>
+      )}
       <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="image">
