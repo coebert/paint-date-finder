@@ -39,8 +39,16 @@ export interface FlyerImporterProps {
   saving?: boolean;
 }
 
+// Hard limits — files above these are rejected outright.
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024; // 8 MB
 const MAX_PDF_BYTES = 10 * 1024 * 1024; // 10 MB
+// Soft warning thresholds — accepted, but we suggest compressing to avoid timeouts.
+const WARN_IMAGE_BYTES = 4 * 1024 * 1024; // 4 MB
+const WARN_PDF_BYTES = 5 * 1024 * 1024; // 5 MB
+const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const ACCEPTED_PDF_TYPES = ['application/pdf'];
+
+const formatMB = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 
 type EditableCandidate = ExtractedCandidate & {
   _id: string;
@@ -140,11 +148,54 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
       setPreviewUrl(null);
       return;
     }
-    const limit = kind === 'image' ? MAX_IMAGE_BYTES : MAX_PDF_BYTES;
-    if (f.size > limit) {
-      toast.error(`File too large. Max ${Math.round(limit / 1024 / 1024)}MB.`);
+
+    // MIME / extension check
+    const accepted = kind === 'image' ? ACCEPTED_IMAGE_TYPES : ACCEPTED_PDF_TYPES;
+    const okType =
+      accepted.includes(f.type) ||
+      (kind === 'pdf' && f.name.toLowerCase().endsWith('.pdf')) ||
+      (kind === 'image' && /\.(jpe?g|png|webp)$/i.test(f.name));
+    if (!okType) {
+      toast.error(
+        kind === 'image'
+          ? 'Unsupported image type. Use JPG, PNG or WebP.'
+          : 'Unsupported file. Please upload a PDF.',
+      );
       return;
     }
+
+    // Reject empty files
+    if (f.size === 0) {
+      toast.error('That file is empty. Please choose a different file.');
+      return;
+    }
+
+    // Hard size limit — block upload entirely
+    const limit = kind === 'image' ? MAX_IMAGE_BYTES : MAX_PDF_BYTES;
+    if (f.size > limit) {
+      const overBy = formatMB(f.size - limit);
+      toast.error(`File too large (${formatMB(f.size)})`, {
+        description:
+          kind === 'image'
+            ? `Max ${formatMB(limit)} — yours is ${overBy} over. Try compressing with TinyPNG/Squoosh, exporting at 1600px wide, or screenshotting just the flyer.`
+            : `Max ${formatMB(limit)} — yours is ${overBy} over. Try compressing with iLovePDF/Smallpdf, or splitting out the flyer page only.`,
+        duration: 8000,
+      });
+      return;
+    }
+
+    // Soft warning — accepted, but slow / timeout risk
+    const warn = kind === 'image' ? WARN_IMAGE_BYTES : WARN_PDF_BYTES;
+    if (f.size > warn) {
+      toast.warning(`Large ${kind} (${formatMB(f.size)}) — extraction may be slow`, {
+        description:
+          kind === 'image'
+            ? 'Consider compressing with TinyPNG or Squoosh, or resizing to ~1600px wide before uploading.'
+            : 'Consider compressing with iLovePDF or Smallpdf, or extracting just the flyer page.',
+        duration: 6000,
+      });
+    }
+
     setFile(f);
     if (kind === 'image') {
       setPreviewUrl(URL.createObjectURL(f));
@@ -305,12 +356,29 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
         </TabsList>
 
         <TabsContent value="image" className="space-y-3 pt-3">
-          <Label>Flyer image (JPG / PNG / WebP, max 8MB)</Label>
+          <Label>Flyer image (JPG / PNG / WebP, max {formatMB(MAX_IMAGE_BYTES)})</Label>
           <Input
             type="file"
             accept="image/jpeg,image/png,image/webp"
             onChange={(e) => onFileChange(e.target.files?.[0] ?? null, 'image')}
           />
+          <p className="text-[11px] text-muted-foreground">
+            Recommended under {formatMB(WARN_IMAGE_BYTES)} (~1600px wide).
+            Compress with{' '}
+            <a href="https://tinypng.com" target="_blank" rel="noopener noreferrer" className="underline">
+              TinyPNG
+            </a>{' '}
+            or{' '}
+            <a href="https://squoosh.app" target="_blank" rel="noopener noreferrer" className="underline">
+              Squoosh
+            </a>{' '}
+            if it's larger.
+          </p>
+          {file && tab === 'image' && file.size > WARN_IMAGE_BYTES && (
+            <p className="text-xs text-amber-500">
+              ⚠ {formatMB(file.size)} is large — extraction may be slow or time out. Compressing first is recommended.
+            </p>
+          )}
           {previewUrl && (
             <img
               src={previewUrl}
@@ -321,16 +389,31 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
         </TabsContent>
 
         <TabsContent value="pdf" className="space-y-3 pt-3">
-          <Label>Flyer PDF (max 10MB)</Label>
+          <Label>Flyer PDF (max {formatMB(MAX_PDF_BYTES)})</Label>
           <Input
             type="file"
             accept="application/pdf"
             onChange={(e) => onFileChange(e.target.files?.[0] ?? null, 'pdf')}
           />
+          <p className="text-[11px] text-muted-foreground">
+            Recommended under {formatMB(WARN_PDF_BYTES)}. Compress with{' '}
+            <a href="https://www.ilovepdf.com/compress_pdf" target="_blank" rel="noopener noreferrer" className="underline">
+              iLovePDF
+            </a>{' '}
+            or extract just the flyer page if it's larger.
+          </p>
           {file && tab === 'pdf' && (
-            <p className="text-sm text-muted-foreground">{file.name}</p>
+            <p className="text-sm text-muted-foreground">
+              {file.name} ({formatMB(file.size)})
+            </p>
+          )}
+          {file && tab === 'pdf' && file.size > WARN_PDF_BYTES && (
+            <p className="text-xs text-amber-500">
+              ⚠ {formatMB(file.size)} is large — extraction may be slow or time out. Compressing first is recommended.
+            </p>
           )}
         </TabsContent>
+
 
         <TabsContent value="text" className="space-y-3 pt-3">
           <Label>Paste the Facebook / Instagram post text</Label>
