@@ -123,18 +123,12 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
     return () => window.clearInterval(id);
   }, [extracting]);
 
-  // Rough per-tab time estimates (seconds), adjusted by file size for image/pdf
+  // Adaptive ETA — uses real timings from past extractions when available,
+  // falls back to a sensible per-tab default otherwise.
   const estimateSeconds = (
     kind: 'image' | 'pdf' | 'text' | 'url',
     f: File | null,
-  ): number => {
-    if (kind === 'text') return 6;
-    if (kind === 'url') return 18;
-    if (!f) return kind === 'pdf' ? 35 : 25;
-    const mb = f.size / 1024 / 1024;
-    const base = kind === 'pdf' ? 25 : 15;
-    return Math.round(base + mb * 4);
-  };
+  ): number => getFlyerEtaSeconds(kind, f?.size);
 
   const formatTime = (s: number) => {
     if (s <= 0) return '0s';
