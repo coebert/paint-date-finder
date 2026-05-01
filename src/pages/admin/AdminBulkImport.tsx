@@ -64,6 +64,16 @@ export default function AdminBulkImport() {
     event_date: '',
   });
   const [savingEdit, setSavingEdit] = useState(false);
+  const [chunkSize, setChunkSize] = useState(25);
+  const [progress, setProgress] = useState<{
+    total: number;
+    processed: number;
+    published: number;
+    duplicates: number;
+    failed: number;
+    currentBatch: number;
+    totalBatches: number;
+  } | null>(null);
 
   const startEdit = (s: EventSubmission) => {
     setEditingId(s.id);
