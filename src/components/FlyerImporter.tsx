@@ -29,6 +29,7 @@ import {
   type FlyerInput,
 } from '@/lib/flyerExtraction';
 import { EVENT_TYPE_LABELS, type EventType } from '@/types/events';
+import { compressImageFile } from '@/lib/imageCompression';
 
 export interface FlyerImporterProps {
   /** Called once the user has reviewed candidates and clicks Save. */
@@ -371,14 +372,38 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
       return;
     }
 
-    // Hard size limit — block upload entirely
+    // For images, attempt client-side compression FIRST so oversized photos
+    // from phones (often 6-12 MB) become uploadable + extractable without
+    // asking the user to resize manually. PDFs we can't recompress in-browser.
+    let working = f;
+    if (kind === 'image') {
+      try {
+        const result = await compressImageFile(f, { maxDimension: 1800, quality: 0.82 });
+        if (result.compressed) {
+          working = result.file;
+          const savedPct = Math.round(
+            ((result.originalBytes - result.finalBytes) / result.originalBytes) * 100,
+          );
+          toast.success(
+            `Compressed image to ${formatMB(result.finalBytes)} (${savedPct}% smaller)`,
+            {
+              description: `Resized to ${result.width}×${result.height}px to speed up extraction.`,
+            },
+          );
+        }
+      } catch {
+        /* compression failed — fall through with original file */
+      }
+    }
+
+    // Hard size limit — block upload entirely (after compression for images)
     const limit = kind === 'image' ? MAX_IMAGE_BYTES : MAX_PDF_BYTES;
-    if (f.size > limit) {
-      const overBy = formatMB(f.size - limit);
-      toast.error(`File too large (${formatMB(f.size)})`, {
+    if (working.size > limit) {
+      const overBy = formatMB(working.size - limit);
+      toast.error(`File too large (${formatMB(working.size)})`, {
         description:
           kind === 'image'
-            ? `Max ${formatMB(limit)} — yours is ${overBy} over. Try compressing with TinyPNG/Squoosh, exporting at 1600px wide, or screenshotting just the flyer.`
+            ? `Max ${formatMB(limit)} — yours is ${overBy} over even after compression. Try cropping to just the flyer or exporting at a lower resolution.`
             : `Max ${formatMB(limit)} — yours is ${overBy} over. Try compressing with iLovePDF/Smallpdf, or splitting out the flyer page only.`,
         duration: 8000,
       });
@@ -387,20 +412,20 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
 
     // Soft warning — accepted, but slow / timeout risk
     const warn = kind === 'image' ? WARN_IMAGE_BYTES : WARN_PDF_BYTES;
-    if (f.size > warn) {
-      toast.warning(`Large ${kind} (${formatMB(f.size)}) — extraction may be slow`, {
+    if (working.size > warn) {
+      toast.warning(`Large ${kind} (${formatMB(working.size)}) — extraction may be slow`, {
         description:
           kind === 'image'
-            ? 'Consider compressing with TinyPNG or Squoosh, or resizing to ~1600px wide before uploading.'
+            ? 'Consider cropping to just the flyer area before uploading.'
             : 'Consider compressing with iLovePDF or Smallpdf, or extracting just the flyer page.',
         duration: 6000,
       });
     }
 
-    setFile(f);
+    setFile(working);
     setUploadedFlyerUrl(null);
     if (kind === 'image') {
-      setPreviewUrl(URL.createObjectURL(f));
+      setPreviewUrl(URL.createObjectURL(working));
     } else {
       setPreviewUrl(null);
     }
