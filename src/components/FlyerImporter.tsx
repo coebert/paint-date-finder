@@ -61,6 +61,17 @@ type EditableCandidate = ExtractedCandidate & {
 
 const DRAFT_STORAGE_KEY = 'flyer-importer-draft-v1';
 const DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+// If a mid-extraction marker is older than this, we assume the previous run
+// crashed/was abandoned rather than is still legitimately running elsewhere.
+const IN_PROGRESS_STALE_MS = 10 * 60 * 1000; // 10 minutes
+
+type InProgressMark = {
+  kind: 'image' | 'pdf' | 'text' | 'url';
+  startedAt: number;
+  // Helpful UI hints captured at start so we can describe the abandoned run
+  hadFile?: boolean;
+  fileName?: string;
+};
 
 type DraftV1 = {
   v: 1;
@@ -69,6 +80,7 @@ type DraftV1 = {
   sourceUrl: string;
   pastedText: string;
   candidates: EditableCandidate[];
+  inProgress?: InProgressMark | null;
 };
 
 function loadDraft(): DraftV1 | null {
@@ -84,6 +96,38 @@ function loadDraft(): DraftV1 | null {
     return parsed;
   } catch {
     return null;
+  }
+}
+
+function saveDraftPartial(patch: Partial<DraftV1>) {
+  try {
+    const existing = loadDraft();
+    const merged: DraftV1 = {
+      v: 1,
+      savedAt: Date.now(),
+      tab: patch.tab ?? existing?.tab ?? 'image',
+      sourceUrl: patch.sourceUrl ?? existing?.sourceUrl ?? '',
+      pastedText: patch.pastedText ?? existing?.pastedText ?? '',
+      candidates: patch.candidates ?? existing?.candidates ?? [],
+      inProgress:
+        patch.inProgress === undefined ? existing?.inProgress ?? null : patch.inProgress,
+    };
+    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(merged));
+  } catch {
+    /* quota / private mode — ignore */
+  }
+}
+
+function clearInProgress() {
+  try {
+    const existing = loadDraft();
+    if (!existing) return;
+    if (existing.inProgress) {
+      const next: DraftV1 = { ...existing, inProgress: null, savedAt: Date.now() };
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(next));
+    }
+  } catch {
+    /* ignore */
   }
 }
 
