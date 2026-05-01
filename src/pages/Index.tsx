@@ -82,7 +82,8 @@ export default function Index() {
         view={view} 
         onViewChange={setView} 
         onAddEvent={() => setAddDialogOpen(true)}
-        onSubmitEvent={() => setSubmitDialogOpen(true)}
+        onSubmitEvent={() => { setSubmitInitialTab('manual'); setSubmitDialogOpen(true); }}
+        onImportFlyer={() => { setSubmitInitialTab('flyer'); setSubmitDialogOpen(true); }}
       />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
