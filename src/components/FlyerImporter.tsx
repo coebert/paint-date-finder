@@ -150,6 +150,7 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
   );
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [uploadedFlyerUrl, setUploadedFlyerUrl] = useState<string | null>(null);
   const [pastedText, setPastedText] = useState(initialDraft?.pastedText ?? '');
   const [sourceUrl, setSourceUrl] = useState(initialDraft?.sourceUrl ?? '');
   const [extracting, setExtracting] = useState(false);
