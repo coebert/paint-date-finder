@@ -13,8 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Sparkles, Upload, ImageIcon, Link2, FileText, FileType } from 'lucide-react';
+import { Loader2, Sparkles, Upload, ImageIcon, Link2, FileText, FileType, Check, X as XIcon, Circle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import {
   extractFlyer,
@@ -55,6 +56,51 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
   const [estimate, setEstimate] = useState(0);
   const startRef = useRef<number>(0);
   const [candidates, setCandidates] = useState<EditableCandidate[]>([]);
+
+  type StageKey = 'prepare' | 'upload' | 'analyse' | 'save';
+  type StageStatus = 'pending' | 'active' | 'done' | 'failed';
+  type StageState = { key: StageKey; label: string; status: StageStatus; note?: string };
+  const [stages, setStages] = useState<StageState[]>([]);
+  const [failedStage, setFailedStage] = useState<StageKey | null>(null);
+
+  const buildStages = (kind: 'image' | 'pdf' | 'text' | 'url'): StageState[] => {
+    if (kind === 'image') {
+      return [
+        { key: 'prepare', label: 'Prepare image', status: 'pending' },
+        { key: 'upload', label: 'Upload to AI', status: 'pending' },
+        { key: 'analyse', label: 'OCR & parse events', status: 'pending' },
+        { key: 'save', label: 'Finalise results', status: 'pending' },
+      ];
+    }
+    if (kind === 'pdf') {
+      return [
+        { key: 'prepare', label: 'Prepare PDF', status: 'pending' },
+        { key: 'upload', label: 'Upload to AI', status: 'pending' },
+        { key: 'analyse', label: 'Extract & parse pages', status: 'pending' },
+        { key: 'save', label: 'Finalise results', status: 'pending' },
+      ];
+    }
+    if (kind === 'url') {
+      return [
+        { key: 'prepare', label: 'Validate URL', status: 'pending' },
+        { key: 'upload', label: 'Fetch page', status: 'pending' },
+        { key: 'analyse', label: 'Parse events', status: 'pending' },
+        { key: 'save', label: 'Finalise results', status: 'pending' },
+      ];
+    }
+    return [
+      { key: 'prepare', label: 'Prepare text', status: 'pending' },
+      { key: 'upload', label: 'Send to AI', status: 'pending' },
+      { key: 'analyse', label: 'Parse events', status: 'pending' },
+      { key: 'save', label: 'Finalise results', status: 'pending' },
+    ];
+  };
+
+  const setStage = (key: StageKey, status: StageStatus, note?: string) => {
+    setStages((prev) =>
+      prev.map((s) => (s.key === key ? { ...s, status, note: note ?? s.note } : s)),
+    );
+  };
 
   // Tick elapsed seconds while extracting
   useEffect(() => {
@@ -111,29 +157,68 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
     startRef.current = Date.now();
     setElapsed(0);
     setEstimate(estimateSeconds(tab, file));
+    setFailedStage(null);
+    setStages(buildStages(tab));
+    let currentStage: StageKey = 'prepare';
     try {
       let input: FlyerInput;
       const trimmedSource = sourceUrl.trim() || undefined;
 
+      // Stage 1: prepare input
+      currentStage = 'prepare';
+      setStage('prepare', 'active');
+
       if (tab === 'image') {
         if (!file) throw new Error('Choose an image first');
         const dataUrl = await fileToDataUrl(file);
+        setStage('prepare', 'done', `${(file.size / 1024 / 1024).toFixed(1)} MB ready`);
         input = { kind: 'image', data: dataUrl, sourceUrl: trimmedSource };
       } else if (tab === 'pdf') {
         if (!file) throw new Error('Choose a PDF first');
         const dataUrl = await fileToDataUrl(file);
+        setStage('prepare', 'done', `${(file.size / 1024 / 1024).toFixed(1)} MB ready`);
         input = { kind: 'pdf', data: dataUrl, sourceUrl: trimmedSource };
       } else if (tab === 'text') {
         if (pastedText.trim().length < 10) throw new Error('Paste the post text first');
+        setStage('prepare', 'done', `${pastedText.trim().length} characters`);
         input = { kind: 'text', text: pastedText, sourceUrl: trimmedSource };
       } else {
         if (!/^https?:\/\//i.test(sourceUrl.trim())) {
           throw new Error('Enter a valid http(s) URL');
         }
+        setStage('prepare', 'done', sourceUrl.trim().slice(0, 60));
         input = { kind: 'url', sourceUrl: sourceUrl.trim() };
       }
 
-      const { candidates: extracted, total_extracted } = await extractFlyer(input);
+      // Stage 2 & 3: upload + analyse — both happen inside the single edge call,
+      // so we mark upload active immediately and flip to analyse after a short
+      // delay so the user can see progress through the steps.
+      currentStage = 'upload';
+      setStage('upload', 'active');
+      const analyseTimer = window.setTimeout(() => {
+        setStage('upload', 'done');
+        setStage('analyse', 'active');
+        currentStage = 'analyse';
+      }, 1200);
+
+      let extracted: ExtractedCandidate[] = [];
+      let total_extracted = 0;
+      try {
+        const res = await extractFlyer(input);
+        extracted = res.candidates;
+        total_extracted = res.total_extracted;
+      } finally {
+        window.clearTimeout(analyseTimer);
+      }
+
+      // Make sure both upload & analyse are marked done before save
+      setStage('upload', 'done');
+      setStage('analyse', 'done', `${total_extracted} raw event${total_extracted === 1 ? '' : 's'} found`);
+
+      // Stage 4: finalise
+      currentStage = 'save';
+      setStage('save', 'active');
+
       if (extracted.length === 0) {
         if (total_extracted > 0) {
           toast.warning(
@@ -152,8 +237,11 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
           _selected: true,
         })),
       );
+      setStage('save', 'done', `${extracted.length} ready to review`);
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Extraction failed';
+      setFailedStage(currentStage);
+      setStage(currentStage, 'failed', msg);
       toast.error(msg);
     } finally {
       setExtracting(false);
@@ -285,29 +373,78 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
         )}
       </Button>
 
-      {extracting && (
-        <div className="space-y-2 rounded-md border border-border bg-card/40 p-3">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Elapsed: {formatTime(elapsed)}</span>
-            <span>
-              {elapsed < estimate
-                ? `~${formatTime(estimate - elapsed)} remaining`
-                : 'Almost done — finishing up...'}
-            </span>
-          </div>
-          <Progress
-            value={
-              estimate > 0
-                ? Math.min(99, Math.round((elapsed / estimate) * 100))
-                : 0
-            }
-          />
-          <p className="text-[11px] text-muted-foreground">
-            {tab === 'image' && 'Reading the flyer image with AI vision — large or busy flyers can take longer.'}
-            {tab === 'pdf' && 'Parsing the PDF and extracting events — multi-page documents take longer.'}
-            {tab === 'text' && 'Analysing the pasted text for dated events.'}
-            {tab === 'url' && 'Fetching the page and analysing it — login-walled posts may fail.'}
-          </p>
+      {(extracting || failedStage) && stages.length > 0 && (
+        <div className="space-y-3 rounded-md border border-border bg-card/40 p-3">
+          {extracting && (
+            <>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>Elapsed: {formatTime(elapsed)}</span>
+                <span>
+                  {elapsed < estimate
+                    ? `~${formatTime(estimate - elapsed)} remaining`
+                    : 'Almost done — finishing up...'}
+                </span>
+              </div>
+              <Progress
+                value={
+                  estimate > 0
+                    ? Math.min(99, Math.round((elapsed / estimate) * 100))
+                    : 0
+                }
+              />
+            </>
+          )}
+
+          <ol className="space-y-1.5">
+            {stages.map((s, idx) => {
+              const isActive = s.status === 'active';
+              const isDone = s.status === 'done';
+              const isFailed = s.status === 'failed';
+              return (
+                <li
+                  key={s.key}
+                  className={cn(
+                    'flex items-start gap-2 text-xs',
+                    isActive && 'text-foreground',
+                    isDone && 'text-muted-foreground',
+                    isFailed && 'text-destructive',
+                    !isActive && !isDone && !isFailed && 'text-muted-foreground/60',
+                  )}
+                >
+                  <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center">
+                    {isDone && <Check className="h-3.5 w-3.5 text-accent" />}
+                    {isActive && <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />}
+                    {isFailed && <XIcon className="h-3.5 w-3.5" />}
+                    {!isActive && !isDone && !isFailed && (
+                      <Circle className="h-2 w-2" />
+                    )}
+                  </span>
+                  <span className="flex-1">
+                    <span className="font-medium">
+                      {idx + 1}. {s.label}
+                    </span>
+                    {s.note && (
+                      <span className="ml-2 text-[11px] opacity-80">— {s.note}</span>
+                    )}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+
+          {extracting && (
+            <p className="text-[11px] text-muted-foreground">
+              {tab === 'image' && 'Reading the flyer image with AI vision — large or busy flyers can take longer.'}
+              {tab === 'pdf' && 'Parsing the PDF and extracting events — multi-page documents take longer.'}
+              {tab === 'text' && 'Analysing the pasted text for dated events.'}
+              {tab === 'url' && 'Fetching the page and analysing it — login-walled posts may fail.'}
+            </p>
+          )}
+          {failedStage && !extracting && (
+            <p className="text-[11px] text-destructive">
+              Failed at the highlighted step. Adjust the input and try again.
+            </p>
+          )}
         </div>
       )}
 
