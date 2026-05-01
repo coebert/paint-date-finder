@@ -33,7 +33,10 @@ import { EventType, EVENT_TYPE_LABELS } from '@/types/events';
 import { useCreateSubmission } from '@/hooks/useSubmissions';
 import { useVenues } from '@/hooks/useEvents';
 import { useVenueDetails } from '@/hooks/useVenueDetails';
-import { Send, CheckCircle, Plus } from 'lucide-react';
+import { Send, CheckCircle, Plus, Sparkles, Edit3 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { FlyerImporter } from '@/components/FlyerImporter';
+import { toast } from 'sonner';
 
 const ADD_NEW_VENUE = '__add_new__';
 
