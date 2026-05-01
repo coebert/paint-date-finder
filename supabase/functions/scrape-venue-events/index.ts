@@ -530,17 +530,5 @@ async function runScrape(
     })
     .eq("id", runId);
 
-  return new Response(
-    JSON.stringify({
-      runId,
-      status,
-      sources_processed: processed,
-      candidates_created: candidatesCreated,
-      errors,
-    }),
-    {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    },
-  );
-});
+}
+
