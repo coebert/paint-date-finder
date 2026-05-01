@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2, Sparkles, Upload, ImageIcon, Link2, FileText, FileType } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import {
   extractFlyer,
@@ -50,7 +51,40 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
   const [pastedText, setPastedText] = useState('');
   const [sourceUrl, setSourceUrl] = useState('');
   const [extracting, setExtracting] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const [estimate, setEstimate] = useState(0);
+  const startRef = useRef<number>(0);
   const [candidates, setCandidates] = useState<EditableCandidate[]>([]);
+
+  // Tick elapsed seconds while extracting
+  useEffect(() => {
+    if (!extracting) return;
+    const id = window.setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startRef.current) / 1000));
+    }, 500);
+    return () => window.clearInterval(id);
+  }, [extracting]);
+
+  // Rough per-tab time estimates (seconds), adjusted by file size for image/pdf
+  const estimateSeconds = (
+    kind: 'image' | 'pdf' | 'text' | 'url',
+    f: File | null,
+  ): number => {
+    if (kind === 'text') return 6;
+    if (kind === 'url') return 18;
+    if (!f) return kind === 'pdf' ? 35 : 25;
+    const mb = f.size / 1024 / 1024;
+    const base = kind === 'pdf' ? 25 : 15;
+    return Math.round(base + mb * 4);
+  };
+
+  const formatTime = (s: number) => {
+    if (s <= 0) return '0s';
+    if (s < 60) return `${s}s`;
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    return r ? `${m}m ${r}s` : `${m}m`;
+  };
 
   const onFileChange = async (f: File | null, kind: 'image' | 'pdf') => {
     if (!f) {
@@ -74,6 +108,9 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
   const handleExtract = async () => {
     setExtracting(true);
     setCandidates([]);
+    startRef.current = Date.now();
+    setElapsed(0);
+    setEstimate(estimateSeconds(tab, file));
     try {
       let input: FlyerInput;
       const trimmedSource = sourceUrl.trim() || undefined;
@@ -247,6 +284,32 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
           </>
         )}
       </Button>
+
+      {extracting && (
+        <div className="space-y-2 rounded-md border border-border bg-card/40 p-3">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>Elapsed: {formatTime(elapsed)}</span>
+            <span>
+              {elapsed < estimate
+                ? `~${formatTime(estimate - elapsed)} remaining`
+                : 'Almost done — finishing up...'}
+            </span>
+          </div>
+          <Progress
+            value={
+              estimate > 0
+                ? Math.min(99, Math.round((elapsed / estimate) * 100))
+                : 0
+            }
+          />
+          <p className="text-[11px] text-muted-foreground">
+            {tab === 'image' && 'Reading the flyer image with AI vision — large or busy flyers can take longer.'}
+            {tab === 'pdf' && 'Parsing the PDF and extracting events — multi-page documents take longer.'}
+            {tab === 'text' && 'Analysing the pasted text for dated events.'}
+            {tab === 'url' && 'Fetching the page and analysing it — login-walled posts may fail.'}
+          </p>
+        </div>
+      )}
 
       {candidates.length > 0 && (
         <div className="space-y-3 pt-2">
