@@ -20,7 +20,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import {
   extractFlyer,
-  fileToDataUrl,
+  // fileToDataUrl no longer needed — we upload to storage and send a URL instead
   FlyerTimeoutError,
   FLYER_TIMEOUTS_MS,
   getFlyerEtaSeconds,
