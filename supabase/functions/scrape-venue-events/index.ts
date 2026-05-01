@@ -25,7 +25,12 @@ type Candidate = {
   end_time?: string | null;
   price_info?: string | null;
   booking_url?: string | null;
+  /** Only populated for facebook_group sources where the post mentions a specific venue. */
+  venue_name?: string | null;
+  venue_location?: string | null;
 };
+
+type SourceType = "venue" | "facebook_group";
 
 const SCRAPER_EMAIL = "scraper@findawalkon.local";
 
@@ -101,18 +106,69 @@ async function extractCandidates(
   sourceUrl: string,
   pageText: string,
   apiKey: string,
+  sourceType: SourceType,
 ): Promise<Candidate[]> {
   const today = new Date().toISOString().slice(0, 10);
-  const systemPrompt =
-    "You extract upcoming UK paintball events from venue website text. " +
-    "Only return events with an unambiguous, explicitly stated date. " +
-    "Never guess or infer dates. If no concrete dates are present, return an empty array.";
+
+  const isGroup = sourceType === "facebook_group";
+
+  const systemPrompt = isGroup
+    ? "You extract upcoming UK paintball events from a Facebook group feed where many different venues post adverts and flyers. " +
+      "Each event may be hosted at a different venue. Extract the venue name as stated in the post. " +
+      "Only return events with an unambiguous, explicitly stated date AND a clearly identified venue. " +
+      "Never guess dates or venues. If either is missing, skip that event."
+    : "You extract upcoming UK paintball events from venue website text. " +
+      "Only return events with an unambiguous, explicitly stated date. " +
+      "Never guess or infer dates. If no concrete dates are present, return an empty array.";
+
+  const contextLine = isGroup
+    ? `Source: Facebook group "${venueName}"\nSource URL: ${sourceUrl}\nToday: ${today}\n\n` +
+      `Extract upcoming events (date >= today, within next 12 months) advertised in posts on this group. ` +
+      `For each event, set venue_name to the venue hosting it (as named in the post). ` +
+      `Set venue_location to the town/county if mentioned.\n`
+    : `Venue: ${venueName}\nSource URL: ${sourceUrl}\nToday: ${today}\n\n` +
+      `Extract upcoming events (date >= today, within next 12 months) from this page text.\n`;
 
   const userPrompt =
-    `Venue: ${venueName}\nSource URL: ${sourceUrl}\nToday: ${today}\n\n` +
-    `Extract upcoming events (date >= today, within next 12 months) from this page text.\n` +
+    contextLine +
     `Return strict JSON via the tool call. Use ISO YYYY-MM-DD for dates and HH:MM (24h) for times.\n\n` +
     `--- PAGE TEXT ---\n${pageText}`;
+
+  const candidateProperties: Record<string, unknown> = {
+    title: { type: "string" },
+    description: { type: "string" },
+    event_type: {
+      type: "string",
+      enum: [
+        "walk_on",
+        "big_game",
+        "competition",
+        "tournament",
+        "speedball",
+        "scenario",
+        "mag_fed",
+        "other",
+      ],
+    },
+    event_date: { type: "string", description: "ISO date YYYY-MM-DD" },
+    start_time: { type: "string", description: "HH:MM 24h" },
+    end_time: { type: "string", description: "HH:MM 24h" },
+    price_info: { type: "string" },
+    booking_url: { type: "string" },
+  };
+  const required = ["title", "event_type", "event_date"];
+
+  if (isGroup) {
+    candidateProperties.venue_name = {
+      type: "string",
+      description: "Name of the paintball venue hosting this event",
+    };
+    candidateProperties.venue_location = {
+      type: "string",
+      description: "Town, county, or region of the venue if stated",
+    };
+    required.push("venue_name");
+  }
 
   const body = {
     model: "google/gemini-3-flash-preview",
@@ -134,32 +190,8 @@ async function extractCandidates(
                 type: "array",
                 items: {
                   type: "object",
-                  properties: {
-                    title: { type: "string" },
-                    description: { type: "string" },
-                    event_type: {
-                      type: "string",
-                      enum: [
-                        "walk_on",
-                        "big_game",
-                        "competition",
-                        "tournament",
-                        "speedball",
-                        "scenario",
-                        "mag_fed",
-                        "other",
-                      ],
-                    },
-                    event_date: {
-                      type: "string",
-                      description: "ISO date YYYY-MM-DD",
-                    },
-                    start_time: { type: "string", description: "HH:MM 24h" },
-                    end_time: { type: "string", description: "HH:MM 24h" },
-                    price_info: { type: "string" },
-                    booking_url: { type: "string" },
-                  },
-                  required: ["title", "event_type", "event_date"],
+                  properties: candidateProperties,
+                  required,
                   additionalProperties: false,
                 },
               },
@@ -255,7 +287,7 @@ Deno.serve(async (req) => {
 
   const { data: sources, error: srcErr } = await supabase
     .from("trusted_venue_sources")
-    .select("id, venue_name, url")
+    .select("id, venue_name, url, source_type")
     .eq("is_active", true);
 
   if (srcErr) {
@@ -314,15 +346,21 @@ Deno.serve(async (req) => {
         `[scrape] source="${source.venue_name}" url="${source.url}" fetched_chars=${textLen} firecrawl=${usedFirecrawl}`,
       );
 
+      const sourceType: SourceType =
+        (source as { source_type?: string }).source_type === "facebook_group"
+          ? "facebook_group"
+          : "venue";
+
       const candidates = await extractCandidates(
         source.venue_name,
         source.url,
         text,
         LOVABLE_API_KEY,
+        sourceType,
       );
       returned = candidates.length;
       console.log(
-        `[scrape] source="${source.venue_name}" ai_returned=${returned}`,
+        `[scrape] source="${source.venue_name}" type=${sourceType} ai_returned=${returned}`,
       );
 
       for (const c of candidates) {
@@ -336,6 +374,18 @@ Deno.serve(async (req) => {
           continue;
         }
 
+        // For facebook_group sources, the venue is per-event (extracted by AI).
+        // For venue sources, fall back to the source's venue_name.
+        const effectiveVenue = sourceType === "facebook_group"
+          ? (c.venue_name?.trim() || "")
+          : source.venue_name;
+
+        if (sourceType === "facebook_group" && !effectiveVenue) {
+          // Skip group posts where the AI couldn't pin down a venue.
+          invalidDate++;
+          continue;
+        }
+
         // Dedupe: skip if same venue+date+type already in events or pending/approved
         // submissions. We intentionally ignore title because the AI returns slight
         // title variations between runs ("Walk-on" vs "Walk on April"), which would
@@ -345,7 +395,7 @@ Deno.serve(async (req) => {
             supabase
               .from("events")
               .select("id")
-              .eq("venue_name", source.venue_name)
+              .ilike("venue_name", effectiveVenue)
               .eq("event_date", c.event_date)
               .eq("event_type", c.event_type)
               .limit(1)
@@ -353,7 +403,7 @@ Deno.serve(async (req) => {
             supabase
               .from("event_submissions")
               .select("id")
-              .eq("venue_name", source.venue_name)
+              .ilike("venue_name", effectiveVenue)
               .eq("event_date", c.event_date)
               .eq("event_type", c.event_type)
               .in("status", ["pending", "approved"])
@@ -365,14 +415,18 @@ Deno.serve(async (req) => {
           continue;
         }
 
+        const submitterLabel = sourceType === "facebook_group"
+          ? `Auto-scraper (FB group: ${source.venue_name})`
+          : `Auto-scraper (${source.venue_name})`;
+
         const { error: insErr } = await supabase
           .from("event_submissions")
           .insert({
             title: c.title.slice(0, 200),
             description: c.description?.slice(0, 2000) ?? null,
             event_type: c.event_type,
-            venue_name: source.venue_name,
-            venue_location: null,
+            venue_name: effectiveVenue.slice(0, 200),
+            venue_location: c.venue_location?.slice(0, 200) ?? null,
             event_date: c.event_date,
             start_time: c.start_time || null,
             end_time: c.end_time || null,
@@ -380,7 +434,7 @@ Deno.serve(async (req) => {
             price_info: c.price_info?.slice(0, 100) ?? null,
             source_url: source.url,
             submitter_email: SCRAPER_EMAIL,
-            submitter_name: `Auto-scraper (${source.venue_name})`,
+            submitter_name: submitterLabel,
             status: "pending",
           });
         if (insErr) {
