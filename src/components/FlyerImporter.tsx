@@ -20,6 +20,8 @@ import { toast } from 'sonner';
 import {
   extractFlyer,
   fileToDataUrl,
+  FlyerTimeoutError,
+  FLYER_TIMEOUTS_MS,
   type ExtractedCandidate,
   type FlyerInput,
 } from '@/lib/flyerExtraction';
