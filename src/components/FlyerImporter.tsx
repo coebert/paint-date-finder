@@ -439,21 +439,31 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
       setStage('save', 'done', `${extracted.length} ready to review`);
     } catch (e) {
       const isTimeout = e instanceof FlyerTimeoutError;
+      const timeoutMs = isTimeout ? (e as FlyerTimeoutError).timeoutMs : undefined;
       const friendly = isTimeout
-        ? `Extraction took longer than ${Math.round((e as FlyerTimeoutError).timeoutMs / 1000)}s and was cancelled. Try a smaller or clearer file, paste the post text instead, or retry.`
+        ? `Extraction took longer than ${Math.round((timeoutMs ?? hardTimeoutMs) / 1000)}s and was cancelled.`
         : e instanceof Error
           ? e.message
           : 'Extraction failed';
       setFailedStage(currentStage);
-      setStage(currentStage, 'failed', isTimeout ? 'Timed out — cancelled' : friendly);
+      setStage(currentStage, 'failed', isTimeout ? 'Timed out — auto-cancelled' : friendly);
+      setLastFailure({
+        kind: tab,
+        isTimeout,
+        timeoutMs,
+        message: friendly,
+        attempt: attemptRef.current,
+      });
       if (isTimeout) {
-        toast.error('Flyer extraction timed out', {
-          description: 'The AI took too long to respond. Try a smaller image, fewer pages, or paste the text directly.',
+        toast.error('Extraction timed out', {
+          description: 'See the panel below for retry options and faster alternatives.',
         });
       } else {
         toast.error(friendly);
       }
     } finally {
+      window.clearTimeout(warnTimer);
+      setSlowWarning(false);
       setExtracting(false);
     }
   };
