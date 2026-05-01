@@ -1,5 +1,6 @@
 import { PaintballEvent } from '@/types/events';
 import { EventTypeBadge } from './EventTypeBadge';
+import { EventSourceBadge } from './EventSourceBadge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, MapPin, Clock, ExternalLink, Pencil, ShieldCheck, ShieldAlert, AlertTriangle } from 'lucide-react';
