@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -63,6 +64,16 @@ export default function AdminBulkImport() {
     event_date: '',
   });
   const [savingEdit, setSavingEdit] = useState(false);
+  const [chunkSize, setChunkSize] = useState(25);
+  const [progress, setProgress] = useState<{
+    total: number;
+    processed: number;
+    published: number;
+    duplicates: number;
+    failed: number;
+    currentBatch: number;
+    totalBatches: number;
+  } | null>(null);
 
   const startEdit = (s: EventSubmission) => {
     setEditingId(s.id);
@@ -169,84 +180,131 @@ export default function AdminBulkImport() {
       toast.error('Select at least one valid submission');
       return;
     }
+    const size = Math.max(1, Math.min(100, chunkSize || 25));
+    const totalBatches = Math.ceil(rows.length / size);
     setPublishing(true);
+    setProgress({
+      total: rows.length,
+      processed: 0,
+      published: 0,
+      duplicates: 0,
+      failed: 0,
+      currentBatch: 0,
+      totalBatches,
+    });
+
+    let totalPublished = 0;
+    let totalDuplicates = 0;
+    let totalFailed = 0;
+
     try {
-      const candidates = rows.map((r) => ({
-        title: r.s.title,
-        description: r.s.description ?? undefined,
-        event_type: r.s.event_type,
-        event_date: r.s.event_date,
-        start_time: r.s.start_time ?? undefined,
-        end_time: r.s.end_time ?? undefined,
-        price_info: r.s.price_info ?? undefined,
-        booking_url: r.s.booking_url ?? undefined,
-        venue_name: r.s.venue_name,
-        venue_location: r.s.venue_location ?? undefined,
-      }));
+      for (let i = 0; i < rows.length; i += size) {
+        const batch = rows.slice(i, i + size);
+        const batchIndex = Math.floor(i / size) + 1;
+        setProgress((p) => (p ? { ...p, currentBatch: batchIndex } : p));
 
-      const { unique, duplicates } = await dedupeCandidates(candidates, 'events');
-      const uniqueKeys = new Set(
-        unique.map((c) => `${c.title}|${c.event_date}|${c.venue_name ?? ''}`),
-      );
-      const toPublish = rows.filter((r) =>
-        uniqueKeys.has(`${r.s.title}|${r.s.event_date}|${r.s.venue_name ?? ''}`),
-      );
-      const dupRows = rows.filter(
-        (r) => !uniqueKeys.has(`${r.s.title}|${r.s.event_date}|${r.s.venue_name ?? ''}`),
-      );
+        try {
+          const candidates = batch.map((r) => ({
+            title: r.s.title,
+            description: r.s.description ?? undefined,
+            event_type: r.s.event_type,
+            event_date: r.s.event_date,
+            start_time: r.s.start_time ?? undefined,
+            end_time: r.s.end_time ?? undefined,
+            price_info: r.s.price_info ?? undefined,
+            booking_url: r.s.booking_url ?? undefined,
+            venue_name: r.s.venue_name,
+            venue_location: r.s.venue_location ?? undefined,
+          }));
 
-      if (toPublish.length > 0) {
-        const eventRows = toPublish.map((r) => ({
-          title: r.s.title.slice(0, 200),
-          description: r.s.description?.slice(0, 2000) ?? null,
-          event_type: r.s.event_type,
-          venue_name: r.s.venue_name.slice(0, 200),
-          venue_location: r.s.venue_location?.slice(0, 200) ?? null,
-          event_date: r.s.event_date,
-          start_time: r.s.start_time || null,
-          end_time: r.s.end_time || null,
-          booking_url: r.s.booking_url || null,
-          price_info: r.s.price_info?.slice(0, 100) ?? null,
-          source_url: r.s.source_url || null,
-          is_verified: true,
-        }));
-        const { error: insertErr } = await supabase.from('events').insert(eventRows);
-        if (insertErr) throw insertErr;
+          const { unique } = await dedupeCandidates(candidates, 'events');
+          const uniqueKeys = new Set(
+            unique.map((c) => `${c.title}|${c.event_date}|${c.venue_name ?? ''}`),
+          );
+          const toPublish = batch.filter((r) =>
+            uniqueKeys.has(`${r.s.title}|${r.s.event_date}|${r.s.venue_name ?? ''}`),
+          );
+          const dupRows = batch.filter(
+            (r) => !uniqueKeys.has(`${r.s.title}|${r.s.event_date}|${r.s.venue_name ?? ''}`),
+          );
 
-        const ids = toPublish.map((r) => r.s.id);
-        const { error: updErr } = await supabase
-          .from('event_submissions')
-          .update({
-            status: 'approved' as SubmissionStatus,
-            admin_notes: 'Bulk imported',
-            reviewed_at: new Date().toISOString(),
-          })
-          .in('id', ids);
-        if (updErr) throw updErr;
+          if (toPublish.length > 0) {
+            const eventRows = toPublish.map((r) => ({
+              title: r.s.title.slice(0, 200),
+              description: r.s.description?.slice(0, 2000) ?? null,
+              event_type: r.s.event_type,
+              venue_name: r.s.venue_name.slice(0, 200),
+              venue_location: r.s.venue_location?.slice(0, 200) ?? null,
+              event_date: r.s.event_date,
+              start_time: r.s.start_time || null,
+              end_time: r.s.end_time || null,
+              booking_url: r.s.booking_url || null,
+              price_info: r.s.price_info?.slice(0, 100) ?? null,
+              source_url: r.s.source_url || null,
+              is_verified: true,
+            }));
+            const { error: insertErr } = await supabase.from('events').insert(eventRows);
+            if (insertErr) throw insertErr;
+
+            const ids = toPublish.map((r) => r.s.id);
+            const { error: updErr } = await supabase
+              .from('event_submissions')
+              .update({
+                status: 'approved' as SubmissionStatus,
+                admin_notes: `Bulk imported (batch ${batchIndex}/${totalBatches})`,
+                reviewed_at: new Date().toISOString(),
+              })
+              .in('id', ids);
+            if (updErr) throw updErr;
+          }
+
+          if (dupRows.length > 0) {
+            const ids = dupRows.map((r) => r.s.id);
+            await supabase
+              .from('event_submissions')
+              .update({
+                status: 'rejected' as SubmissionStatus,
+                admin_notes: 'Bulk: duplicate of existing event',
+                reviewed_at: new Date().toISOString(),
+              })
+              .in('id', ids);
+          }
+
+          totalPublished += toPublish.length;
+          totalDuplicates += dupRows.length;
+        } catch (batchErr) {
+          totalFailed += batch.length;
+          console.error(`Batch ${batchIndex} failed:`, batchErr);
+          toast.error(
+            `Batch ${batchIndex}/${totalBatches} failed: ${
+              batchErr instanceof Error ? batchErr.message : 'unknown error'
+            }`,
+          );
+        }
+
+        setProgress((p) =>
+          p
+            ? {
+                ...p,
+                processed: Math.min(p.total, i + batch.length),
+                published: totalPublished,
+                duplicates: totalDuplicates,
+                failed: totalFailed,
+              }
+            : p,
+        );
       }
 
-      if (dupRows.length > 0) {
-        const ids = dupRows.map((r) => r.s.id);
-        await supabase
-          .from('event_submissions')
-          .update({
-            status: 'rejected' as SubmissionStatus,
-            admin_notes: 'Bulk: duplicate of existing event',
-            reviewed_at: new Date().toISOString(),
-          })
-          .in('id', ids);
-      }
-
-      toast.success(
-        `Published ${toPublish.length}${duplicates.length ? `, skipped ${duplicates.length} duplicate${duplicates.length === 1 ? '' : 's'}` : ''}`,
-      );
+      const parts = [`Published ${totalPublished}`];
+      if (totalDuplicates) parts.push(`skipped ${totalDuplicates} duplicate${totalDuplicates === 1 ? '' : 's'}`);
+      if (totalFailed) parts.push(`${totalFailed} failed`);
+      (totalFailed > 0 ? toast.error : toast.success)(parts.join(', '));
       qc.invalidateQueries({ queryKey: ['submissions'] });
       qc.invalidateQueries({ queryKey: ['events'] });
       clearSelection();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Bulk publish failed');
     } finally {
       setPublishing(false);
+      setTimeout(() => setProgress(null), 4000);
     }
   };
 
@@ -336,7 +394,27 @@ export default function AdminBulkImport() {
                   <AlertTriangle className="h-3 w-3" /> {totalInvalid} need editing
                 </Badge>
               )}
-              <div className="ml-auto flex flex-wrap gap-2">
+              <div className="ml-auto flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  <Label htmlFor="chunk-size" className="text-xs whitespace-nowrap">
+                    Batch size
+                  </Label>
+                  <Select
+                    value={String(chunkSize)}
+                    onValueChange={(v) => setChunkSize(Number(v))}
+                    disabled={publishing}
+                  >
+                    <SelectTrigger id="chunk-size" className="h-8 w-[80px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="25">25</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                      <SelectItem value="100">100</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <Button variant="outline" size="sm" onClick={selectAllValid} disabled={publishing}>
                   Select all valid
                 </Button>
@@ -367,6 +445,39 @@ export default function AdminBulkImport() {
                 </Button>
               </div>
             </div>
+
+            {progress && (
+              <div className="space-y-2 rounded-md border border-border/60 bg-muted/30 p-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium">
+                    {publishing
+                      ? `Publishing batch ${progress.currentBatch} of ${progress.totalBatches}…`
+                      : 'Bulk publish complete'}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {progress.processed} / {progress.total}
+                  </span>
+                </div>
+                <Progress
+                  value={progress.total ? (progress.processed / progress.total) * 100 : 0}
+                />
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <Badge variant="secondary" className="gap-1">
+                    <CheckCircle2 className="h-3 w-3" /> {progress.published} published
+                  </Badge>
+                  {progress.duplicates > 0 && (
+                    <Badge variant="outline" className="gap-1">
+                      {progress.duplicates} duplicates skipped
+                    </Badge>
+                  )}
+                  {progress.failed > 0 && (
+                    <Badge variant="destructive" className="gap-1">
+                      <AlertTriangle className="h-3 w-3" /> {progress.failed} failed
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
