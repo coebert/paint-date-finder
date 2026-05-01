@@ -107,6 +107,9 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
   const handleExtract = async () => {
     setExtracting(true);
     setCandidates([]);
+    startRef.current = Date.now();
+    setElapsed(0);
+    setEstimate(estimateSeconds(tab, file));
     try {
       let input: FlyerInput;
       const trimmedSource = sourceUrl.trim() || undefined;
