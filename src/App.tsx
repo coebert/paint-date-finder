@@ -15,6 +15,7 @@ import AdminEvents from "./pages/admin/AdminEvents";
 import AdminTeams from "./pages/admin/AdminTeams";
 import AdminFlags from "./pages/admin/AdminFlags";
 import AdminScraper from "./pages/admin/AdminScraper";
+import AdminBulkImport from "./pages/admin/AdminBulkImport";
 import FieldLayout from "./pages/FieldLayout";
 
 const queryClient = new QueryClient();
@@ -78,6 +79,14 @@ const App = () => (
             element={
               <AdminRoute>
                 <AdminScraper />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/bulk-import"
+            element={
+              <AdminRoute>
+                <AdminBulkImport />
               </AdminRoute>
             }
           />
