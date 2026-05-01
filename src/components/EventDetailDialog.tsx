@@ -163,6 +163,8 @@ export function EventDetailDialog({ event, open, onOpenChange, onEdit }: EventDe
             </div>
           )}
 
+          <EventSourceBadge sourceUrl={event.source_url} />
+
           <div className="flex items-center gap-2 text-sm">
             {event.is_verified ? (
               <>
