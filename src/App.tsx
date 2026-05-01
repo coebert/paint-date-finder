@@ -82,6 +82,14 @@ const App = () => (
               </AdminRoute>
             }
           />
+          <Route
+            path="/admin/bulk-import"
+            element={
+              <AdminRoute>
+                <AdminBulkImport />
+              </AdminRoute>
+            }
+          />
           
           {/* Legacy route redirect */}
           <Route
