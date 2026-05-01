@@ -78,6 +78,7 @@ export function useUpsertTrustedSource() {
             url: input.url,
             notes: input.notes ?? null,
             is_active: input.is_active ?? true,
+            source_type: input.source_type ?? 'venue',
           })
           .eq('id', input.id);
         if (error) throw error;
@@ -89,6 +90,7 @@ export function useUpsertTrustedSource() {
             url: input.url,
             notes: input.notes ?? null,
             is_active: input.is_active ?? true,
+            source_type: input.source_type ?? 'venue',
           });
         if (error) throw error;
       }
