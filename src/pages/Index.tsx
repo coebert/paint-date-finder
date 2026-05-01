@@ -36,6 +36,7 @@ export default function Index() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
+  const [submitInitialTab, setSubmitInitialTab] = useState<'flyer' | 'manual'>('flyer');
   const [detailEvent, setDetailEvent] = useState<PaintballEvent | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
 
