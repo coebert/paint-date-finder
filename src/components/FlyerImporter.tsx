@@ -57,6 +57,51 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
   const startRef = useRef<number>(0);
   const [candidates, setCandidates] = useState<EditableCandidate[]>([]);
 
+  type StageKey = 'prepare' | 'upload' | 'analyse' | 'save';
+  type StageStatus = 'pending' | 'active' | 'done' | 'failed';
+  type StageState = { key: StageKey; label: string; status: StageStatus; note?: string };
+  const [stages, setStages] = useState<StageState[]>([]);
+  const [failedStage, setFailedStage] = useState<StageKey | null>(null);
+
+  const buildStages = (kind: 'image' | 'pdf' | 'text' | 'url'): StageState[] => {
+    if (kind === 'image') {
+      return [
+        { key: 'prepare', label: 'Prepare image', status: 'pending' },
+        { key: 'upload', label: 'Upload to AI', status: 'pending' },
+        { key: 'analyse', label: 'OCR & parse events', status: 'pending' },
+        { key: 'save', label: 'Finalise results', status: 'pending' },
+      ];
+    }
+    if (kind === 'pdf') {
+      return [
+        { key: 'prepare', label: 'Prepare PDF', status: 'pending' },
+        { key: 'upload', label: 'Upload to AI', status: 'pending' },
+        { key: 'analyse', label: 'Extract & parse pages', status: 'pending' },
+        { key: 'save', label: 'Finalise results', status: 'pending' },
+      ];
+    }
+    if (kind === 'url') {
+      return [
+        { key: 'prepare', label: 'Validate URL', status: 'pending' },
+        { key: 'upload', label: 'Fetch page', status: 'pending' },
+        { key: 'analyse', label: 'Parse events', status: 'pending' },
+        { key: 'save', label: 'Finalise results', status: 'pending' },
+      ];
+    }
+    return [
+      { key: 'prepare', label: 'Prepare text', status: 'pending' },
+      { key: 'upload', label: 'Send to AI', status: 'pending' },
+      { key: 'analyse', label: 'Parse events', status: 'pending' },
+      { key: 'save', label: 'Finalise results', status: 'pending' },
+    ];
+  };
+
+  const setStage = (key: StageKey, status: StageStatus, note?: string) => {
+    setStages((prev) =>
+      prev.map((s) => (s.key === key ? { ...s, status, note: note ?? s.note } : s)),
+    );
+  };
+
   // Tick elapsed seconds while extracting
   useEffect(() => {
     if (!extracting) return;
