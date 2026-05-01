@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Sparkles, Upload, ImageIcon, Link2, FileText, FileType, Check, X as XIcon, Circle } from 'lucide-react';
+import { Loader2, Sparkles, Upload, ImageIcon, Link2, FileText, FileType, Check, X as XIcon, Circle, AlertTriangle, RotateCw, Clipboard } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
