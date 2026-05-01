@@ -612,10 +612,11 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
 
     // If the user uploaded an image or PDF, persist it to the public
     // flyer-images bucket so the original flyer can be attached to each
-    // saved event. Failure to upload should NOT block saving the events
-    // themselves — we just lose the image attachment.
-    let flyerImageUrl: string | null = null;
-    if (file && (tab === 'image' || tab === 'pdf')) {
+    // saved event. The file is normally already uploaded during extraction —
+    // only upload here as a fallback (e.g. the user reviewed a draft from
+    // an earlier session and never re-ran extraction).
+    let flyerImageUrl: string | null = uploadedFlyerUrl;
+    if (!flyerImageUrl && file && (tab === 'image' || tab === 'pdf')) {
       try {
         const ext = file.name.split('.').pop()?.toLowerCase() || (tab === 'pdf' ? 'pdf' : 'jpg');
         const safeExt = ext.replace(/[^a-z0-9]/g, '').slice(0, 5) || 'bin';
@@ -642,6 +643,7 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
     setCandidates([]);
     setFile(null);
     setPreviewUrl(null);
+    setUploadedFlyerUrl(null);
     setPastedText('');
     setSourceUrl('');
     clearDraft();
