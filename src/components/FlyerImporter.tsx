@@ -50,7 +50,40 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
   const [pastedText, setPastedText] = useState('');
   const [sourceUrl, setSourceUrl] = useState('');
   const [extracting, setExtracting] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const [estimate, setEstimate] = useState(0);
+  const startRef = useRef<number>(0);
   const [candidates, setCandidates] = useState<EditableCandidate[]>([]);
+
+  // Tick elapsed seconds while extracting
+  useEffect(() => {
+    if (!extracting) return;
+    const id = window.setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startRef.current) / 1000));
+    }, 500);
+    return () => window.clearInterval(id);
+  }, [extracting]);
+
+  // Rough per-tab time estimates (seconds), adjusted by file size for image/pdf
+  const estimateSeconds = (
+    kind: 'image' | 'pdf' | 'text' | 'url',
+    f: File | null,
+  ): number => {
+    if (kind === 'text') return 6;
+    if (kind === 'url') return 18;
+    if (!f) return kind === 'pdf' ? 35 : 25;
+    const mb = f.size / 1024 / 1024;
+    const base = kind === 'pdf' ? 25 : 15;
+    return Math.round(base + mb * 4);
+  };
+
+  const formatTime = (s: number) => {
+    if (s <= 0) return '0s';
+    if (s < 60) return `${s}s`;
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    return r ? `${m}m ${r}s` : `${m}m`;
+  };
 
   const onFileChange = async (f: File | null, kind: 'image' | 'pdf') => {
     if (!f) {
