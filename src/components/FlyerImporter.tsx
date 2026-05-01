@@ -131,6 +131,17 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
   const [failedStage, setFailedStage] = useState<StageKey | null>(null);
   // Tick to drive per-stage live elapsed display
   const [stageTick, setStageTick] = useState(0);
+  // Soft-warning state: surfaced when extraction crosses ~70% of the hard timeout
+  const [slowWarning, setSlowWarning] = useState(false);
+  // Last failure details for the retry/fallback panel
+  const [lastFailure, setLastFailure] = useState<{
+    kind: FlyerInput['kind'];
+    isTimeout: boolean;
+    timeoutMs?: number;
+    message: string;
+    attempt: number;
+  } | null>(null);
+  const attemptRef = useRef(0);
 
   // Persist draft whenever the meaningful fields change.
   useEffect(() => {
