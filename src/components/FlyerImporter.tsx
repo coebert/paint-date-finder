@@ -234,6 +234,7 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
     setPastedText('');
     setFile(null);
     setPreviewUrl(null);
+    setUploadedFlyerUrl(null);
     setResumePrompt(null);
     clearDraft();
     toast.success('Draft cleared');
@@ -345,6 +346,7 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
     if (!f) {
       setFile(null);
       setPreviewUrl(null);
+      setUploadedFlyerUrl(null);
       return;
     }
 
@@ -396,6 +398,7 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
     }
 
     setFile(f);
+    setUploadedFlyerUrl(null);
     if (kind === 'image') {
       setPreviewUrl(URL.createObjectURL(f));
     } else {
