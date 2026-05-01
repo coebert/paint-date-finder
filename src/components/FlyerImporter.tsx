@@ -440,6 +440,7 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
     setPreviewUrl(null);
     setPastedText('');
     setSourceUrl('');
+    clearDraft();
   };
 
   const selectedCount = candidates.filter((c) => c._selected).length;
