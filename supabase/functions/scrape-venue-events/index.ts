@@ -346,15 +346,21 @@ Deno.serve(async (req) => {
         `[scrape] source="${source.venue_name}" url="${source.url}" fetched_chars=${textLen} firecrawl=${usedFirecrawl}`,
       );
 
+      const sourceType: SourceType =
+        (source as { source_type?: string }).source_type === "facebook_group"
+          ? "facebook_group"
+          : "venue";
+
       const candidates = await extractCandidates(
         source.venue_name,
         source.url,
         text,
         LOVABLE_API_KEY,
+        sourceType,
       );
       returned = candidates.length;
       console.log(
-        `[scrape] source="${source.venue_name}" ai_returned=${returned}`,
+        `[scrape] source="${source.venue_name}" type=${sourceType} ai_returned=${returned}`,
       );
 
       for (const c of candidates) {
@@ -368,6 +374,18 @@ Deno.serve(async (req) => {
           continue;
         }
 
+        // For facebook_group sources, the venue is per-event (extracted by AI).
+        // For venue sources, fall back to the source's venue_name.
+        const effectiveVenue = sourceType === "facebook_group"
+          ? (c.venue_name?.trim() || "")
+          : source.venue_name;
+
+        if (sourceType === "facebook_group" && !effectiveVenue) {
+          // Skip group posts where the AI couldn't pin down a venue.
+          invalidDate++;
+          continue;
+        }
+
         // Dedupe: skip if same venue+date+type already in events or pending/approved
         // submissions. We intentionally ignore title because the AI returns slight
         // title variations between runs ("Walk-on" vs "Walk on April"), which would
@@ -377,7 +395,7 @@ Deno.serve(async (req) => {
             supabase
               .from("events")
               .select("id")
-              .eq("venue_name", source.venue_name)
+              .ilike("venue_name", effectiveVenue)
               .eq("event_date", c.event_date)
               .eq("event_type", c.event_type)
               .limit(1)
@@ -385,7 +403,7 @@ Deno.serve(async (req) => {
             supabase
               .from("event_submissions")
               .select("id")
-              .eq("venue_name", source.venue_name)
+              .ilike("venue_name", effectiveVenue)
               .eq("event_date", c.event_date)
               .eq("event_type", c.event_type)
               .in("status", ["pending", "approved"])
@@ -397,14 +415,18 @@ Deno.serve(async (req) => {
           continue;
         }
 
+        const submitterLabel = sourceType === "facebook_group"
+          ? `Auto-scraper (FB group: ${source.venue_name})`
+          : `Auto-scraper (${source.venue_name})`;
+
         const { error: insErr } = await supabase
           .from("event_submissions")
           .insert({
             title: c.title.slice(0, 200),
             description: c.description?.slice(0, 2000) ?? null,
             event_type: c.event_type,
-            venue_name: source.venue_name,
-            venue_location: null,
+            venue_name: effectiveVenue.slice(0, 200),
+            venue_location: c.venue_location?.slice(0, 200) ?? null,
             event_date: c.event_date,
             start_time: c.start_time || null,
             end_time: c.end_time || null,
@@ -412,7 +434,7 @@ Deno.serve(async (req) => {
             price_info: c.price_info?.slice(0, 100) ?? null,
             source_url: source.url,
             submitter_email: SCRAPER_EMAIL,
-            submitter_name: `Auto-scraper (${source.venue_name})`,
+            submitter_name: submitterLabel,
             status: "pending",
           });
         if (insErr) {
