@@ -98,8 +98,17 @@ export function Header({ view, onViewChange, onAddEvent, onSubmitEvent, onImport
             </Button>
 
             <Button
+              onClick={onImportFlyer}
+              className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md ring-2 ring-accent/40"
+            >
+              <Sparkles className="h-4 w-4" />
+              Import from Flyer
+            </Button>
+
+            <Button
               onClick={onSubmitEvent}
-              className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90 shadow-sm"
+              variant="outline"
+              className="gap-2"
             >
               <Send className="h-4 w-4" />
               Suggest an Event
