@@ -56,6 +56,52 @@ export default function AdminBulkImport() {
   const [submitterFilter, setSubmitterFilter] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [publishing, setPublishing] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<{ title: string; venue_name: string; event_date: string }>({
+    title: '',
+    venue_name: '',
+    event_date: '',
+  });
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const startEdit = (s: EventSubmission) => {
+    setEditingId(s.id);
+    setEditDraft({
+      title: s.title ?? '',
+      venue_name: s.venue_name ?? '',
+      event_date: s.event_date ?? '',
+    });
+  };
+  const cancelEdit = () => {
+    setEditingId(null);
+  };
+  const saveEdit = async (id: string) => {
+    const title = editDraft.title.trim();
+    const venue_name = editDraft.venue_name.trim();
+    const event_date = editDraft.event_date;
+    if (title.length < 3) return toast.error('Title must be at least 3 characters');
+    if (venue_name.length < 2) return toast.error('Venue is required');
+    if (!event_date || !isValid(parseISO(event_date))) return toast.error('Valid date required');
+    setSavingEdit(true);
+    try {
+      const { error } = await supabase
+        .from('event_submissions')
+        .update({
+          title: title.slice(0, 200),
+          venue_name: venue_name.slice(0, 200),
+          event_date,
+        })
+        .eq('id', id);
+      if (error) throw error;
+      toast.success('Submission updated');
+      setEditingId(null);
+      qc.invalidateQueries({ queryKey: ['submissions'] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Update failed');
+    } finally {
+      setSavingEdit(false);
+    }
+  };
 
   const filtered = useMemo(() => {
     if (!submissions) return [];
