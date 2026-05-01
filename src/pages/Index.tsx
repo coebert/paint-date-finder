@@ -36,6 +36,7 @@ export default function Index() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
+  const [submitInitialTab, setSubmitInitialTab] = useState<'flyer' | 'manual'>('flyer');
   const [detailEvent, setDetailEvent] = useState<PaintballEvent | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
 
@@ -81,7 +82,8 @@ export default function Index() {
         view={view} 
         onViewChange={setView} 
         onAddEvent={() => setAddDialogOpen(true)}
-        onSubmitEvent={() => setSubmitDialogOpen(true)}
+        onSubmitEvent={() => { setSubmitInitialTab('manual'); setSubmitDialogOpen(true); }}
+        onImportFlyer={() => { setSubmitInitialTab('flyer'); setSubmitDialogOpen(true); }}
       />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
@@ -145,6 +147,7 @@ export default function Index() {
       <SubmitEventDialog
         open={submitDialogOpen}
         onOpenChange={setSubmitDialogOpen}
+        initialTab={submitInitialTab}
       />
 
       <EventDetailDialog

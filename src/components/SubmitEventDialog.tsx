@@ -67,9 +67,10 @@ type FormData = z.infer<typeof formSchema>;
 interface SubmitEventDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialTab?: 'flyer' | 'manual';
 }
 
-export function SubmitEventDialog({ open, onOpenChange }: SubmitEventDialogProps) {
+export function SubmitEventDialog({ open, onOpenChange, initialTab = 'flyer' }: SubmitEventDialogProps) {
   const [submitted, setSubmitted] = useState(false);
   const [isAddingNewVenue, setIsAddingNewVenue] = useState(false);
   const [selectedVenue, setSelectedVenue] = useState('');
@@ -228,7 +229,7 @@ export function SubmitEventDialog({ open, onOpenChange }: SubmitEventDialogProps
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="flyer" className="w-full">
+        <Tabs defaultValue={initialTab} key={initialTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="flyer">
               <Sparkles className="h-4 w-4 mr-2" /> Upload flyer
