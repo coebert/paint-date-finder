@@ -413,6 +413,21 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
     setSlowWarning(false);
     setLastFailure(null);
     attemptRef.current += 1;
+    // Mark this run as in-progress in localStorage so a refresh / accidental
+    // navigation can offer to resume from this exact tab + inputs.
+    saveDraftPartial({
+      tab,
+      sourceUrl,
+      pastedText,
+      candidates: [],
+      inProgress: {
+        kind: tab,
+        startedAt: Date.now(),
+        hadFile: !!file,
+        fileName: file?.name,
+      },
+    });
+    setResumePrompt(null);
     // Soft warning at 70% of the hard timeout — gives users a heads-up
     // before we auto-cancel, so they can decide to wait or prepare a fallback.
     const hardTimeoutMs = FLYER_TIMEOUTS_MS[tab];
