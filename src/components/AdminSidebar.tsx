@@ -20,6 +20,7 @@ import { Crosshair } from "lucide-react";
 const menuItems = [
   { title: "Overview", url: "/admin", icon: BarChart3 },
   { title: "Submissions", url: "/admin/submissions", icon: FileText },
+  { title: "Bulk Import", url: "/admin/bulk-import", icon: Layers },
   { title: "Events", url: "/admin/events", icon: Calendar },
   { title: "Flags", url: "/admin/flags", icon: Flag },
   { title: "Teams", url: "/admin/teams", icon: Users },
