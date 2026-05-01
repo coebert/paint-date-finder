@@ -33,7 +33,10 @@ import { EventType, EVENT_TYPE_LABELS } from '@/types/events';
 import { useCreateSubmission } from '@/hooks/useSubmissions';
 import { useVenues } from '@/hooks/useEvents';
 import { useVenueDetails } from '@/hooks/useVenueDetails';
-import { Send, CheckCircle, Plus } from 'lucide-react';
+import { Send, CheckCircle, Plus, Sparkles, Edit3 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { FlyerImporter } from '@/components/FlyerImporter';
+import { toast } from 'sonner';
 
 const ADD_NEW_VENUE = '__add_new__';
 
@@ -170,17 +173,81 @@ export function SubmitEventDialog({ open, onOpenChange }: SubmitEventDialogProps
     );
   }
 
+  const handleFlyerSave = async (
+    candidates: { title: string; description?: string | null; event_type: EventType; event_date: string; start_time?: string | null; end_time?: string | null; price_info?: string | null; booking_url?: string | null; venue_name?: string | null; venue_location?: string | null }[],
+    sourceUrl: string | null,
+  ) => {
+    const email = (document.getElementById('flyer-submitter-email') as HTMLInputElement | null)?.value?.trim();
+    const name = (document.getElementById('flyer-submitter-name') as HTMLInputElement | null)?.value?.trim();
+    if (!email || !/.+@.+\..+/.test(email)) {
+      toast.error('Please enter a valid email so we can credit the submission');
+      return;
+    }
+    try {
+      for (const c of candidates) {
+        await createSubmission.mutateAsync({
+          title: c.title.slice(0, 200),
+          description: c.description?.slice(0, 2000) ?? null,
+          event_type: c.event_type,
+          venue_name: (c.venue_name || 'Unknown venue').slice(0, 200),
+          venue_location: c.venue_location?.slice(0, 200) ?? null,
+          event_date: c.event_date,
+          start_time: c.start_time || null,
+          end_time: c.end_time || null,
+          booking_url: c.booking_url || null,
+          price_info: c.price_info?.slice(0, 100) ?? null,
+          source_url: sourceUrl,
+          submitter_email: email,
+          submitter_name: name || null,
+        });
+      }
+      setSubmitted(true);
+    } catch (e) {
+      // useCreateSubmission already toasts on error
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-card border-border max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display text-2xl">Suggest an Event</DialogTitle>
           <DialogDescription>
-            Spotted a walk-on or big game? Share the details and a source link — we'll verify and add it to the calendar.
+            Upload a flyer/screenshot from Facebook and we'll auto-fill the details, or enter them manually.
           </DialogDescription>
         </DialogHeader>
 
+        <Tabs defaultValue="flyer" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="flyer">
+              <Sparkles className="h-4 w-4 mr-2" /> Upload flyer
+            </TabsTrigger>
+            <TabsTrigger value="manual">
+              <Edit3 className="h-4 w-4 mr-2" /> Enter manually
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="flyer" className="pt-4 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Your name</label>
+                <Input id="flyer-submitter-name" placeholder="Optional" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Your email *</label>
+                <Input id="flyer-submitter-email" type="email" placeholder="you@example.com" required />
+              </div>
+            </div>
+            <FlyerImporter
+              onSave={handleFlyerSave}
+              saveLabel="Submit for review"
+              saving={createSubmission.isPending}
+            />
+          </TabsContent>
+
+          <TabsContent value="manual" className="pt-4">
         <Form {...form}>
+
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
@@ -447,7 +514,10 @@ export function SubmitEventDialog({ open, onOpenChange }: SubmitEventDialogProps
             </div>
           </form>
         </Form>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
 }
+
