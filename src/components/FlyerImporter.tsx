@@ -189,7 +189,16 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
   } | null>(null);
   const attemptRef = useRef(0);
 
-  // Persist draft whenever the meaningful fields change.
+  // Auto-resume: detect a previous run that started extraction but never
+  // finished (no candidates set, in-progress marker present and not stale).
+  const initialResume: InProgressMark | null = (() => {
+    const ip = initialDraft?.inProgress;
+    if (!ip) return null;
+    if (initialDraft?.candidates && initialDraft.candidates.length > 0) return null;
+    if (Date.now() - ip.startedAt > IN_PROGRESS_STALE_MS) return null;
+    return ip;
+  })();
+  const [resumePrompt, setResumePrompt] = useState<InProgressMark | null>(initialResume);
   useEffect(() => {
     // Don't persist while extraction is in flight to avoid storing partial state.
     if (extracting) return;
