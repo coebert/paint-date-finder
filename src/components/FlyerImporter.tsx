@@ -17,6 +17,7 @@ import { Loader2, Sparkles, Upload, ImageIcon, Link2, FileText, FileType, Check,
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import {
   extractFlyer,
   fileToDataUrl,
