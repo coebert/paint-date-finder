@@ -147,6 +147,7 @@ export default function Index() {
       <SubmitEventDialog
         open={submitDialogOpen}
         onOpenChange={setSubmitDialogOpen}
+        initialTab={submitInitialTab}
       />
 
       <EventDetailDialog
