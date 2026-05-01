@@ -631,6 +631,61 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
 
   return (
     <div className="space-y-4">
+      {resumePrompt && !extracting && (
+        <div className="flex flex-wrap items-start justify-between gap-3 rounded-md border border-accent/40 bg-accent/5 p-3 text-xs">
+          <div className="flex items-start gap-2">
+            <RotateCw className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+            <div className="space-y-1">
+              <p className="font-medium text-foreground">
+                Unfinished extraction detected
+              </p>
+              <p className="text-muted-foreground">
+                A {resumePrompt.kind.toUpperCase()} extraction started{' '}
+                {new Date(resumePrompt.startedAt).toLocaleString('en-GB', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: false,
+                })}{' '}
+                didn't finish.
+                {(resumePrompt.kind === 'image' || resumePrompt.kind === 'pdf') && (
+                  <>
+                    {' '}You'll need to re-select{' '}
+                    {resumePrompt.fileName ? (
+                      <span className="font-medium">{resumePrompt.fileName}</span>
+                    ) : (
+                      'the same file'
+                    )}{' '}
+                    to continue.
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="default"
+              className="h-7 text-xs"
+              onClick={handleResumeExtraction}
+            >
+              <RotateCw className="mr-1.5 h-3 w-3" />
+              Resume
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2 text-xs"
+              onClick={handleDismissResume}
+            >
+              Dismiss
+            </Button>
+          </div>
+        </div>
+      )}
       <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="image">
