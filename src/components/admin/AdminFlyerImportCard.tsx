@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Sparkles } from 'lucide-react';
+import { dedupeCandidates } from '@/lib/flyerDedupe';
 
 export function AdminFlyerImportCard() {
   const qc = useQueryClient();
