@@ -61,7 +61,12 @@ function SourceDialog({
   const [url, setUrl] = useState(source?.url ?? "");
   const [notes, setNotes] = useState(source?.notes ?? "");
   const [active, setActive] = useState(source?.is_active ?? true);
+  const [sourceType, setSourceType] = useState<"venue" | "facebook_group">(
+    source?.source_type ?? "venue",
+  );
   const upsert = useUpsertTrustedSource();
+
+  const isGroup = sourceType === "facebook_group";
 
   const onSave = async () => {
     if (!venueName.trim() || !url.trim()) return;
@@ -71,6 +76,7 @@ function SourceDialog({
       url: url.trim(),
       notes: notes.trim() || null,
       is_active: active,
+      source_type: sourceType,
     });
     setOpen(false);
   };
@@ -90,11 +96,37 @@ function SourceDialog({
         </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1">
-            <Label>Venue name</Label>
+            <Label>Source type</Label>
+            <Select
+              value={sourceType}
+              onValueChange={(v) => setSourceType(v as "venue" | "facebook_group")}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="venue">Venue website</SelectItem>
+                <SelectItem value="facebook_group">
+                  Facebook group (multi-venue)
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {isGroup
+                ? "Posts in this group may advertise events at many different venues. The AI will extract the venue name from each post."
+                : "All events on this page belong to a single venue."}
+            </p>
+          </div>
+          <div className="space-y-1">
+            <Label>{isGroup ? "Group name" : "Venue name"}</Label>
             <Input
               value={venueName}
               onChange={(e) => setVenueName(e.target.value)}
-              placeholder="e.g. Mayhem Paintball"
+              placeholder={
+                isGroup
+                  ? "e.g. UK Paintball Walk-Ons"
+                  : "e.g. Mayhem Paintball"
+              }
             />
           </div>
           <div className="space-y-1">
@@ -102,7 +134,11 @@ function SourceDialog({
             <Input
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://venue.example/events"
+              placeholder={
+                isGroup
+                  ? "https://www.facebook.com/groups/..."
+                  : "https://venue.example/events"
+              }
               type="url"
             />
           </div>
