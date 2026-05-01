@@ -285,6 +285,41 @@ Deno.serve(async (req) => {
   }
   const runId = runRow.id as string;
 
+  // Run the (potentially long) scrape work in the background so that the
+  // client gets an immediate 202 and can poll `scrape_runs` for completion.
+  // Without this, Facebook group sources that go through Firecrawl + Lovable
+  // AI can keep the request open long enough that the browser/client thinks
+  // the app has locked up.
+  const work = runScrape(supabase, runId, LOVABLE_API_KEY);
+  // @ts-ignore — EdgeRuntime is provided by the Deno deploy edge runtime.
+  if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) {
+    // @ts-ignore
+    EdgeRuntime.waitUntil(work);
+  } else {
+    // Local/dev fallback: don't await, just swallow errors.
+    work.catch((e) => console.error("[scrape] background work failed", e));
+  }
+
+  return new Response(
+    JSON.stringify({
+      runId,
+      status: "running",
+      sources_processed: 0,
+      candidates_created: 0,
+    }),
+    {
+      status: 202,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    },
+  );
+});
+
+async function runScrape(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  runId: string,
+  LOVABLE_API_KEY: string,
+) {
   const { data: sources, error: srcErr } = await supabase
     .from("trusted_venue_sources")
     .select("id, venue_name, url, source_type")
@@ -299,13 +334,7 @@ Deno.serve(async (req) => {
         errors: [{ stage: "load_sources", message: srcErr.message }],
       })
       .eq("id", runId);
-    return new Response(
-      JSON.stringify({ error: srcErr.message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
+    return;
   }
 
   const errors: { source: string; message: string }[] = [];
