@@ -1,5 +1,6 @@
 import { PaintballEvent } from '@/types/events';
 import { EventTypeBadge } from './EventTypeBadge';
+import { EventSourceBadge } from './EventSourceBadge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, MapPin, Clock, ExternalLink, Pencil, ShieldCheck, ShieldAlert, AlertTriangle } from 'lucide-react';
@@ -38,6 +39,7 @@ export function EventCard({ event, onEdit }: EventCardProps) {
                   <ShieldAlert className="h-3 w-3" /> Unverified
                 </span>
               )}
+              <EventSourceBadge sourceUrl={event.source_url} compact />
             </div>
             <h3 className="font-display text-xl text-foreground truncate">{event.title}</h3>
           </div>

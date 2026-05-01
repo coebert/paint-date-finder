@@ -15,6 +15,7 @@ import { format, parseISO } from 'date-fns';
 import { useVenueDetails } from '@/hooks/useVenueDetails';
 import { useIsAdmin } from '@/hooks/useAuth';
 import { useFlaggedEventIds, useWithdrawFlag, getStoredFlagForEvent } from '@/hooks/useEventFlags';
+import { EventSourceBadge } from './EventSourceBadge';
 
 interface EventDetailDialogProps {
   event: PaintballEvent | null;
@@ -161,6 +162,8 @@ export function EventDetailDialog({ event, open, onOpenChange, onEdit }: EventDe
               <p className="text-muted-foreground text-sm">{event.description}</p>
             </div>
           )}
+
+          <EventSourceBadge sourceUrl={event.source_url} />
 
           <div className="flex items-center gap-2 text-sm">
             {event.is_verified ? (
