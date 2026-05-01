@@ -247,7 +247,14 @@ export default function AdminScraper() {
                   {sources.map((s) => (
                     <TableRow key={s.id}>
                       <TableCell className="font-medium">
-                        {s.venue_name}
+                        <div className="flex flex-col gap-1">
+                          <span>{s.venue_name}</span>
+                          {s.source_type === "facebook_group" ? (
+                            <Badge variant="outline" className="w-fit text-[10px]">
+                              FB group · multi-venue
+                            </Badge>
+                          ) : null}
+                        </div>
                       </TableCell>
                       <TableCell className="max-w-[280px] truncate">
                         <a
