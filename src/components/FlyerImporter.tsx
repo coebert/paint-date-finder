@@ -721,10 +721,96 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
               {' '}ETA learns from your past runs. Will auto-cancel after {Math.round(FLYER_TIMEOUTS_MS[tab] / 1000)}s.
             </p>
           )}
-          {failedStage && !extracting && (
-            <p className="text-[11px] text-destructive">
-              Failed at the highlighted step. Adjust the input and try again.
-            </p>
+
+          {extracting && slowWarning && (
+            <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-2 text-[11px]">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
+              <div className="flex-1 text-foreground/90">
+                <span className="font-medium">Taking longer than usual.</span>{' '}
+                <span className="text-muted-foreground">
+                  We'll auto-cancel at {Math.round(FLYER_TIMEOUTS_MS[tab] / 1000)}s. You can wait, or prepare a fallback ({tab === 'url' ? 'paste the post text' : tab === 'pdf' ? 'split the PDF or paste the text' : tab === 'image' ? 'shrink the image or paste the text' : 'simplify the text'}).
+                </span>
+              </div>
+            </div>
+          )}
+
+          {failedStage && !extracting && lastFailure && (
+            <div className="space-y-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-xs">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                <div className="flex-1 space-y-1">
+                  <p className="font-medium text-destructive">
+                    {lastFailure.isTimeout
+                      ? `Timed out after ${Math.round((lastFailure.timeoutMs ?? FLYER_TIMEOUTS_MS[lastFailure.kind]) / 1000)}s`
+                      : 'Extraction failed'}
+                  </p>
+                  <p className="text-muted-foreground">{lastFailure.message}</p>
+                </div>
+              </div>
+
+              <div className="space-y-1 pl-6">
+                <p className="text-[11px] font-medium text-foreground">Try one of these:</p>
+                <ul className="ml-4 list-disc space-y-0.5 text-[11px] text-muted-foreground">
+                  {lastFailure.kind === 'image' && (
+                    <>
+                      <li>Compress or crop the image to under 4 MB.</li>
+                      <li>Re-take the photo with better lighting / less glare.</li>
+                      <li>Switch to the <span className="font-medium">Text</span> tab and paste the flyer text.</li>
+                    </>
+                  )}
+                  {lastFailure.kind === 'pdf' && (
+                    <>
+                      <li>Split multi-page PDFs and try a single page.</li>
+                      <li>Export the PDF as a JPG and use the <span className="font-medium">Image</span> tab.</li>
+                      <li>Copy the text out and use the <span className="font-medium">Text</span> tab.</li>
+                    </>
+                  )}
+                  {lastFailure.kind === 'url' && (
+                    <>
+                      <li>Login-walled posts (private FB/IG) can't be scraped — paste the text instead.</li>
+                      <li>Take a screenshot of the post and use the <span className="font-medium">Image</span> tab.</li>
+                      <li>Try the public mobile URL (e.g. <code className="rounded bg-muted px-1">m.facebook.com</code>).</li>
+                    </>
+                  )}
+                  {lastFailure.kind === 'text' && (
+                    <>
+                      <li>Trim down extremely long text (over a few thousand chars).</li>
+                      <li>Make sure dates and event names are present in the text.</li>
+                      <li>Retry — the AI service may have been briefly overloaded.</li>
+                    </>
+                  )}
+                </ul>
+              </div>
+
+              <div className="flex flex-wrap gap-2 pt-1">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleExtract}
+                  className="h-7 text-xs"
+                >
+                  <RotateCw className="mr-1.5 h-3 w-3" />
+                  Retry {lastFailure.attempt > 1 ? `(attempt ${lastFailure.attempt + 1})` : ''}
+                </Button>
+                {(lastFailure.kind === 'url' || lastFailure.kind === 'image' || lastFailure.kind === 'pdf') && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setTab('text');
+                      setFailedStage(null);
+                      setLastFailure(null);
+                    }}
+                    className="h-7 text-xs"
+                  >
+                    <Clipboard className="mr-1.5 h-3 w-3" />
+                    Paste text instead
+                  </Button>
+                )}
+              </div>
+            </div>
           )}
         </div>
       )}
