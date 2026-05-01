@@ -39,6 +39,7 @@ export function EventCard({ event, onEdit }: EventCardProps) {
                   <ShieldAlert className="h-3 w-3" /> Unverified
                 </span>
               )}
+              <EventSourceBadge sourceUrl={event.source_url} compact />
             </div>
             <h3 className="font-display text-xl text-foreground truncate">{event.title}</h3>
           </div>
