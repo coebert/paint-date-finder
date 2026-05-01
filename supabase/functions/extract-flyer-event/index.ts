@@ -551,18 +551,14 @@ Deno.serve(async (req) => {
       if (!/^https?:\/\//i.test(url)) {
         throw new Error("a valid http(s) URL is required");
       }
-      let text: string;
-      if (FIRECRAWL_API_KEY && shouldUseFirecrawlFirst(url)) {
-        text = await fetchViaFirecrawl(url, FIRECRAWL_API_KEY);
-      } else {
-        text = await fetchPageText(url);
-        if (text.length < 300 && FIRECRAWL_API_KEY) {
-          text = await fetchViaFirecrawl(url, FIRECRAWL_API_KEY);
-        }
-      }
+      const { text, via } = await resolveUrlText(url, FIRECRAWL_API_KEY);
+      console.log(`[flyer] url resolved via=${via} chars=${text.length}`);
       if (text.length < 30) {
+        const social = isFacebook(url) || isInstagram(url);
         throw new Error(
-          "Couldn't read enough content from that URL — many Facebook posts require login. Try uploading a screenshot instead.",
+          social
+            ? "Couldn't read this Facebook/Instagram post — it likely requires login or has been removed. Open the post, take a screenshot, and use the Image tab instead."
+            : "Couldn't read enough content from that URL. Try the Text tab and paste the post directly, or use a screenshot.",
         );
       }
       candidates = await extractFromText(LOVABLE_API_KEY, text, url);
