@@ -356,12 +356,29 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
         </TabsList>
 
         <TabsContent value="image" className="space-y-3 pt-3">
-          <Label>Flyer image (JPG / PNG / WebP, max 8MB)</Label>
+          <Label>Flyer image (JPG / PNG / WebP, max {formatMB(MAX_IMAGE_BYTES)})</Label>
           <Input
             type="file"
             accept="image/jpeg,image/png,image/webp"
             onChange={(e) => onFileChange(e.target.files?.[0] ?? null, 'image')}
           />
+          <p className="text-[11px] text-muted-foreground">
+            Recommended under {formatMB(WARN_IMAGE_BYTES)} (~1600px wide).
+            Compress with{' '}
+            <a href="https://tinypng.com" target="_blank" rel="noopener noreferrer" className="underline">
+              TinyPNG
+            </a>{' '}
+            or{' '}
+            <a href="https://squoosh.app" target="_blank" rel="noopener noreferrer" className="underline">
+              Squoosh
+            </a>{' '}
+            if it's larger.
+          </p>
+          {file && tab === 'image' && file.size > WARN_IMAGE_BYTES && (
+            <p className="text-xs text-amber-500">
+              ⚠ {formatMB(file.size)} is large — extraction may be slow or time out. Compressing first is recommended.
+            </p>
+          )}
           {previewUrl && (
             <img
               src={previewUrl}
@@ -372,16 +389,31 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
         </TabsContent>
 
         <TabsContent value="pdf" className="space-y-3 pt-3">
-          <Label>Flyer PDF (max 10MB)</Label>
+          <Label>Flyer PDF (max {formatMB(MAX_PDF_BYTES)})</Label>
           <Input
             type="file"
             accept="application/pdf"
             onChange={(e) => onFileChange(e.target.files?.[0] ?? null, 'pdf')}
           />
+          <p className="text-[11px] text-muted-foreground">
+            Recommended under {formatMB(WARN_PDF_BYTES)}. Compress with{' '}
+            <a href="https://www.ilovepdf.com/compress_pdf" target="_blank" rel="noopener noreferrer" className="underline">
+              iLovePDF
+            </a>{' '}
+            or extract just the flyer page if it's larger.
+          </p>
           {file && tab === 'pdf' && (
-            <p className="text-sm text-muted-foreground">{file.name}</p>
+            <p className="text-sm text-muted-foreground">
+              {file.name} ({formatMB(file.size)})
+            </p>
+          )}
+          {file && tab === 'pdf' && file.size > WARN_PDF_BYTES && (
+            <p className="text-xs text-amber-500">
+              ⚠ {formatMB(file.size)} is large — extraction may be slow or time out. Compressing first is recommended.
+            </p>
           )}
         </TabsContent>
+
 
         <TabsContent value="text" className="space-y-3 pt-3">
           <Label>Paste the Facebook / Instagram post text</Label>
