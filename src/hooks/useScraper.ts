@@ -2,12 +2,15 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+export type TrustedSourceType = 'venue' | 'facebook_group';
+
 export interface TrustedSource {
   id: string;
   venue_name: string;
   url: string;
   notes: string | null;
   is_active: boolean;
+  source_type: TrustedSourceType;
   last_scraped_at: string | null;
   last_status: string | null;
   last_returned: number | null;
