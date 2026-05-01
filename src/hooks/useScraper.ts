@@ -130,11 +130,38 @@ export function useRunScrape() {
         { body: { triggeredBy: 'manual' } },
       );
       if (error) throw error;
-      return data as {
-        sources_processed: number;
-        candidates_created: number;
-        status: string;
-      };
+      const runId = (data as { runId?: string })?.runId;
+      if (!runId) {
+        return {
+          sources_processed: 0,
+          candidates_created: 0,
+          status: 'unknown',
+        };
+      }
+
+      // Poll the scrape_runs row until the background job finishes.
+      // Cap at ~5 minutes (60 × 5s) — generous for Facebook group sources.
+      const MAX_POLLS = 60;
+      const POLL_MS = 5000;
+      for (let i = 0; i < MAX_POLLS; i++) {
+        await new Promise((r) => setTimeout(r, POLL_MS));
+        const { data: row, error: rowErr } = await supabase
+          .from('scrape_runs')
+          .select('status, finished_at, sources_processed, candidates_created')
+          .eq('id', runId)
+          .maybeSingle();
+        if (rowErr) throw rowErr;
+        if (row?.finished_at) {
+          return {
+            sources_processed: row.sources_processed ?? 0,
+            candidates_created: row.candidates_created ?? 0,
+            status: row.status ?? 'unknown',
+          };
+        }
+        // Refresh runs list while we wait so the user sees progress.
+        if (i % 2 === 1) qc.invalidateQueries({ queryKey: ['scrape_runs'] });
+      }
+      throw new Error('Scrape is taking longer than expected — check Recent runs in a moment.');
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['scrape_runs'] });
@@ -144,6 +171,9 @@ export function useRunScrape() {
         `Scrape ${data.status} — ${data.candidates_created} candidate(s) from ${data.sources_processed} source(s)`,
       );
     },
-    onError: (e: Error) => toast.error(`Scrape failed: ${e.message}`),
+    onError: (e: Error) => {
+      qc.invalidateQueries({ queryKey: ['scrape_runs'] });
+      toast.error(`Scrape failed: ${e.message}`);
+    },
   });
 }
