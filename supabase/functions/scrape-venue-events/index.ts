@@ -25,7 +25,12 @@ type Candidate = {
   end_time?: string | null;
   price_info?: string | null;
   booking_url?: string | null;
+  /** Only populated for facebook_group sources where the post mentions a specific venue. */
+  venue_name?: string | null;
+  venue_location?: string | null;
 };
+
+type SourceType = "venue" | "facebook_group";
 
 const SCRAPER_EMAIL = "scraper@findawalkon.local";
 
