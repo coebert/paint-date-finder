@@ -57,23 +57,106 @@ type EditableCandidate = ExtractedCandidate & {
   _selected: boolean;
 };
 
+const DRAFT_STORAGE_KEY = 'flyer-importer-draft-v1';
+const DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+type DraftV1 = {
+  v: 1;
+  savedAt: number;
+  tab: 'image' | 'pdf' | 'text' | 'url';
+  sourceUrl: string;
+  pastedText: string;
+  candidates: EditableCandidate[];
+};
+
+function loadDraft(): DraftV1 | null {
+  try {
+    const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as DraftV1;
+    if (parsed?.v !== 1) return null;
+    if (!parsed.savedAt || Date.now() - parsed.savedAt > DRAFT_TTL_MS) {
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function clearDraft() {
+  try {
+    localStorage.removeItem(DRAFT_STORAGE_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: FlyerImporterProps) {
-  const [tab, setTab] = useState<'image' | 'pdf' | 'text' | 'url'>('image');
+  // Hydrate from a persisted draft on mount so the user can leave and come back.
+  // Files (binary) cannot be persisted — but the source URL, pasted text, and
+  // already-extracted candidates can, which is what avoids re-running extraction.
+  const initialDraft = typeof window !== 'undefined' ? loadDraft() : null;
+
+  const [tab, setTab] = useState<'image' | 'pdf' | 'text' | 'url'>(
+    initialDraft?.tab ?? 'image',
+  );
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [pastedText, setPastedText] = useState('');
-  const [sourceUrl, setSourceUrl] = useState('');
+  const [pastedText, setPastedText] = useState(initialDraft?.pastedText ?? '');
+  const [sourceUrl, setSourceUrl] = useState(initialDraft?.sourceUrl ?? '');
   const [extracting, setExtracting] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [estimate, setEstimate] = useState(0);
   const startRef = useRef<number>(0);
-  const [candidates, setCandidates] = useState<EditableCandidate[]>([]);
+  const [candidates, setCandidates] = useState<EditableCandidate[]>(
+    initialDraft?.candidates ?? [],
+  );
+  const [restoredAt] = useState<number | null>(
+    initialDraft?.candidates?.length ? initialDraft.savedAt : null,
+  );
 
   type StageKey = 'prepare' | 'upload' | 'analyse' | 'save';
   type StageStatus = 'pending' | 'active' | 'done' | 'failed';
   type StageState = { key: StageKey; label: string; status: StageStatus; note?: string };
   const [stages, setStages] = useState<StageState[]>([]);
   const [failedStage, setFailedStage] = useState<StageKey | null>(null);
+
+  // Persist draft whenever the meaningful fields change.
+  useEffect(() => {
+    // Don't persist while extraction is in flight to avoid storing partial state.
+    if (extracting) return;
+    try {
+      // If everything is empty, just clear the draft.
+      if (!sourceUrl && !pastedText && candidates.length === 0) {
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+        return;
+      }
+      const draft: DraftV1 = {
+        v: 1,
+        savedAt: Date.now(),
+        tab,
+        sourceUrl,
+        pastedText,
+        candidates,
+      };
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+    } catch {
+      /* quota exceeded / private mode — silently ignore */
+    }
+  }, [tab, sourceUrl, pastedText, candidates, extracting]);
+
+  const handleDiscardDraft = () => {
+    setCandidates([]);
+    setSourceUrl('');
+    setPastedText('');
+    setFile(null);
+    setPreviewUrl(null);
+    clearDraft();
+    toast.success('Draft cleared');
+  };
+
 
   const buildStages = (kind: 'image' | 'pdf' | 'text' | 'url'): StageState[] => {
     if (kind === 'image') {
@@ -357,6 +440,7 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
     setPreviewUrl(null);
     setPastedText('');
     setSourceUrl('');
+    clearDraft();
   };
 
   const selectedCount = candidates.filter((c) => c._selected).length;
@@ -571,6 +655,31 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
 
       {candidates.length > 0 && (
         <div className="space-y-3 pt-2">
+          {restoredAt && (
+            <div className="flex items-center justify-between gap-2 rounded-md border border-accent/40 bg-accent/5 p-2 text-xs">
+              <span className="text-muted-foreground">
+                Restored draft from{' '}
+                {new Date(restoredAt).toLocaleString('en-GB', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: false,
+                })}
+                {' '}— continue reviewing or discard.
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={handleDiscardDraft}
+              >
+                Discard
+              </Button>
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <h3 className="font-display text-sm tracking-wider">
               Found {candidates.length} event{candidates.length === 1 ? '' : 's'} — review &amp; edit
@@ -579,6 +688,7 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
               {selectedCount} selected
             </span>
           </div>
+
 
           <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
             {candidates.map((c) => (
