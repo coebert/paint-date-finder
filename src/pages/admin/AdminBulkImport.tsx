@@ -12,7 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, CheckCircle2, XCircle, Layers, Filter } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, XCircle, Layers, Filter, Pencil, Save, X } from 'lucide-react';
 import { EVENT_TYPE_LABELS } from '@/types/events';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -56,6 +56,52 @@ export default function AdminBulkImport() {
   const [submitterFilter, setSubmitterFilter] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [publishing, setPublishing] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<{ title: string; venue_name: string; event_date: string }>({
+    title: '',
+    venue_name: '',
+    event_date: '',
+  });
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const startEdit = (s: EventSubmission) => {
+    setEditingId(s.id);
+    setEditDraft({
+      title: s.title ?? '',
+      venue_name: s.venue_name ?? '',
+      event_date: s.event_date ?? '',
+    });
+  };
+  const cancelEdit = () => {
+    setEditingId(null);
+  };
+  const saveEdit = async (id: string) => {
+    const title = editDraft.title.trim();
+    const venue_name = editDraft.venue_name.trim();
+    const event_date = editDraft.event_date;
+    if (title.length < 3) return toast.error('Title must be at least 3 characters');
+    if (venue_name.length < 2) return toast.error('Venue is required');
+    if (!event_date || !isValid(parseISO(event_date))) return toast.error('Valid date required');
+    setSavingEdit(true);
+    try {
+      const { error } = await supabase
+        .from('event_submissions')
+        .update({
+          title: title.slice(0, 200),
+          venue_name: venue_name.slice(0, 200),
+          event_date,
+        })
+        .eq('id', id);
+      if (error) throw error;
+      toast.success('Submission updated');
+      setEditingId(null);
+      qc.invalidateQueries({ queryKey: ['submissions'] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Update failed');
+    } finally {
+      setSavingEdit(false);
+    }
+  };
 
   const filtered = useMemo(() => {
     if (!submissions) return [];
@@ -384,6 +430,7 @@ export default function AdminBulkImport() {
                       const dateStr = isValid(parseISO(s.event_date))
                         ? format(parseISO(s.event_date), 'dd/MM/yyyy')
                         : s.event_date || '—';
+                      const isEditing = editingId === s.id;
                       return (
                         <div
                           key={s.id}
@@ -393,59 +440,126 @@ export default function AdminBulkImport() {
                         >
                           <Checkbox
                             className="mt-1"
-                            disabled={invalid}
+                            disabled={invalid || isEditing}
                             checked={selected.has(s.id)}
                             onCheckedChange={() => toggle(s.id)}
                           />
                           <div className="flex-1 min-w-0 space-y-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-medium truncate">{s.title}</span>
-                              <Badge variant="outline" className="text-xs">
-                                {s.event_type}
-                              </Badge>
-                              <Badge variant="secondary" className="text-xs">
-                                {dateStr}
-                              </Badge>
-                              {s.start_time && (
-                                <span className="text-xs text-muted-foreground">
-                                  {s.start_time.slice(0, 5)}
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-xs text-muted-foreground truncate">
-                              {s.venue_name}
-                              {s.venue_location ? ` · ${s.venue_location}` : ''}
-                            </div>
-                            <div className="text-xs text-muted-foreground truncate">
-                              From {s.submitter_name || s.submitter_email}
-                              {s.source_url && (
-                                <>
-                                  {' · '}
-                                  <a
-                                    href={s.source_url}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="underline"
+                            {isEditing ? (
+                              <div className="space-y-2">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                  <div className="space-y-1 md:col-span-2">
+                                    <Label className="text-xs">Title</Label>
+                                    <Input
+                                      value={editDraft.title}
+                                      onChange={(e) =>
+                                        setEditDraft((d) => ({ ...d, title: e.target.value }))
+                                      }
+                                    />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <Label className="text-xs">Venue</Label>
+                                    <Input
+                                      value={editDraft.venue_name}
+                                      onChange={(e) =>
+                                        setEditDraft((d) => ({ ...d, venue_name: e.target.value }))
+                                      }
+                                    />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <Label className="text-xs">Date</Label>
+                                    <Input
+                                      type="date"
+                                      value={editDraft.event_date}
+                                      onChange={(e) =>
+                                        setEditDraft((d) => ({ ...d, event_date: e.target.value }))
+                                      }
+                                    />
+                                  </div>
+                                </div>
+                                <div className="flex gap-2 pt-1">
+                                  <Button
+                                    size="sm"
+                                    onClick={() => saveEdit(s.id)}
+                                    disabled={savingEdit}
+                                    className="bg-primary text-primary-foreground hover:bg-primary/90"
                                   >
-                                    source
-                                  </a>
-                                </>
-                              )}
-                            </div>
-                            {invalid && (
-                              <div className="flex flex-wrap gap-1 pt-1">
-                                {issues.map((i) => (
-                                  <Badge
-                                    key={i.field}
-                                    variant="destructive"
-                                    className="text-[10px]"
+                                    <Save className="h-3.5 w-3.5 mr-1" /> Save
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={cancelEdit}
+                                    disabled={savingEdit}
                                   >
-                                    {i.message}
-                                  </Badge>
-                                ))}
+                                    <X className="h-3.5 w-3.5 mr-1" /> Cancel
+                                  </Button>
+                                </div>
                               </div>
+                            ) : (
+                              <>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-medium truncate">{s.title}</span>
+                                  <Badge variant="outline" className="text-xs">
+                                    {s.event_type}
+                                  </Badge>
+                                  <Badge variant="secondary" className="text-xs">
+                                    {dateStr}
+                                  </Badge>
+                                  {s.start_time && (
+                                    <span className="text-xs text-muted-foreground">
+                                      {s.start_time.slice(0, 5)}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-xs text-muted-foreground truncate">
+                                  {s.venue_name}
+                                  {s.venue_location ? ` · ${s.venue_location}` : ''}
+                                </div>
+                                <div className="text-xs text-muted-foreground truncate">
+                                  From {s.submitter_name || s.submitter_email}
+                                  {s.source_url && (
+                                    <>
+                                      {' · '}
+                                      <a
+                                        href={s.source_url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="underline"
+                                      >
+                                        source
+                                      </a>
+                                    </>
+                                  )}
+                                </div>
+                                {invalid && (
+                                  <div className="flex flex-wrap gap-1 pt-1">
+                                    {issues.map((i) => (
+                                      <Badge
+                                        key={i.field}
+                                        variant="destructive"
+                                        className="text-[10px]"
+                                      >
+                                        {i.message}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                )}
+                              </>
                             )}
                           </div>
+                          {!isEditing && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => startEdit(s)}
+                              disabled={publishing}
+                              className="shrink-0"
+                            >
+                              <Pencil className="h-3.5 w-3.5 mr-1" />
+                              Edit
+                            </Button>
+                          )}
                         </div>
                       );
                     })}
