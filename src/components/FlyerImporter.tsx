@@ -221,6 +221,7 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
     if (!extracting) return;
     const id = window.setInterval(() => {
       setElapsed(Math.floor((Date.now() - startRef.current) / 1000));
+      setStageTick((t) => t + 1);
     }, 500);
     return () => window.clearInterval(id);
   }, [extracting]);
