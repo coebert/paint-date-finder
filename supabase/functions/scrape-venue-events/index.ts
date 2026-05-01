@@ -106,18 +106,69 @@ async function extractCandidates(
   sourceUrl: string,
   pageText: string,
   apiKey: string,
+  sourceType: SourceType,
 ): Promise<Candidate[]> {
   const today = new Date().toISOString().slice(0, 10);
-  const systemPrompt =
-    "You extract upcoming UK paintball events from venue website text. " +
-    "Only return events with an unambiguous, explicitly stated date. " +
-    "Never guess or infer dates. If no concrete dates are present, return an empty array.";
+
+  const isGroup = sourceType === "facebook_group";
+
+  const systemPrompt = isGroup
+    ? "You extract upcoming UK paintball events from a Facebook group feed where many different venues post adverts and flyers. " +
+      "Each event may be hosted at a different venue. Extract the venue name as stated in the post. " +
+      "Only return events with an unambiguous, explicitly stated date AND a clearly identified venue. " +
+      "Never guess dates or venues. If either is missing, skip that event."
+    : "You extract upcoming UK paintball events from venue website text. " +
+      "Only return events with an unambiguous, explicitly stated date. " +
+      "Never guess or infer dates. If no concrete dates are present, return an empty array.";
+
+  const contextLine = isGroup
+    ? `Source: Facebook group "${venueName}"\nSource URL: ${sourceUrl}\nToday: ${today}\n\n` +
+      `Extract upcoming events (date >= today, within next 12 months) advertised in posts on this group. ` +
+      `For each event, set venue_name to the venue hosting it (as named in the post). ` +
+      `Set venue_location to the town/county if mentioned.\n`
+    : `Venue: ${venueName}\nSource URL: ${sourceUrl}\nToday: ${today}\n\n` +
+      `Extract upcoming events (date >= today, within next 12 months) from this page text.\n`;
 
   const userPrompt =
-    `Venue: ${venueName}\nSource URL: ${sourceUrl}\nToday: ${today}\n\n` +
-    `Extract upcoming events (date >= today, within next 12 months) from this page text.\n` +
+    contextLine +
     `Return strict JSON via the tool call. Use ISO YYYY-MM-DD for dates and HH:MM (24h) for times.\n\n` +
     `--- PAGE TEXT ---\n${pageText}`;
+
+  const candidateProperties: Record<string, unknown> = {
+    title: { type: "string" },
+    description: { type: "string" },
+    event_type: {
+      type: "string",
+      enum: [
+        "walk_on",
+        "big_game",
+        "competition",
+        "tournament",
+        "speedball",
+        "scenario",
+        "mag_fed",
+        "other",
+      ],
+    },
+    event_date: { type: "string", description: "ISO date YYYY-MM-DD" },
+    start_time: { type: "string", description: "HH:MM 24h" },
+    end_time: { type: "string", description: "HH:MM 24h" },
+    price_info: { type: "string" },
+    booking_url: { type: "string" },
+  };
+  const required = ["title", "event_type", "event_date"];
+
+  if (isGroup) {
+    candidateProperties.venue_name = {
+      type: "string",
+      description: "Name of the paintball venue hosting this event",
+    };
+    candidateProperties.venue_location = {
+      type: "string",
+      description: "Town, county, or region of the venue if stated",
+    };
+    required.push("venue_name");
+  }
 
   const body = {
     model: "google/gemini-3-flash-preview",
@@ -139,32 +190,8 @@ async function extractCandidates(
                 type: "array",
                 items: {
                   type: "object",
-                  properties: {
-                    title: { type: "string" },
-                    description: { type: "string" },
-                    event_type: {
-                      type: "string",
-                      enum: [
-                        "walk_on",
-                        "big_game",
-                        "competition",
-                        "tournament",
-                        "speedball",
-                        "scenario",
-                        "mag_fed",
-                        "other",
-                      ],
-                    },
-                    event_date: {
-                      type: "string",
-                      description: "ISO date YYYY-MM-DD",
-                    },
-                    start_time: { type: "string", description: "HH:MM 24h" },
-                    end_time: { type: "string", description: "HH:MM 24h" },
-                    price_info: { type: "string" },
-                    booking_url: { type: "string" },
-                  },
-                  required: ["title", "event_type", "event_date"],
+                  properties: candidateProperties,
+                  required,
                   additionalProperties: false,
                 },
               },
