@@ -49,6 +49,12 @@ const FIRECRAWL_HOST_PATTERNS = [
   /(^|\.)eventbrite\.com$/i,
 ];
 
+// Hard per-attempt timeouts so the function never hangs.
+const FETCH_TIMEOUT_MS = 12_000;
+const FIRECRAWL_TIMEOUT_MS = 25_000;
+// Treat anything shorter than this (after stripping markup) as "empty".
+const MIN_USEFUL_TEXT = 200;
+
 function shouldUseFirecrawlFirst(url: string): boolean {
   try {
     const host = new URL(url).hostname;
@@ -58,44 +64,144 @@ function shouldUseFirecrawlFirst(url: string): boolean {
   }
 }
 
-async function fetchPageText(url: string): Promise<string> {
-  const res = await fetch(url, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (compatible; FindAWalkOnBot/1.0; +https://findawalkon.app)",
-      Accept: "text/html,application/xhtml+xml",
-    },
-    redirect: "follow",
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${url}`);
-  const html = await res.text();
+function isFacebook(url: string): boolean {
+  try {
+    return /(^|\.)facebook\.com$/i.test(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+}
+
+function isInstagram(url: string): boolean {
+  try {
+    return /(^|\.)instagram\.com$/i.test(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+}
+
+/** fetch() with an AbortController-backed timeout. */
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number,
+): Promise<Response> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: ctrl.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function stripHtml(html: string): string {
   return html
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
     .replace(/<style[\s\S]*?<\/style>/gi, " ")
     .replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 30_000);
 }
 
-async function fetchViaFirecrawl(
+async function fetchPageText(url: string): Promise<string> {
+  const res = await fetchWithTimeout(
+    url,
+    {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (compatible; FindAWalkOnBot/1.0; +https://findawalkon.app)",
+        Accept: "text/html,application/xhtml+xml",
+      },
+      redirect: "follow",
+    },
+    FETCH_TIMEOUT_MS,
+  );
+  if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${url}`);
+  return stripHtml(await res.text());
+}
+
+/** Convert www.facebook.com → m.facebook.com (mobile site exposes more content without login). */
+function toMobileFacebook(url: string): string {
+  try {
+    const u = new URL(url);
+    if (/(^|\.)facebook\.com$/i.test(u.hostname)) {
+      u.hostname = "m.facebook.com";
+      return u.toString();
+    }
+  } catch {
+    /* ignore */
+  }
+  return url;
+}
+
+/** Try Instagram's public oEmbed for caption text. */
+async function fetchInstagramOEmbed(url: string): Promise<string> {
+  const oembedUrl =
+    "https://www.instagram.com/api/v1/oembed/?url=" + encodeURIComponent(url);
+  const res = await fetchWithTimeout(
+    oembedUrl,
+    {
+      headers: {
+        "User-Agent": "Mozilla/5.0 FindAWalkOnBot/1.0",
+        Accept: "application/json",
+      },
+    },
+    FETCH_TIMEOUT_MS,
+  );
+  if (!res.ok) throw new Error(`Instagram oEmbed ${res.status}`);
+  const data = await res.json().catch(() => ({}));
+  const title = (data?.title ?? "").toString();
+  const author = (data?.author_name ?? "").toString();
+  return [title, author && `Posted by ${author}`].filter(Boolean).join("\n");
+}
+
+/** Try Facebook's plugins/post HTML which often surfaces the post text without login. */
+async function fetchFacebookEmbed(url: string): Promise<string> {
+  const embedUrl =
+    "https://www.facebook.com/plugins/post.php?show_text=true&href=" +
+    encodeURIComponent(url);
+  const res = await fetchWithTimeout(
+    embedUrl,
+    {
+      headers: {
+        "User-Agent": "Mozilla/5.0 FindAWalkOnBot/1.0",
+        Accept: "text/html,application/xhtml+xml",
+      },
+      redirect: "follow",
+    },
+    FETCH_TIMEOUT_MS,
+  );
+  if (!res.ok) throw new Error(`Facebook embed ${res.status}`);
+  return stripHtml(await res.text());
+}
+
+async function fetchViaFirecrawlOnce(
   url: string,
   apiKey: string,
 ): Promise<string> {
-  const res = await fetch("https://api.firecrawl.dev/v2/scrape", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
+  const res = await fetchWithTimeout(
+    "https://api.firecrawl.dev/v2/scrape",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        url,
+        formats: ["markdown"],
+        onlyMainContent: true,
+        waitFor: 2500,
+      }),
     },
-    body: JSON.stringify({
-      url,
-      formats: ["markdown"],
-      onlyMainContent: true,
-      waitFor: 2000,
-    }),
-  });
+    FIRECRAWL_TIMEOUT_MS,
+  );
   if (!res.ok) {
     const t = await res.text();
     throw new Error(`Firecrawl ${res.status}: ${t.slice(0, 200)}`);
@@ -103,6 +209,91 @@ async function fetchViaFirecrawl(
   const data = await res.json();
   const md: string = data?.data?.markdown ?? data?.markdown ?? "";
   return md.replace(/\s+/g, " ").trim().slice(0, 30_000);
+}
+
+/**
+ * Firecrawl with one retry + backoff. Returns "" on empty/insufficient content
+ * instead of throwing, so the caller can fall back.
+ */
+async function fetchViaFirecrawl(
+  url: string,
+  apiKey: string,
+): Promise<string> {
+  let lastErr: unknown = null;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const text = await fetchViaFirecrawlOnce(url, apiKey);
+      if (text.length >= MIN_USEFUL_TEXT) return text;
+      console.log(
+        `[flyer] firecrawl attempt ${attempt} returned ${text.length} chars (below ${MIN_USEFUL_TEXT})`,
+      );
+    } catch (e) {
+      lastErr = e;
+      const msg = e instanceof Error ? e.message : String(e);
+      console.log(`[flyer] firecrawl attempt ${attempt} failed: ${msg}`);
+    }
+    if (attempt === 1) await new Promise((r) => setTimeout(r, 800));
+  }
+  if (lastErr) {
+    const msg = lastErr instanceof Error ? lastErr.message : String(lastErr);
+    console.log(`[flyer] firecrawl exhausted retries: ${msg}`);
+  }
+  return "";
+}
+
+/**
+ * Resolve a social URL to text via a fallback chain.
+ * Each step has its own timeout and never hangs the request.
+ * Returns the best non-empty text found, or "" if everything failed.
+ */
+async function resolveUrlText(
+  url: string,
+  firecrawlKey: string | undefined,
+): Promise<{ text: string; via: string }> {
+  const attempts: Array<{ name: string; run: () => Promise<string> }> = [];
+
+  if (firecrawlKey && shouldUseFirecrawlFirst(url)) {
+    attempts.push({
+      name: "firecrawl",
+      run: () => fetchViaFirecrawl(url, firecrawlKey),
+    });
+  }
+
+  if (isFacebook(url)) {
+    attempts.push({ name: "fb-embed", run: () => fetchFacebookEmbed(url) });
+    attempts.push({
+      name: "fb-mobile",
+      run: () => fetchPageText(toMobileFacebook(url)),
+    });
+  }
+  if (isInstagram(url)) {
+    attempts.push({ name: "ig-oembed", run: () => fetchInstagramOEmbed(url) });
+  }
+
+  // Plain HTTP fetch as a baseline (works for venue sites, often empty for FB).
+  attempts.push({ name: "plain", run: () => fetchPageText(url) });
+
+  // Last resort: Firecrawl on non-social sites if we haven't tried it yet.
+  if (firecrawlKey && !shouldUseFirecrawlFirst(url)) {
+    attempts.push({
+      name: "firecrawl-fallback",
+      run: () => fetchViaFirecrawl(url, firecrawlKey),
+    });
+  }
+
+  let best = { text: "", via: "none" };
+  for (const a of attempts) {
+    try {
+      const text = await a.run();
+      console.log(`[flyer] url ${a.name} -> ${text.length} chars`);
+      if (text.length > best.text.length) best = { text, via: a.name };
+      if (text.length >= MIN_USEFUL_TEXT) return best;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.log(`[flyer] url ${a.name} failed: ${msg}`);
+    }
+  }
+  return best;
 }
 
 function buildExtractionTool() {
@@ -360,18 +551,14 @@ Deno.serve(async (req) => {
       if (!/^https?:\/\//i.test(url)) {
         throw new Error("a valid http(s) URL is required");
       }
-      let text: string;
-      if (FIRECRAWL_API_KEY && shouldUseFirecrawlFirst(url)) {
-        text = await fetchViaFirecrawl(url, FIRECRAWL_API_KEY);
-      } else {
-        text = await fetchPageText(url);
-        if (text.length < 300 && FIRECRAWL_API_KEY) {
-          text = await fetchViaFirecrawl(url, FIRECRAWL_API_KEY);
-        }
-      }
+      const { text, via } = await resolveUrlText(url, FIRECRAWL_API_KEY);
+      console.log(`[flyer] url resolved via=${via} chars=${text.length}`);
       if (text.length < 30) {
+        const social = isFacebook(url) || isInstagram(url);
         throw new Error(
-          "Couldn't read enough content from that URL — many Facebook posts require login. Try uploading a screenshot instead.",
+          social
+            ? "Couldn't read this Facebook/Instagram post — it likely requires login or has been removed. Open the post, take a screenshot, and use the Image tab instead."
+            : "Couldn't read enough content from that URL. Try the Text tab and paste the post directly, or use a screenshot.",
         );
       }
       candidates = await extractFromText(LOVABLE_API_KEY, text, url);
