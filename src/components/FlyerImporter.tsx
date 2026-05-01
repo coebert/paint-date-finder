@@ -442,16 +442,32 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
       currentStage = 'prepare';
       setStage('prepare', 'active');
 
-      if (tab === 'image') {
-        if (!file) throw new Error('Choose an image first');
-        const dataUrl = await fileToDataUrl(file);
-        setStage('prepare', 'done', `${(file.size / 1024 / 1024).toFixed(1)} MB ready`);
-        input = { kind: 'image', data: dataUrl, sourceUrl: trimmedSource };
-      } else if (tab === 'pdf') {
-        if (!file) throw new Error('Choose a PDF first');
-        const dataUrl = await fileToDataUrl(file);
-        setStage('prepare', 'done', `${(file.size / 1024 / 1024).toFixed(1)} MB ready`);
-        input = { kind: 'pdf', data: dataUrl, sourceUrl: trimmedSource };
+      if (tab === 'image' || tab === 'pdf') {
+        if (!file) throw new Error(`Choose ${tab === 'image' ? 'an image' : 'a PDF'} first`);
+        // Upload to storage first so we send a small URL to the edge function
+        // instead of a multi-MB base64 payload (which routinely caused timeouts).
+        // The uploaded file is reused at save time as the attached flyer.
+        let publicUrl = uploadedFlyerUrl;
+        if (!publicUrl) {
+          const ext = file.name.split('.').pop()?.toLowerCase() || (tab === 'pdf' ? 'pdf' : 'jpg');
+          const safeExt = ext.replace(/[^a-z0-9]/g, '').slice(0, 5) || 'bin';
+          const objectKey = `${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}.${safeExt}`;
+          const { error: uploadError } = await supabase.storage
+            .from('flyer-images')
+            .upload(objectKey, file, {
+              cacheControl: '31536000',
+              contentType: file.type || undefined,
+              upsert: false,
+            });
+          if (uploadError) {
+            throw new Error(`Upload failed: ${uploadError.message}`);
+          }
+          const { data: pub } = supabase.storage.from('flyer-images').getPublicUrl(objectKey);
+          publicUrl = pub.publicUrl;
+          setUploadedFlyerUrl(publicUrl);
+        }
+        setStage('prepare', 'done', `${(file.size / 1024 / 1024).toFixed(1)} MB uploaded`);
+        input = { kind: tab, data: publicUrl, sourceUrl: trimmedSource };
       } else if (tab === 'text') {
         if (pastedText.trim().length < 10) throw new Error('Paste the post text first');
         setStage('prepare', 'done', `${pastedText.trim().length} characters`);
