@@ -126,6 +126,7 @@ export function SubmitEventDialog({ open, onOpenChange, initialTab = 'flyer' }: 
       booking_url: data.booking_url || null,
       price_info: data.price_info || null,
       source_url: data.source_url || null,
+      image_url: null,
       submitter_email: data.submitter_email,
       submitter_name: data.submitter_name || null,
     });
@@ -178,6 +179,7 @@ export function SubmitEventDialog({ open, onOpenChange, initialTab = 'flyer' }: 
   const handleFlyerSave = async (
     candidates: { title: string; description?: string | null; event_type: EventType; event_date: string; start_time?: string | null; end_time?: string | null; price_info?: string | null; booking_url?: string | null; venue_name?: string | null; venue_location?: string | null }[],
     sourceUrl: string | null,
+    flyerImageUrl: string | null,
   ) => {
     const email = (document.getElementById('flyer-submitter-email') as HTMLInputElement | null)?.value?.trim();
     const name = (document.getElementById('flyer-submitter-name') as HTMLInputElement | null)?.value?.trim();
@@ -209,6 +211,7 @@ export function SubmitEventDialog({ open, onOpenChange, initialTab = 'flyer' }: 
           booking_url: c.booking_url || null,
           price_info: c.price_info?.slice(0, 100) ?? null,
           source_url: sourceUrl,
+          image_url: flyerImageUrl,
           submitter_email: email,
           submitter_name: name || null,
         });

@@ -65,6 +65,7 @@ export type Database = {
           event_date: string
           event_type: Database["public"]["Enums"]["event_type"]
           id: string
+          image_url: string | null
           price_info: string | null
           reviewed_at: string | null
           source_url: string | null
@@ -85,6 +86,7 @@ export type Database = {
           event_date: string
           event_type?: Database["public"]["Enums"]["event_type"]
           id?: string
+          image_url?: string | null
           price_info?: string | null
           reviewed_at?: string | null
           source_url?: string | null
@@ -105,6 +107,7 @@ export type Database = {
           event_date?: string
           event_type?: Database["public"]["Enums"]["event_type"]
           id?: string
+          image_url?: string | null
           price_info?: string | null
           reviewed_at?: string | null
           source_url?: string | null

@@ -39,6 +39,7 @@ export function AdminFlyerImportCard() {
       venue_location?: string | null;
     }>,
     sourceUrl: string | null,
+    flyerImageUrl: string | null,
   ) => {
     setSaving(true);
     try {
@@ -64,6 +65,7 @@ export function AdminFlyerImportCard() {
         booking_url: c.booking_url || null,
         price_info: c.price_info?.slice(0, 100) ?? null,
         source_url: sourceUrl,
+        image_url: flyerImageUrl,
         is_verified: true,
       }));
       const { error } = await supabase.from('events').insert(rows);

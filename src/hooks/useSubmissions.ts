@@ -68,6 +68,7 @@ export function useApproveSubmission() {
           booking_url: submission.booking_url,
           price_info: submission.price_info,
           source_url: submission.source_url,
+          image_url: submission.image_url,
           is_verified: false,
         });
 

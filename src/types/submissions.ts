@@ -15,6 +15,7 @@ export interface EventSubmission {
   booking_url: string | null;
   price_info: string | null;
   source_url: string | null;
+  image_url: string | null;
   submitter_email: string;
   submitter_name: string | null;
   status: SubmissionStatus;
