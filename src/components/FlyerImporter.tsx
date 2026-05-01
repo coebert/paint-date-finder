@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Sparkles, Upload, ImageIcon, Link2, FileText, FileType, Check, X as XIcon, Circle } from 'lucide-react';
+import { Loader2, Sparkles, Upload, ImageIcon, Link2, FileText, FileType, Check, X as XIcon, Circle, AlertTriangle, RotateCw, Clipboard } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -131,6 +131,17 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
   const [failedStage, setFailedStage] = useState<StageKey | null>(null);
   // Tick to drive per-stage live elapsed display
   const [stageTick, setStageTick] = useState(0);
+  // Soft-warning state: surfaced when extraction crosses ~70% of the hard timeout
+  const [slowWarning, setSlowWarning] = useState(false);
+  // Last failure details for the retry/fallback panel
+  const [lastFailure, setLastFailure] = useState<{
+    kind: FlyerInput['kind'];
+    isTimeout: boolean;
+    timeoutMs?: number;
+    message: string;
+    attempt: number;
+  } | null>(null);
+  const attemptRef = useRef(0);
 
   // Persist draft whenever the meaningful fields change.
   useEffect(() => {
@@ -311,6 +322,14 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
     setEstimate(estimateSeconds(tab, file));
     setFailedStage(null);
     setStages(buildStages(tab));
+    setSlowWarning(false);
+    setLastFailure(null);
+    attemptRef.current += 1;
+    // Soft warning at 70% of the hard timeout — gives users a heads-up
+    // before we auto-cancel, so they can decide to wait or prepare a fallback.
+    const hardTimeoutMs = FLYER_TIMEOUTS_MS[tab];
+    const warnAt = Math.round(hardTimeoutMs * 0.7);
+    const warnTimer = window.setTimeout(() => setSlowWarning(true), warnAt);
     let currentStage: StageKey = 'prepare';
     try {
       let input: FlyerInput;
@@ -420,21 +439,31 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
       setStage('save', 'done', `${extracted.length} ready to review`);
     } catch (e) {
       const isTimeout = e instanceof FlyerTimeoutError;
+      const timeoutMs = isTimeout ? (e as FlyerTimeoutError).timeoutMs : undefined;
       const friendly = isTimeout
-        ? `Extraction took longer than ${Math.round((e as FlyerTimeoutError).timeoutMs / 1000)}s and was cancelled. Try a smaller or clearer file, paste the post text instead, or retry.`
+        ? `Extraction took longer than ${Math.round((timeoutMs ?? hardTimeoutMs) / 1000)}s and was cancelled.`
         : e instanceof Error
           ? e.message
           : 'Extraction failed';
       setFailedStage(currentStage);
-      setStage(currentStage, 'failed', isTimeout ? 'Timed out — cancelled' : friendly);
+      setStage(currentStage, 'failed', isTimeout ? 'Timed out — auto-cancelled' : friendly);
+      setLastFailure({
+        kind: tab,
+        isTimeout,
+        timeoutMs,
+        message: friendly,
+        attempt: attemptRef.current,
+      });
       if (isTimeout) {
-        toast.error('Flyer extraction timed out', {
-          description: 'The AI took too long to respond. Try a smaller image, fewer pages, or paste the text directly.',
+        toast.error('Extraction timed out', {
+          description: 'See the panel below for retry options and faster alternatives.',
         });
       } else {
         toast.error(friendly);
       }
     } finally {
+      window.clearTimeout(warnTimer);
+      setSlowWarning(false);
       setExtracting(false);
     }
   };
@@ -692,10 +721,96 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
               {' '}ETA learns from your past runs. Will auto-cancel after {Math.round(FLYER_TIMEOUTS_MS[tab] / 1000)}s.
             </p>
           )}
-          {failedStage && !extracting && (
-            <p className="text-[11px] text-destructive">
-              Failed at the highlighted step. Adjust the input and try again.
-            </p>
+
+          {extracting && slowWarning && (
+            <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-2 text-[11px]">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
+              <div className="flex-1 text-foreground/90">
+                <span className="font-medium">Taking longer than usual.</span>{' '}
+                <span className="text-muted-foreground">
+                  We'll auto-cancel at {Math.round(FLYER_TIMEOUTS_MS[tab] / 1000)}s. You can wait, or prepare a fallback ({tab === 'url' ? 'paste the post text' : tab === 'pdf' ? 'split the PDF or paste the text' : tab === 'image' ? 'shrink the image or paste the text' : 'simplify the text'}).
+                </span>
+              </div>
+            </div>
+          )}
+
+          {failedStage && !extracting && lastFailure && (
+            <div className="space-y-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-xs">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                <div className="flex-1 space-y-1">
+                  <p className="font-medium text-destructive">
+                    {lastFailure.isTimeout
+                      ? `Timed out after ${Math.round((lastFailure.timeoutMs ?? FLYER_TIMEOUTS_MS[lastFailure.kind]) / 1000)}s`
+                      : 'Extraction failed'}
+                  </p>
+                  <p className="text-muted-foreground">{lastFailure.message}</p>
+                </div>
+              </div>
+
+              <div className="space-y-1 pl-6">
+                <p className="text-[11px] font-medium text-foreground">Try one of these:</p>
+                <ul className="ml-4 list-disc space-y-0.5 text-[11px] text-muted-foreground">
+                  {lastFailure.kind === 'image' && (
+                    <>
+                      <li>Compress or crop the image to under 4 MB.</li>
+                      <li>Re-take the photo with better lighting / less glare.</li>
+                      <li>Switch to the <span className="font-medium">Text</span> tab and paste the flyer text.</li>
+                    </>
+                  )}
+                  {lastFailure.kind === 'pdf' && (
+                    <>
+                      <li>Split multi-page PDFs and try a single page.</li>
+                      <li>Export the PDF as a JPG and use the <span className="font-medium">Image</span> tab.</li>
+                      <li>Copy the text out and use the <span className="font-medium">Text</span> tab.</li>
+                    </>
+                  )}
+                  {lastFailure.kind === 'url' && (
+                    <>
+                      <li>Login-walled posts (private FB/IG) can't be scraped — paste the text instead.</li>
+                      <li>Take a screenshot of the post and use the <span className="font-medium">Image</span> tab.</li>
+                      <li>Try the public mobile URL (e.g. <code className="rounded bg-muted px-1">m.facebook.com</code>).</li>
+                    </>
+                  )}
+                  {lastFailure.kind === 'text' && (
+                    <>
+                      <li>Trim down extremely long text (over a few thousand chars).</li>
+                      <li>Make sure dates and event names are present in the text.</li>
+                      <li>Retry — the AI service may have been briefly overloaded.</li>
+                    </>
+                  )}
+                </ul>
+              </div>
+
+              <div className="flex flex-wrap gap-2 pt-1">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleExtract}
+                  className="h-7 text-xs"
+                >
+                  <RotateCw className="mr-1.5 h-3 w-3" />
+                  Retry {lastFailure.attempt > 1 ? `(attempt ${lastFailure.attempt + 1})` : ''}
+                </Button>
+                {(lastFailure.kind === 'url' || lastFailure.kind === 'image' || lastFailure.kind === 'pdf') && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setTab('text');
+                      setFailedStage(null);
+                      setLastFailure(null);
+                    }}
+                    className="h-7 text-xs"
+                  >
+                    <Clipboard className="mr-1.5 h-3 w-3" />
+                    Paste text instead
+                  </Button>
+                )}
+              </div>
+            </div>
           )}
         </div>
       )}
