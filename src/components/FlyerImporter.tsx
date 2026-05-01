@@ -157,29 +157,68 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
     startRef.current = Date.now();
     setElapsed(0);
     setEstimate(estimateSeconds(tab, file));
+    setFailedStage(null);
+    setStages(buildStages(tab));
+    let currentStage: StageKey = 'prepare';
     try {
       let input: FlyerInput;
       const trimmedSource = sourceUrl.trim() || undefined;
 
+      // Stage 1: prepare input
+      currentStage = 'prepare';
+      setStage('prepare', 'active');
+
       if (tab === 'image') {
         if (!file) throw new Error('Choose an image first');
         const dataUrl = await fileToDataUrl(file);
+        setStage('prepare', 'done', `${(file.size / 1024 / 1024).toFixed(1)} MB ready`);
         input = { kind: 'image', data: dataUrl, sourceUrl: trimmedSource };
       } else if (tab === 'pdf') {
         if (!file) throw new Error('Choose a PDF first');
         const dataUrl = await fileToDataUrl(file);
+        setStage('prepare', 'done', `${(file.size / 1024 / 1024).toFixed(1)} MB ready`);
         input = { kind: 'pdf', data: dataUrl, sourceUrl: trimmedSource };
       } else if (tab === 'text') {
         if (pastedText.trim().length < 10) throw new Error('Paste the post text first');
+        setStage('prepare', 'done', `${pastedText.trim().length} characters`);
         input = { kind: 'text', text: pastedText, sourceUrl: trimmedSource };
       } else {
         if (!/^https?:\/\//i.test(sourceUrl.trim())) {
           throw new Error('Enter a valid http(s) URL');
         }
+        setStage('prepare', 'done', sourceUrl.trim().slice(0, 60));
         input = { kind: 'url', sourceUrl: sourceUrl.trim() };
       }
 
-      const { candidates: extracted, total_extracted } = await extractFlyer(input);
+      // Stage 2 & 3: upload + analyse — both happen inside the single edge call,
+      // so we mark upload active immediately and flip to analyse after a short
+      // delay so the user can see progress through the steps.
+      currentStage = 'upload';
+      setStage('upload', 'active');
+      const analyseTimer = window.setTimeout(() => {
+        setStage('upload', 'done');
+        setStage('analyse', 'active');
+        currentStage = 'analyse';
+      }, 1200);
+
+      let extracted: ExtractedCandidate[] = [];
+      let total_extracted = 0;
+      try {
+        const res = await extractFlyer(input);
+        extracted = res.candidates;
+        total_extracted = res.total_extracted;
+      } finally {
+        window.clearTimeout(analyseTimer);
+      }
+
+      // Make sure both upload & analyse are marked done before save
+      setStage('upload', 'done');
+      setStage('analyse', 'done', `${total_extracted} raw event${total_extracted === 1 ? '' : 's'} found`);
+
+      // Stage 4: finalise
+      currentStage = 'save';
+      setStage('save', 'active');
+
       if (extracted.length === 0) {
         if (total_extracted > 0) {
           toast.warning(
@@ -198,8 +237,11 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
           _selected: true,
         })),
       );
+      setStage('save', 'done', `${extracted.length} ready to review`);
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Extraction failed';
+      setFailedStage(currentStage);
+      setStage(currentStage, 'failed', msg);
       toast.error(msg);
     } finally {
       setExtracting(false);
