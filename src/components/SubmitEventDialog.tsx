@@ -126,6 +126,7 @@ export function SubmitEventDialog({ open, onOpenChange, initialTab = 'flyer' }: 
       booking_url: data.booking_url || null,
       price_info: data.price_info || null,
       source_url: data.source_url || null,
+      image_url: null,
       submitter_email: data.submitter_email,
       submitter_name: data.submitter_name || null,
     });
