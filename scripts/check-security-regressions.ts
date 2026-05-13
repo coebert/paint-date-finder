@@ -43,7 +43,12 @@ async function main() {
     process.exit(0);
   }
 
-  const client = new Client({ connectionString: url });
+  const client = new Client({
+    connectionString: url,
+    ssl: url.includes("sslmode=disable")
+      ? false
+      : { rejectUnauthorized: false },
+  });
   await client.connect();
   const violations: Violation[] = [];
 
