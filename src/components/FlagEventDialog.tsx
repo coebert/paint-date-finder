@@ -45,17 +45,18 @@ export function FlagEventDialog({ eventId, eventTitle, open, onOpenChange }: Fla
 
     setIsSubmitting(true);
     try {
-      const { data, error } = await supabase.from('event_flags' as any).insert({
-        event_id: eventId,
-        reason,
-        details: details.trim() || null,
-      }).select('id, delete_token').single();
+      const { data, error } = await supabase.rpc('create_event_flag' as any, {
+        _event_id: eventId,
+        _reason: reason,
+        _details: details.trim() || null,
+      });
 
       if (error) throw error;
 
       // Store the delete token so the user can withdraw their flag
-      if (data) {
-        storeFlagToken(eventId, (data as any).id, (data as any).delete_token);
+      const row = Array.isArray(data) ? (data as any)[0] : (data as any);
+      if (row?.id && row?.delete_token) {
+        storeFlagToken(eventId, row.id, row.delete_token);
       }
 
       toast.success('Thank you! Your report has been submitted for review.');
