@@ -659,6 +659,7 @@ export default function FieldLayout() {
         </Tabs>
       </main>
     </div>
+    </>
   );
 }
 
