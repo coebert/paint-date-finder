@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Calendar, List, Plus, Map, Send, Settings, LogIn, Users, LayoutGrid, Sparkles } from 'lucide-react';
-import logo from '@/assets/logo.png';
+import { HeroLogo } from '@/components/HeroLogo';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
@@ -26,13 +26,8 @@ export function Header({ view, onViewChange, onAddEvent, onSubmitEvent, onImport
       <div className="container mx-auto px-4 py-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <img
-              src={logo}
-              alt="Find A Walk-On logo"
-              width={80}
-              height={80}
-              fetchPriority="high"
-              decoding="async"
+            <HeroLogo
+              displayWidth={80}
               className="w-16 h-16 md:w-20 md:h-20 drop-shadow-lg"
             />
             <div>
