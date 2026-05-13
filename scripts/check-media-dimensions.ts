@@ -271,8 +271,12 @@ function writeReport(path: string, contents: string) {
 }
 
 if (isMain) {
+  const strategyRaw = getArg('parent-strategy');
+  const strategy = strategyRaw === 'any' ? 'any' : 'nearest';
+  const scanOpts: ScanOptions = { parentStrategy: strategy };
+
   const files = walk(ROOT).filter((f) => !EXEMPT.has(relative(process.cwd(), f)));
-  const all = files.flatMap(scanFile);
+  const all = files.flatMap((f) => scanFile(f, scanOpts));
 
   const jsonOut = getArg('json');
   const mdOut = getArg('md');
