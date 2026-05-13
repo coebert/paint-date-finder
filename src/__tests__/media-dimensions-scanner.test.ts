@@ -184,11 +184,11 @@ describe('check-media-dimensions: nested wrapper resolution', () => {
     expect(v).toHaveLength(1);
   });
 
-  it('multiple sibling subtrees — each evaluated independently', () => {
+  it('multiple sibling subtrees — each evaluated against its own nearest parent', () => {
     const src = `
       <section>
         <div className="h-20 w-20">
-          <span><img src="/a.png" /></span>
+          <img src="/a.png" />
         </div>
         <div className="h-20 w-20">
           <img src="/b.png" />
@@ -206,7 +206,7 @@ describe('check-media-dimensions: nested wrapper resolution', () => {
       </section>
     `;
     const v = scanSource(src);
-    // Only /d.png has no sized ancestor in its chain
+    // a, b, c all have a sized nearest parent. d's nearest parent is <span> (unsized).
     expect(v).toHaveLength(1);
     expect(v[0].snippet).toContain('d.png');
   });
