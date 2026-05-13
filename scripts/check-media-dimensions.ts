@@ -12,6 +12,7 @@
  *     - data-cls-exempt attribute
  *   …or on the nearest enclosing JSX wrapper element:
  *     - any of the above className utilities
+ *     - inline style containing `aspectRatio`
  *   …or inline comment immediately before the tag:
  *     - JSX comment with "cls-exempt"
  *     - HTML comment with "cls-exempt"
