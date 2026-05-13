@@ -80,24 +80,34 @@ function hasDimensions(attrs: string): boolean {
  * Returns the className and style blobs of the nearest enclosing JSX element opened
  * before offset i (or null if none / not yet sized-checkable).
  */
-function parentAttrsAt(src: string, offset: number): { className: string | null; style: string | null } {
+function parentAttrsAt(
+  src: string,
+  offset: number,
+): { tag: string | null; className: string | null; style: string | null } {
+  const tagStack: string[] = [];
   const classStack: string[] = [];
   const styleStack: string[] = [];
   const tokenRe = /<(\/?)([A-Za-z][\w.-]*)([^<>]*?)(\/?)>/g;
   let m: RegExpExecArray | null;
   while ((m = tokenRe.exec(src)) !== null) {
     if (m.index >= offset) break;
-    const [, slash, , attrs, selfClose] = m;
+    const [, slash, name, attrs, selfClose] = m;
     if (slash) {
+      tagStack.pop();
       classStack.pop();
       styleStack.pop();
     } else if (!selfClose) {
+      tagStack.push(name);
       classStack.push(classNameBlob(attrs));
       styleStack.push(styleBlob(attrs));
     }
   }
   const i = classStack.length;
-  return { className: i ? classStack[i - 1] : null, style: i ? styleStack[i - 1] : null };
+  return {
+    tag: i ? tagStack[i - 1] : null,
+    className: i ? classStack[i - 1] : null,
+    style: i ? styleStack[i - 1] : null,
+  };
 }
 
 /**
