@@ -10,6 +10,7 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
+    "lint:media": "bunx tsx scripts/check-media-dimensions.ts",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest"
