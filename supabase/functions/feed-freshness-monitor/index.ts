@@ -67,25 +67,44 @@ async function sendAlertEmail(
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  // Require the service-role key (sent by pg_cron / admin invocations).
-  const authHeader = req.headers.get("Authorization");
-  const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "";
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!bearer || !serviceRoleKey || bearer !== serviceRoleKey) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
   const lovableKey = Deno.env.get("LOVABLE_API_KEY");
   const resendKey = Deno.env.get("RESEND_API_KEY");
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
 
-  if (!lovableKey || !resendKey || !supabaseUrl || !serviceKey) {
+  if (!lovableKey || !resendKey || !supabaseUrl || !serviceKey || !anonKey) {
     return new Response(JSON.stringify({ error: "Missing required env vars" }), {
       status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  // Accept either the service-role key (pg_cron) or a signed-in admin user JWT.
+  const authHeader = req.headers.get("Authorization");
+  const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "";
+  let authorized = bearer && bearer === serviceKey;
+
+  if (!authorized && bearer) {
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: `Bearer ${bearer}` } },
+    });
+    const { data: { user } } = await userClient.auth.getUser();
+    if (user) {
+      const admin = createClient(supabaseUrl, serviceKey);
+      const { data: roleRow } = await admin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      authorized = !!roleRow;
+    }
+  }
+
+  if (!authorized) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
