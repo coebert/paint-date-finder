@@ -1,0 +1,15 @@
+# Find A Walk-On
+
+> UK paintball hub for finding walk-on events, browsing teams, and planning field layouts.
+
+Find A Walk-On helps UK paintballers discover walk-on events across the country, explore the team directory, and design or share field layouts. All events are manually verified and .68 caliber only. Dates use DD/MM/YYYY and times use the 24-hour clock.
+
+## Pages
+
+- [Home](/): Browse and filter upcoming UK walk-on paintball events on a map, calendar, or list.
+- [Teams](/teams): Directory of UK paintball teams with profiles, rosters, and CPPS data.
+- [Field Layout](/field-layout): Interactive 2D/3D paintball field simulator and layout designer.
+
+## Optional
+
+- [Reset password](/reset-password): Account password recovery flow.
