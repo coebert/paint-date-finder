@@ -2,12 +2,15 @@
  * CI lint: scan src/ for <img>, <iframe>, <embed>, <video>, <object> JSX
  * elements that don't reserve space, which would cause layout shift (CLS).
  *
- * An element passes if ANY of these are present on the tag:
- *   - explicit width AND height attributes
- *   - a className containing both an h-* and a w-* utility
- *   - a className containing aspect-* (e.g. aspect-video, aspect-square)
- *   - a className containing size-* (Tailwind shorthand for w+h)
- *   - a style containing aspectRatio
+ * An element passes if ANY of these are present:
+ *   On the tag itself:
+ *     - explicit width AND height attributes
+ *     - className with both an h-* (or min-h-/max-h-) AND w-* (or min-w-/max-w-) utility
+ *     - className with aspect-* (e.g. aspect-video, aspect-square)
+ *     - className with size-* (Tailwind shorthand for w+h)
+ *     - style containing aspectRatio
+ *   …or on the nearest enclosing JSX wrapper element:
+ *     - any of the above className utilities
  *
  * Run via: bun run lint:media
  */
