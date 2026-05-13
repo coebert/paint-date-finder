@@ -184,7 +184,7 @@ export function EventCalendar({ events, onEventClick }: EventCalendarProps) {
           <span className="border border-border/50 rounded px-1.5 py-0.5">Verified</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <ShieldAlert className="h-3.5 w-3.5 text-muted-foreground/50" />
+          <ShieldAlert className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="border border-dashed border-muted-foreground/30 rounded px-1.5 py-0.5 opacity-60">Unverified</span>
         </div>
         <span className="hidden sm:inline text-border">|</span>
@@ -252,7 +252,7 @@ export function EventCalendar({ events, onEventClick }: EventCalendarProps) {
                     {event.is_verified ? (
                       <ShieldCheck className="h-3.5 w-3.5 text-primary shrink-0" />
                     ) : (
-                      <ShieldAlert className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
+                      <ShieldAlert className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                     )}
                   </div>
                   <p className="font-semibold text-foreground text-sm">{event.title}</p>
@@ -268,7 +268,7 @@ export function EventCalendar({ events, onEventClick }: EventCalendarProps) {
                     <p className="text-xs font-medium text-primary mt-2">{event.price_info}</p>
                   )}
                   {!event.is_verified && (
-                    <p className="text-[10px] text-muted-foreground/50 italic mt-1">Unverified</p>
+                    <p className="text-[10px] text-muted-foreground italic mt-1">Unverified</p>
                   )}
                 </div>
               ))}
