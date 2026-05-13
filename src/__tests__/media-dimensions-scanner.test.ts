@@ -98,10 +98,42 @@ describe('check-media-dimensions: parent-wrapper allowance', () => {
     expect(scanSource(src)).toEqual([]);
   });
 
+
   it('applies parent-wrapper allowance to <video>, <iframe>, <embed>, <object>', () => {
     for (const tag of ['video', 'iframe', 'embed', 'object'] as const) {
       const src = `<div className="aspect-video"><${tag} src="/x" /></div>`;
       expect(scanSource(src), `tag=${tag}`).toEqual([]);
     }
+  });
+
+  it('passes via data-cls-exempt attribute', () => {
+    const src = `<img src="/a.png" data-cls-exempt alt="a" />`;
+    expect(scanSource(src)).toEqual([]);
+  });
+
+  it('passes via JSX comment {/* cls-exempt */}', () => {
+    const src = `
+      {/* cls-exempt */}
+      <img src="/a.png" />
+    `;
+    expect(scanSource(src)).toEqual([]);
+  });
+
+  it('passes via HTML-style comment <!-- cls-exempt -->', () => {
+    const src = `
+      <!-- cls-exempt -->
+      <img src="/a.png" />
+    `;
+    expect(scanSource(src)).toEqual([]);
+  });
+
+  it('does NOT exempt when comment is on a different unrelated line with other content between', () => {
+    const src = `
+      {/* cls-exempt */}
+      <div> unrelated </div>
+      <img src="/a.png" />
+    `;
+    const v = scanSource(src);
+    expect(v).toHaveLength(1);
   });
 });
