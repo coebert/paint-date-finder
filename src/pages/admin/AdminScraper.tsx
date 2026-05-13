@@ -335,12 +335,7 @@ export default function AdminScraper() {
                             </Badge>
                           ) : null}
                           {s.last_error_message ? (
-                            <span
-                              className="max-w-[220px] truncate text-xs text-destructive"
-                              title={s.last_error_message}
-                            >
-                              {s.last_error_message}
-                            </span>
+                            <ErrorDetails message={s.last_error_message} />
                           ) : null}
                         </div>
                       </TableCell>
