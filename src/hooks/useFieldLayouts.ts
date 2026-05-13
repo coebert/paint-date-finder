@@ -70,18 +70,19 @@ export function useSaveFieldLayout() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: SaveLayoutInput): Promise<{ id: string; delete_token: string }> => {
-      const { data, error } = await supabase.from('field_layouts').insert({
-        name: input.name,
-        description: input.description || null,
-        author_name: input.author_name || null,
-        tags: input.tags ?? [],
-        obstacles: input.obstacles as any,
-        obstacle_count: input.obstacles.length,
-      }).select('id, delete_token').single();
+      const { data, error } = await supabase.rpc('create_field_layout', {
+        _name: input.name,
+        _description: input.description || null,
+        _author_name: input.author_name || null,
+        _tags: input.tags ?? [],
+        _obstacles: input.obstacles as any,
+        _obstacle_count: input.obstacles.length,
+      });
       if (error) throw error;
-      // Store token locally for future deletion
-      storeToken(data.id, data.delete_token);
-      return data;
+      const row = Array.isArray(data) ? data[0] : (data as any);
+      if (!row?.id || !row?.delete_token) throw new Error('Failed to create layout');
+      storeToken(row.id, row.delete_token);
+      return { id: row.id, delete_token: row.delete_token };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['field-layouts'] });
