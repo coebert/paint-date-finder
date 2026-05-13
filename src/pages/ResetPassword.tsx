@@ -260,25 +260,28 @@ export default function ResetPassword() {
 
   if (!isValidSession) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md bg-card border-border">
-          <CardContent className="pt-6">
-            <div className="flex flex-col items-center gap-4">
-              <KeyRound className="h-12 w-12 text-destructive" />
-              <h1 className="font-display text-xl tracking-wide">INVALID OR EXPIRED LINK</h1>
-              <p className="text-muted-foreground text-center text-sm">
-                This password reset link is invalid or has expired. Please request a new one.
-              </p>
-              <Button
-                onClick={() => navigate('/')}
-                className="bg-accent text-accent-foreground hover:bg-accent/90"
-              >
-                Back to Home
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <>
+        <ResetPasswordHead />
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+          <Card className="w-full max-w-md bg-card border-border">
+            <CardContent className="pt-6">
+              <div className="flex flex-col items-center gap-4">
+                <KeyRound className="h-12 w-12 text-destructive" />
+                <h1 className="font-display text-xl tracking-wide">INVALID OR EXPIRED LINK</h1>
+                <p className="text-muted-foreground text-center text-sm">
+                  This password reset link is invalid or has expired. Please request a new one.
+                </p>
+                <Button
+                  onClick={() => navigate('/')}
+                  className="bg-accent text-accent-foreground hover:bg-accent/90"
+                >
+                  Back to Home
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </>
     );
   }
 
