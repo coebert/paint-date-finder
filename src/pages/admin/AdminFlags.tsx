@@ -151,6 +151,25 @@ export default function AdminFlags() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
+                          {flag.suggested_date && flag.event_id && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() =>
+                                applySuggestedDate.mutate({
+                                  flagId: flag.id,
+                                  eventId: flag.event_id,
+                                  suggestedDate: flag.suggested_date,
+                                })
+                              }
+                              disabled={applySuggestedDate.isPending}
+                              className="gap-1 bg-accent text-accent-foreground hover:bg-accent/90"
+                              title="Apply suggested date and mark event for revalidation"
+                            >
+                              <CalendarCheck className="h-3.5 w-3.5" />
+                              Apply date
+                            </Button>
+                          )}
                           <Button
                             variant="outline"
                             size="sm"
