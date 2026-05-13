@@ -1,3 +1,4 @@
+import { ImageWithSkeleton } from '@/components/ImageWithSkeleton';
 import { useState, useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -164,9 +165,9 @@ export function TeamEditDialog({ team, open, onOpenChange }: TeamEditDialogProps
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Logo */}
           <div className="flex items-center gap-4">
-            <div className="w-20 h-20 rounded-lg bg-secondary border border-border/50 flex items-center justify-center overflow-hidden flex-shrink-0">
+            <div className="relative w-20 h-20 rounded-lg bg-secondary border border-border/50 flex items-center justify-center overflow-hidden flex-shrink-0">
               {form.logo_url ? (
-                <img src={form.logo_url} alt="Team logo" loading="lazy" decoding="async" className="w-full h-full object-contain p-1" />
+                <ImageWithSkeleton src={form.logo_url} alt="Team logo" className="w-full h-full object-contain p-1" />
               ) : (
                 <Users className="w-8 h-8 text-muted-foreground" />
               )}

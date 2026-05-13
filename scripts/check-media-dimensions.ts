@@ -16,6 +16,9 @@ import { join, relative } from 'node:path';
 
 const ROOT = join(process.cwd(), 'src');
 const TAGS = ['img', 'iframe', 'embed', 'video', 'object'];
+// Files exempt from the check — these own the dimension contract themselves
+// (e.g. wrapper components that require a sized parent by API).
+const EXEMPT = new Set<string>(['src/components/ImageWithSkeleton.tsx']);
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const name of readdirSync(dir)) {
@@ -74,7 +77,7 @@ function scanFile(file: string): Violation[] {
   return violations;
 }
 
-const files = walk(ROOT);
+const files = walk(ROOT).filter((f) => !EXEMPT.has(relative(process.cwd(), f)));
 const all = files.flatMap(scanFile);
 
 if (all.length === 0) {
