@@ -75,15 +75,24 @@ function hasDimensions(attrs: string): boolean {
   return classHasSizing(classNameBlob(attrs));
 }
 
+export interface ScanOptions {
+  /** How to resolve parent sizing: 'nearest' (default) checks only the
+   *  immediately enclosing JSX element; 'any' allows ANY ancestor
+   *  to satisfy the sizing requirement. */
+  parentStrategy?: 'nearest' | 'any';
+}
+
+interface ParentInfo {
+  tag: string | null;
+  className: string | null;
+  style: string | null;
+}
+
 /**
  * Build the JSX open-tag stack at every byte offset in `src`.
- * Returns the className and style blobs of the nearest enclosing JSX element opened
- * before offset i (or null if none / not yet sized-checkable).
+ * Returns all enclosing JSX elements from nearest to outermost.
  */
-function parentAttrsAt(
-  src: string,
-  offset: number,
-): { tag: string | null; className: string | null; style: string | null } {
+function parentAttrsAt(src: string, offset: number): ParentInfo[] {
   const tagStack: string[] = [];
   const classStack: string[] = [];
   const styleStack: string[] = [];
@@ -102,12 +111,11 @@ function parentAttrsAt(
       styleStack.push(styleBlob(attrs));
     }
   }
-  const i = classStack.length;
-  return {
-    tag: i ? tagStack[i - 1] : null,
-    className: i ? classStack[i - 1] : null,
-    style: i ? styleStack[i - 1] : null,
-  };
+  const result: ParentInfo[] = [];
+  for (let i = tagStack.length - 1; i >= 0; i--) {
+    result.push({ tag: tagStack[i], className: classStack[i], style: styleStack[i] });
+  }
+  return result;
 }
 
 /**
