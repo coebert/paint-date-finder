@@ -10,7 +10,7 @@ export interface ImageWithSkeletonProps extends ImgHTMLAttributes<HTMLImageEleme
 /**
  * Renders an <img> with a Skeleton placeholder visible until the image loads.
  *
- * Requires a parent with reserved dimensions (h-*/w-* or aspect-*) to avoid
+ * Requires a parent with reserved dimensions (h-N/w-N or aspect-*) to avoid
  * layout shift — same contract as the dimension lint rule.
  */
 export function ImageWithSkeleton({
