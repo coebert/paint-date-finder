@@ -58,7 +58,7 @@ export default function AdminSEO() {
         .order("captured_at", { ascending: false })
         .limit(30);
       if (error) throw error;
-      return data as Snapshot[];
+      return (data ?? []) as unknown as Snapshot[];
     },
   });
 
