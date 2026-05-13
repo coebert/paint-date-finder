@@ -11,6 +11,7 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "lint:media": "bunx tsx scripts/check-media-dimensions.ts",
+    "lint:media:report": "bunx tsx scripts/check-media-dimensions.ts --json=reports/media-dimensions.json --md=reports/media-dimensions.md",
     "lint:fonts": "bunx tsx scripts/check-no-font-face.ts",
     "preview": "vite preview",
     "test": "vitest run",
