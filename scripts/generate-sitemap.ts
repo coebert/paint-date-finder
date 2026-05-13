@@ -35,6 +35,7 @@ function discoverStaticRoutes(): string[] {
   while ((match = regex.exec(appTsx)) !== null) {
     const p = match[1];
     if (isExcluded(p)) continue;
+    if (p.includes(":")) continue; // skip dynamic params (expanded separately)
     paths.push(p);
   }
   return [...new Set(paths)];
