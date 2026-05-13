@@ -111,7 +111,7 @@ export function EventCard({ event, onEdit }: EventCardProps) {
         )}
 
         {!event.is_verified && (
-          <p className="text-xs text-muted-foreground/50 italic">Dates & details may be approximate</p>
+          <p className="text-xs text-muted-foreground italic">Dates & details may be approximate</p>
         )}
       </CardContent>
     </Card>

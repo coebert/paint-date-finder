@@ -137,7 +137,7 @@ export default function AdminTeams() {
                           )}
                         </TableCell>
                         <TableCell>
-                          <span className={team.captain_name ? 'text-foreground' : 'text-muted-foreground/50 italic'}>
+                          <span className={team.captain_name ? 'text-foreground' : 'text-muted-foreground italic'}>
                             {team.captain_name || 'Not set'}
                           </span>
                         </TableCell>
@@ -146,7 +146,7 @@ export default function AdminTeams() {
                             {team.contact_email && <Mail className="w-3 h-3 text-accent" />}
                             {team.website && <Globe className="w-3 h-3 text-accent" />}
                             {!team.contact_email && !team.website && (
-                              <span className="text-muted-foreground/50 italic text-xs">None</span>
+                              <span className="text-muted-foreground italic text-xs">None</span>
                             )}
                           </div>
                         </TableCell>
