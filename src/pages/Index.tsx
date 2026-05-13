@@ -162,29 +162,33 @@ export default function Index() {
           onClearFilters={handleClearFilters}
         />
 
-        {isLoading ? (
-          <div className="space-y-4">
-            <Skeleton className="h-[400px] w-full bg-card" />
-          </div>
-        ) : error ? (
-          <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-6 text-center">
-            <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-2" />
-            <p className="text-destructive font-medium">Failed to load events</p>
-            <p className="text-muted-foreground text-sm mt-1">Please try again later</p>
-          </div>
-        ) : (
-          <>
-            {view === 'calendar' && (
-              <EventCalendar events={events || []} onEventClick={handleEventClick} />
-            )}
-            {view === 'list' && (
-              <EventList events={events || []} onEdit={handleEdit} />
-            )}
-            {view === 'map' && (
-              <EventMap events={events || []} onEventClick={handleEventClick} />
-            )}
-          </>
-        )}
+        {/* Reserve a stable min-height for the dynamic view to avoid CLS
+            when skeleton → real content swap, and when switching views. */}
+        <div className="min-h-[720px]">
+          {isLoading ? (
+            <div className="space-y-4">
+              <Skeleton className="h-[720px] w-full bg-card" />
+            </div>
+          ) : error ? (
+            <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-6 text-center">
+              <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-2" />
+              <p className="text-destructive font-medium">Failed to load events</p>
+              <p className="text-muted-foreground text-sm mt-1">Please try again later</p>
+            </div>
+          ) : (
+            <>
+              {view === 'calendar' && (
+                <EventCalendar events={events || []} onEventClick={handleEventClick} />
+              )}
+              {view === 'list' && (
+                <EventList events={events || []} onEdit={handleEdit} />
+              )}
+              {view === 'map' && (
+                <EventMap events={events || []} onEventClick={handleEventClick} />
+              )}
+            </>
+          )}
+        </div>
 
         {/* Stats footer */}
         {events && events.length > 0 && (
