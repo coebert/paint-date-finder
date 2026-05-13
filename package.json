@@ -14,6 +14,7 @@
     "lint:media:report": "bunx tsx scripts/check-media-dimensions.ts --json=reports/media-dimensions.json --md=reports/media-dimensions.md",
     "lint:fonts": "bunx tsx scripts/check-no-font-face.ts",
     "lint:security": "bunx tsx scripts/check-security-regressions.ts",
+    "lint:seo": "bunx tsx scripts/generate-sitemap.ts && bunx tsx scripts/check-seo.ts",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest"
