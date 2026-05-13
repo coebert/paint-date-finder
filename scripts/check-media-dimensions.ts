@@ -81,8 +81,7 @@ function parentClassNameAt(src: string, offset: number): string | null {
   return stack.length ? stack[stack.length - 1] : null;
 }
 
-function scanFile(file: string): Violation[] {
-  const src = readFileSync(file, 'utf8');
+export function scanSource(src: string, file = '<inline>'): Violation[] {
   const violations: Violation[] = [];
   const tagRe = new RegExp(`<(${TAGS.join('|')})(\\s[^>]*?)?/?>`, 'gs');
   let m: RegExpExecArray | null;
@@ -96,13 +95,17 @@ function scanFile(file: string): Violation[] {
     if (parentClass && classHasSizing(parentClass)) continue;
     const line = src.slice(0, m.index).split('\n').length;
     violations.push({
-      file: relative(process.cwd(), file),
+      file,
       line,
       tag,
       snippet: full.replace(/\s+/g, ' ').slice(0, 120),
     });
   }
   return violations;
+}
+
+function scanFile(file: string): Violation[] {
+  return scanSource(readFileSync(file, 'utf8'), relative(process.cwd(), file));
 }
 
 const files = walk(ROOT).filter((f) => !EXEMPT.has(relative(process.cwd(), f)));
