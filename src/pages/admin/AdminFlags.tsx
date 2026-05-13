@@ -1,5 +1,5 @@
 import { AdminLayout } from "@/layouts/AdminLayout";
-import { useAdminEventFlags, useResolveFlag, useDeleteFlag } from '@/hooks/useEventFlags';
+import { useAdminEventFlags, useResolveFlag, useDeleteFlag, useApplySuggestedDate } from '@/hooks/useEventFlags';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
