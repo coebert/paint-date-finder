@@ -241,7 +241,8 @@ if (isMain) {
       console.error(`      → ${suggestFix(v)}`);
     }
     console.error(
-      `\nFix: add width+height attributes, a sized parent with h-*/w-* classes, an aspect-* class, or style={{ aspectRatio: ... }}.`,
+      `\nFix: add width+height attributes, a sized parent with h-*/w-* classes, an aspect-* class, or style={{ aspectRatio: ... }}.\n` +
+        `       To suppress a false positive inline, add data-cls-exempt or a {/* cls-exempt */} comment before the tag.`,
     );
     if (jsonOut) console.error(`\nJSON report written to ${jsonOut}`);
     if (mdOut) console.error(`Markdown report written to ${mdOut}`);
