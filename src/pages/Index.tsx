@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { Helmet } from 'react-helmet-async';
+import { RouteHead } from '@/components/RouteHead';
 import { useEvents, useVenues } from '@/hooks/useEvents';
 import { useRegions } from '@/hooks/useRegions';
 import { EventType, PaintballEvent } from '@/types/events';
