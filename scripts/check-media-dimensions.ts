@@ -2,12 +2,15 @@
  * CI lint: scan src/ for <img>, <iframe>, <embed>, <video>, <object> JSX
  * elements that don't reserve space, which would cause layout shift (CLS).
  *
- * An element passes if ANY of these are present on the tag:
- *   - explicit width AND height attributes
- *   - a className containing both an h-* and a w-* utility
- *   - a className containing aspect-* (e.g. aspect-video, aspect-square)
- *   - a className containing size-* (Tailwind shorthand for w+h)
- *   - a style containing aspectRatio
+ * An element passes if ANY of these are present:
+ *   On the tag itself:
+ *     - explicit width AND height attributes
+ *     - className with both an h-* (or min-h-/max-h-) AND w-* (or min-w-/max-w-) utility
+ *     - className with aspect-* (e.g. aspect-video, aspect-square)
+ *     - className with size-* (Tailwind shorthand for w+h)
+ *     - style containing aspectRatio
+ *   …or on the nearest enclosing JSX wrapper element:
+ *     - any of the above className utilities
  *
  * Run via: bun run lint:media
  */
@@ -37,21 +40,45 @@ interface Violation {
   snippet: string;
 }
 
-function hasDimensions(attrs: string): boolean {
-  // explicit width + height attributes
-  if (/\bwidth\s*=/.test(attrs) && /\bheight\s*=/.test(attrs)) return true;
-  // aspect-ratio inline style
-  if (/aspectRatio\s*:/.test(attrs)) return true;
-  // className utilities — pull every className="..." or className={`...`}
-  const classBlobs = [...attrs.matchAll(/className\s*=\s*(?:"([^"]*)"|'([^']*)'|\{`([^`]*)`\}|\{"([^"]*)"\}|\{'([^']*)'\})/g)]
+function classNameBlob(attrs: string): string {
+  return [...attrs.matchAll(/className\s*=\s*(?:"([^"]*)"|'([^']*)'|\{`([^`]*)`\}|\{"([^"]*)"\}|\{'([^']*)'\})/g)]
     .map((m) => m[1] ?? m[2] ?? m[3] ?? m[4] ?? m[5] ?? '')
     .join(' ');
-  if (/\baspect-[\w./-]+/.test(classBlobs)) return true;
-  if (/\bsize-[\w./-]+/.test(classBlobs)) return true;
-  const hasH = /\bh-[\w./[\]-]+/.test(classBlobs);
-  const hasW = /\bw-[\w./[\]-]+/.test(classBlobs);
-  if (hasH && hasW) return true;
-  return false;
+}
+
+function classHasSizing(blob: string): boolean {
+  if (/\baspect-[\w./-]+/.test(blob)) return true;
+  if (/\bsize-[\w./-]+/.test(blob)) return true;
+  const hasH = /\b(?:h|min-h|max-h)-[\w./[\]-]+/.test(blob);
+  const hasW = /\b(?:w|min-w|max-w)-[\w./[\]-]+/.test(blob);
+  return hasH && hasW;
+}
+
+function hasDimensions(attrs: string): boolean {
+  if (/\bwidth\s*=/.test(attrs) && /\bheight\s*=/.test(attrs)) return true;
+  if (/aspectRatio\s*:/.test(attrs)) return true;
+  return classHasSizing(classNameBlob(attrs));
+}
+
+/**
+ * Build the JSX open-tag stack at every byte offset in `src`.
+ * Returns parents[i] = className of nearest enclosing JSX element opened
+ * before offset i (or null if none / not yet sized-checkable).
+ */
+function parentClassNameAt(src: string, offset: number): string | null {
+  const stack: string[] = []; // className blobs of currently-open ancestors
+  const tokenRe = /<(\/?)([A-Za-z][\w.-]*)([^<>]*?)(\/?)>/g;
+  let m: RegExpExecArray | null;
+  while ((m = tokenRe.exec(src)) !== null) {
+    if (m.index >= offset) break;
+    const [, slash, , attrs, selfClose] = m;
+    if (slash) {
+      stack.pop();
+    } else if (!selfClose) {
+      stack.push(classNameBlob(attrs));
+    }
+  }
+  return stack.length ? stack[stack.length - 1] : null;
 }
 
 function scanFile(file: string): Violation[] {
@@ -62,10 +89,11 @@ function scanFile(file: string): Violation[] {
   while ((m = tagRe.exec(src)) !== null) {
     const [full, tag, attrsRaw] = m;
     const attrs = attrsRaw ?? '';
-    // parent wrapper allowance: inspect attrs only — we deliberately keep
-    // this strict. Authors should put dimensions on the tag itself OR use a
-    // sized parent + className h-*/w-*/aspect-*/size-* on the element.
     if (hasDimensions(attrs)) continue;
+    // Parent-wrapper allowance: accept if the nearest enclosing JSX element
+    // reserves dimensions via className utilities.
+    const parentClass = parentClassNameAt(src, m.index);
+    if (parentClass && classHasSizing(parentClass)) continue;
     const line = src.slice(0, m.index).split('\n').length;
     violations.push({
       file: relative(process.cwd(), file),
