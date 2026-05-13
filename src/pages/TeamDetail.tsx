@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import { RouteHead } from '@/components/RouteHead';
 import { useTeamById, useTeamRoster } from '@/hooks/useTeamDetail';
 import { useEvents } from '@/hooks/useEvents';
 import { format } from 'date-fns';
