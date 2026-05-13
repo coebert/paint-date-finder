@@ -1,6 +1,7 @@
 import { AdminLayout } from "@/layouts/AdminLayout";
 import { AdminAnalytics } from "@/components/AdminAnalytics";
 import { DataCompletenessCard } from "@/components/DataCompletenessCard";
+import { FeedFreshnessCard } from "@/components/FeedFreshnessCard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, Calendar, ArrowRight } from "lucide-react";
@@ -18,7 +19,8 @@ export default function AdminOverview() {
   return (
     <AdminLayout title="DASHBOARD OVERVIEW" description="Monitor platform activity and manage content">
       {/* Quick Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+        <FeedFreshnessCard />
         <Card className="bg-card border-border/50">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
