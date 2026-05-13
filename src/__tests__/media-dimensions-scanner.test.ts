@@ -283,4 +283,44 @@ describe('check-media-dimensions: nested wrapper resolution', () => {
     `;
     expect(scanSource(src)).toEqual([]);
   });
+
+  it('passes when nearest parent has style={{ aspectRatio: ... }}', () => {
+    const src = `
+      <div style={{ aspectRatio: '16/9' }}>
+        <img src="/a.png" />
+      </div>
+    `;
+    expect(scanSource(src)).toEqual([]);
+  });
+
+  it('passes when nearest parent has style={{ aspectRatio: 16/9 }} (numeric)', () => {
+    const src = `
+      <div style={{ aspectRatio: 16 / 9 }}>
+        <img src="/a.png" />
+      </div>
+    `;
+    expect(scanSource(src)).toEqual([]);
+  });
+
+  it('fails when a grandparent has style={{ aspectRatio }} but nearest parent does not', () => {
+    const src = `
+      <section style={{ aspectRatio: '16/9' }}>
+        <div>
+          <img src="/a.png" />
+        </div>
+      </section>
+    `;
+    const v = scanSource(src);
+    expect(v).toHaveLength(1);
+    expect(v[0].tag).toBe('img');
+  });
+
+  it('style aspectRatio on parent takes precedence over unsized className on parent', () => {
+    const src = `
+      <div style={{ aspectRatio: '4/3' }} className="p-4">
+        <img src="/a.png" />
+      </div>
+    `;
+    expect(scanSource(src)).toEqual([]);
+  });
 });
