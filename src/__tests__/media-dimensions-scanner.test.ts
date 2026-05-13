@@ -324,3 +324,76 @@ describe('check-media-dimensions: nested wrapper resolution', () => {
     expect(scanSource(src)).toEqual([]);
   });
 });
+
+describe('check-media-dimensions: Tailwind arbitrary value patterns', () => {
+  it('w-[42px] + h-[24rem] on tag passes', () => {
+    const src = `<img src="/a.png" className="w-[42px] h-[24rem]" />`;
+    expect(scanSource(src)).toEqual([]);
+  });
+
+  it('aspect-[9/16] on tag passes', () => {
+    const src = `<img src="/a.png" className="aspect-[9/16]" />`;
+    expect(scanSource(src)).toEqual([]);
+  });
+
+  it('w-[calc(100vh-4rem)] + h-[50%] on parent wrapper passes', () => {
+    const src = `
+      <div className="w-[calc(100vh-4rem)] h-[50%]">
+        <img src="/a.png" />
+      </div>
+    `;
+    expect(scanSource(src)).toEqual([]);
+  });
+
+  it('min-w-[200px] + max-h-[50vh] on parent passes', () => {
+    const src = `
+      <div className="min-w-[200px] max-h-[50vh]">
+        <img src="/a.png" />
+      </div>
+    `;
+    expect(scanSource(src)).toEqual([]);
+  });
+
+  it('size-[100%] on tag passes', () => {
+    const src = `<img src="/a.png" className="size-[100%]" />`;
+    expect(scanSource(src)).toEqual([]);
+  });
+
+  it('w-[clamp(100px,50%,200px)] on tag passes', () => {
+    const src = `<img src="/a.png" className="w-[clamp(100px,50%,200px)] h-[24rem]" />`;
+    expect(scanSource(src)).toEqual([]);
+  });
+
+  it('h-[calc(100vh_-_4rem)] with underscores for spaces passes', () => {
+    const src = `
+      <div className="h-[calc(100vh_-_4rem)] w-[50vw]">
+        <img src="/a.png" />
+      </div>
+    `;
+    expect(scanSource(src)).toEqual([]);
+  });
+
+  it('fractional non-arbitrary w-1/2 + h-3/4 passes', () => {
+    const src = `<img src="/a.png" className="w-1/2 h-3/4" />`;
+    expect(scanSource(src)).toEqual([]);
+  });
+
+  it('parent with only w-[200px] but no h-* still fails', () => {
+    const src = `
+      <div className="w-[200px]">
+        <img src="/a.png" />
+      </div>
+    `;
+    const v = scanSource(src);
+    expect(v).toHaveLength(1);
+  });
+
+  it('parent with aspect-[21/9] arbitrary passes', () => {
+    const src = `
+      <div className="aspect-[21/9]">
+        <iframe src="/x" />
+      </div>
+    `;
+    expect(scanSource(src)).toEqual([]);
+  });
+});

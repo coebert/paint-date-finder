@@ -58,10 +58,12 @@ function styleBlob(attrs: string): string {
 }
 
 function classHasSizing(blob: string): boolean {
-  if (/\baspect-[\w./[\]-]+/.test(blob)) return true;
-  if (/\bsize-[\w./[\]-]+/.test(blob)) return true;
-  const hasH = /\b(?:h|min-h|max-h)-[\w./[\]-]+/.test(blob);
-  const hasW = /\b(?:w|min-w|max-w)-[\w./[\]-]+/.test(blob);
+  // Tailwind value: non-arbitrary (e.g. h-full, w-1/2, aspect-video) or arbitrary (e.g. h-[24rem], w-[calc(100vh-4rem)])
+  const twValue = String.raw`(?:[\w./-]+|\[[^\]]*\])`;
+  if (new RegExp(String.raw`\baspect-${twValue}`).test(blob)) return true;
+  if (new RegExp(String.raw`\bsize-${twValue}`).test(blob)) return true;
+  const hasH = new RegExp(String.raw`\b(?:h|min-h|max-h)-${twValue}`).test(blob);
+  const hasW = new RegExp(String.raw`\b(?:w|min-w|max-w)-${twValue}`).test(blob);
   return hasH && hasW;
 }
 
