@@ -1,6 +1,8 @@
 // Runs before `vite dev` and `vite build` (predev/prebuild hooks); writes public/sitemap.xml.
+// Discovers routes from src/App.tsx automatically, excludes /reset-password and /admin/*,
+// and expands dynamic params by fetching from Supabase.
 
-import { writeFileSync } from "fs";
+import { readFileSync, writeFileSync } from "fs";
 import { resolve } from "path";
 
 const BASE_URL = "https://findawalkon.com";
@@ -15,11 +17,29 @@ interface SitemapEntry {
   priority?: string;
 }
 
-const staticEntries: SitemapEntry[] = [
-  { path: "/", changefreq: "daily", priority: "1.0" },
-  { path: "/teams", changefreq: "weekly", priority: "0.8" },
-  { path: "/field-layout", changefreq: "monthly", priority: "0.6" },
-];
+const EXCLUDED_PATHS = new Set(["/reset-password", "/submissions"]);
+
+function isExcluded(path: string): boolean {
+  if (EXCLUDED_PATHS.has(path)) return true;
+  if (path === "*") return true;
+  if (path.startsWith("/admin")) return true;
+  return false;
+}
+
+// Discover static routes from src/App.tsx by matching <Route path="..." />
+function discoverStaticRoutes(): string[] {
+  const appTsx = readFileSync(resolve("src/App.tsx"), "utf-8");
+  const paths: string[] = [];
+  const regex = /<Route\s+path=["']([^"']+)["']/g;
+  let match;
+  while ((match = regex.exec(appTsx)) !== null) {
+    const p = match[1];
+    if (isExcluded(p)) continue;
+    if (p.includes(":")) continue; // skip dynamic params (expanded separately)
+    paths.push(p);
+  }
+  return [...new Set(paths)];
+}
 
 async function fetchTeams(): Promise<SitemapEntry[]> {
   try {
@@ -69,6 +89,12 @@ function generateSitemap(entries: SitemapEntry[]) {
 }
 
 (async () => {
+  const staticPaths = discoverStaticRoutes();
+  const staticEntries: SitemapEntry[] = staticPaths.map((p) => {
+    if (p === "/") return { path: p, changefreq: "daily", priority: "1.0" };
+    return { path: p, changefreq: "weekly", priority: "0.8" };
+  });
+
   const teams = await fetchTeams();
   const entries = [...staticEntries, ...teams];
   writeFileSync(resolve("public/sitemap.xml"), generateSitemap(entries));

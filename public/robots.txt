@@ -11,6 +11,8 @@ User-agent: facebookexternalhit
 Allow: /
 
 User-agent: *
+Disallow: /admin/
+Disallow: /reset-password
 Allow: /
 
 Sitemap: https://findawalkon.com/sitemap.xml
