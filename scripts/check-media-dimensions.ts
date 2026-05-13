@@ -75,15 +75,24 @@ function hasDimensions(attrs: string): boolean {
   return classHasSizing(classNameBlob(attrs));
 }
 
+export interface ScanOptions {
+  /** How to resolve parent sizing: 'nearest' (default) checks only the
+   *  immediately enclosing JSX element; 'any' allows ANY ancestor
+   *  to satisfy the sizing requirement. */
+  parentStrategy?: 'nearest' | 'any';
+}
+
+interface ParentInfo {
+  tag: string | null;
+  className: string | null;
+  style: string | null;
+}
+
 /**
  * Build the JSX open-tag stack at every byte offset in `src`.
- * Returns the className and style blobs of the nearest enclosing JSX element opened
- * before offset i (or null if none / not yet sized-checkable).
+ * Returns all enclosing JSX elements from nearest to outermost.
  */
-function parentAttrsAt(
-  src: string,
-  offset: number,
-): { tag: string | null; className: string | null; style: string | null } {
+function parentAttrsAt(src: string, offset: number): ParentInfo[] {
   const tagStack: string[] = [];
   const classStack: string[] = [];
   const styleStack: string[] = [];
@@ -102,12 +111,11 @@ function parentAttrsAt(
       styleStack.push(styleBlob(attrs));
     }
   }
-  const i = classStack.length;
-  return {
-    tag: i ? tagStack[i - 1] : null,
-    className: i ? classStack[i - 1] : null,
-    style: i ? styleStack[i - 1] : null,
-  };
+  const result: ParentInfo[] = [];
+  for (let i = tagStack.length - 1; i >= 0; i--) {
+    result.push({ tag: tagStack[i], className: classStack[i], style: styleStack[i] });
+  }
+  return result;
 }
 
 /**
@@ -126,7 +134,8 @@ function isInlineExempt(src: string, tagIndex: number): boolean {
   return /^[\s\n]*$/.test(textBetween);
 }
 
-export function scanSource(src: string, file = '<inline>'): Violation[] {
+export function scanSource(src: string, file = '<inline>', opts: ScanOptions = {}): Violation[] {
+  const strategy = opts.parentStrategy ?? 'nearest';
   const violations: Violation[] = [];
   const tagRe = new RegExp(`<(${TAGS.join('|')})(\\s[^>]*?)?/?>`, 'gs');
   let m: RegExpExecArray | null;
@@ -136,27 +145,38 @@ export function scanSource(src: string, file = '<inline>'): Violation[] {
     if (/\bdata-cls-exempt\b/.test(attrs)) continue;
     if (isInlineExempt(src, m.index)) continue;
     if (hasDimensions(attrs)) continue;
-    // Parent-wrapper allowance: accept if the nearest enclosing JSX element
-    // reserves dimensions via className utilities or inline style aspectRatio.
-    const parent = parentAttrsAt(src, m.index);
-    if (parent.className && classHasSizing(parent.className)) continue;
-    if (parent.style && /aspectRatio\s*:/.test(parent.style)) continue;
+
+    const parents = parentAttrsAt(src, m.index);
+    const nearest = parents[0] ?? null;
+
+    let parentSized = false;
+    if (strategy === 'any') {
+      parentSized = parents.some(
+        (p) => (p.className && classHasSizing(p.className)) || (p.style && /aspectRatio\s*:/.test(p.style)),
+      );
+    } else {
+      parentSized =
+        (nearest?.className && classHasSizing(nearest.className)) ||
+        (nearest?.style && /aspectRatio\s*:/.test(nearest.style));
+    }
+    if (parentSized) continue;
+
     const line = src.slice(0, m.index).split('\n').length;
     violations.push({
       file,
       line,
       tag,
       snippet: full.replace(/\s+/g, ' ').slice(0, 120),
-      nearestParent: parent.tag
-        ? { tag: parent.tag, className: parent.className ?? '', style: parent.style ?? '' }
+      nearestParent: nearest
+        ? { tag: nearest.tag, className: nearest.className ?? '', style: nearest.style ?? '' }
         : null,
     });
   }
   return violations;
 }
 
-function scanFile(file: string): Violation[] {
-  return scanSource(readFileSync(file, 'utf8'), relative(process.cwd(), file));
+function scanFile(file: string, opts: ScanOptions = {}): Violation[] {
+  return scanSource(readFileSync(file, 'utf8'), relative(process.cwd(), file), opts);
 }
 
 /**
@@ -251,8 +271,12 @@ function writeReport(path: string, contents: string) {
 }
 
 if (isMain) {
+  const strategyRaw = getArg('parent-strategy');
+  const strategy = strategyRaw === 'any' ? 'any' : 'nearest';
+  const scanOpts: ScanOptions = { parentStrategy: strategy };
+
   const files = walk(ROOT).filter((f) => !EXEMPT.has(relative(process.cwd(), f)));
-  const all = files.flatMap(scanFile);
+  const all = files.flatMap((f) => scanFile(f, scanOpts));
 
   const jsonOut = getArg('json');
   const mdOut = getArg('md');
