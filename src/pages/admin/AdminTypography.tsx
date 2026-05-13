@@ -105,14 +105,17 @@ export default function AdminTypography() {
             <CardTitle className="font-display tracking-wider text-sm">Heading scale</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
-            {HEADINGS.map(({ tag: Tag, classes, label }) => (
-              <div key={String(tag)} className="border-b border-border/40 pb-4 last:border-0">
-                <p className="text-xs text-muted-foreground mb-1">
-                  {label} · <code>{`<${String(Tag)}>`}</code> · <code>{classes}</code>
-                </p>
-                <Tag className={classes}>{SAMPLE}</Tag>
-              </div>
-            ))}
+            {HEADINGS.map(({ tag, classes, label }) => {
+              const Tag = tag as keyof JSX.IntrinsicElements;
+              return (
+                <div key={tag} className="border-b border-border/40 pb-4 last:border-0">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    {label} · <code>{`<${tag}>`}</code> · <code>{classes}</code>
+                  </p>
+                  <Tag className={classes}>{SAMPLE}</Tag>
+                </div>
+              );
+            })}
           </CardContent>
         </Card>
 
