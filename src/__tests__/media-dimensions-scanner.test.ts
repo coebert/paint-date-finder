@@ -316,8 +316,8 @@ describe('check-media-dimensions: Tailwind arbitrary value patterns', () => {
  * Strip volatile fields (file path) so snapshots remain stable across environments.
  * Returns a deterministic, structurally-comparable shape suitable for `toMatchInlineSnapshot`.
  */
-function shape(src: string) {
-  return scanSource(src).map((v) => ({
+function shape(src: string, scanOpts?: ScanOptions) {
+  return scanSource(src, '<inline>', scanOpts).map((v) => ({
     line: v.line,
     tag: v.tag,
     snippet: v.snippet,
