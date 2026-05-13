@@ -38,11 +38,13 @@ function walk(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-interface Violation {
+export interface Violation {
   file: string;
   line: number;
   tag: string;
   snippet: string;
+  /** className+style of the nearest enclosing JSX wrapper (or null if none) — useful for diagnostics. */
+  nearestParent?: { tag: string | null; className: string; style: string } | null;
 }
 
 export function classNameBlob(attrs: string): string {
