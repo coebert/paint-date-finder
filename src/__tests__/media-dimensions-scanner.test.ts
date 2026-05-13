@@ -476,3 +476,115 @@ describe('check-media-dimensions: snapshot-style nested-wrapper assertions', () 
     `);
   });
 });
+
+describe('check-media-dimensions: any-sized-ancestor strategy', () => {
+  it('passes when ANY ancestor is sized even if nearest parent is not', () => {
+    const src = wrap('section', { className: 'h-96 w-96' },
+      raw('article', { className: 'p-4' },
+        raw('div', { className: 'm-2' }, img('/deep.png'))
+      )
+    );
+    // nearest strategy fails because nearest parent <div> is unsized
+    expectFails(src, { tag: 'img', contains: '/deep.png', count: 1 });
+    // any strategy passes because <section> is sized
+    expectPasses(src, 'any strategy passes', { parentStrategy: 'any' });
+  });
+
+  it('still fails under any strategy when no ancestor is sized', () => {
+    const src = raw('section',
+      raw('article', { className: 'p-4' },
+        raw('div', { className: 'm-2' }, img('/deep.png'))
+      )
+    );
+    expectFails(src, { tag: 'img', contains: '/deep.png', count: 1 });
+    expectFails(src, { tag: 'img', contains: '/deep.png', count: 1, scanOpts: { parentStrategy: 'any' } });
+  });
+
+  it('grandparent aspectRatio style satisfies any strategy', () => {
+    const src = wrap('section', { style: "{ aspectRatio: '16/9' }" },
+      raw('div', img())
+    );
+    expectFails(src, { tag: 'img', count: 1 });
+    expectPasses(src, 'any strategy passes via grandparent style', { parentStrategy: 'any' });
+  });
+
+  it('sibling subtrees behave independently under any strategy', () => {
+    const src = `<section>
+  ${wrap('div', { className: 'h-20 w-20' }, img('/a.png'))}
+  ${raw('span', img('/b.png'))}
+</section>`;
+    // nearest: a passes, b fails (no sized parent)
+    expectFails(src, { contains: '/b.png', count: 1 });
+    // any: a passes (sized parent), b still fails (no ancestor sized at all)
+    expectFails(src, { contains: '/b.png', count: 1, scanOpts: { parentStrategy: 'any' } });
+  });
+
+  it('deeply nested sized component ancestor satisfies any strategy', () => {
+    const src = raw('Card', { className: 'aspect-square' },
+      raw('CardContent', { className: 'p-4' },
+        raw('div', { className: 'm-2' }, img())
+      )
+    );
+    expectFails(src, { tag: 'img', count: 1 });
+    expectPasses(src, 'any strategy passes via Card ancestor', { parentStrategy: 'any' });
+  });
+
+  it('any strategy accepts arbitrary Tailwind on any ancestor', () => {
+    const src = raw('section', { className: 'w-[calc(100vh-4rem)] h-[50%]' },
+      raw('article',
+        raw('div', img())
+      )
+    );
+    expectFails(src, { tag: 'img', count: 1 });
+    expectPasses(src, 'any strategy passes via section ancestor', { parentStrategy: 'any' });
+  });
+});
+
+describe('check-media-dimensions: snapshot any-sized-ancestor resolution', () => {
+  it('nearest parent is unsized but outer ancestor is sized — any strategy passes, snapshot still records nearest', () => {
+    const src = wrap('section', { className: 'h-96 w-96' },
+      raw('article', { className: 'p-4' },
+        raw('div', { className: 'm-2' }, img('/deep.png'))
+      )
+    );
+    // Under any strategy, the violation list is empty (passes).
+    expect(shape(src, { parentStrategy: 'any' })).toEqual([]);
+    // Under nearest strategy, snapshot captures the unsized nearest parent.
+    expect(shape(src)).toMatchInlineSnapshot(`
+      [
+        {
+          "line": 4,
+          "nearestParent": {
+            "className": "m-2",
+            "style": "",
+            "tag": "div",
+          },
+          "snippet": "<img src="/deep.png" />",
+          "tag": "img",
+        },
+      ]
+    `);
+  });
+
+  it('no sized ancestor under any strategy — snapshot identical to nearest strategy', () => {
+    const src = raw('section',
+      raw('article', { className: 'p-4' },
+        raw('div', { className: 'm-2' }, img('/deep.png'))
+      )
+    );
+    expect(shape(src, { parentStrategy: 'any' })).toMatchInlineSnapshot(`
+      [
+        {
+          "line": 4,
+          "nearestParent": {
+            "className": "m-2",
+            "style": "",
+            "tag": "div",
+          },
+          "snippet": "<img src="/deep.png" />",
+          "tag": "img",
+        },
+      ]
+    `);
+  });
+});
