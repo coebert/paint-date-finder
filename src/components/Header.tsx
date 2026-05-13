@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Calendar, List, Plus, Map, Send, Settings, LogIn, Users, LayoutGrid, Sparkles } from 'lucide-react';
-import logo from '@/assets/logo.png';
+import { HeroLogo } from '@/components/HeroLogo';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
