@@ -50,6 +50,12 @@ export function classNameBlob(attrs: string): string {
     .join(' ');
 }
 
+function styleBlob(attrs: string): string {
+  return [...attrs.matchAll(/style\s*=\s*(?:"([^"]*)"|'([^']*)'|\{(\{[^}]*\})\})/g)]
+    .map((m) => m[1] ?? m[2] ?? m[3] ?? '')
+    .join(' ');
+}
+
 function classHasSizing(blob: string): boolean {
   if (/\baspect-[\w./[\]-]+/.test(blob)) return true;
   if (/\bsize-[\w./[\]-]+/.test(blob)) return true;
@@ -60,7 +66,7 @@ function classHasSizing(blob: string): boolean {
 
 function hasDimensions(attrs: string): boolean {
   if (/\bwidth\s*=/.test(attrs) && /\bheight\s*=/.test(attrs)) return true;
-  if (/aspectRatio\s*:/.test(attrs)) return true;
+  if (/aspectRatio\s*:/.test(styleBlob(attrs))) return true;
   return classHasSizing(classNameBlob(attrs));
 }
 
