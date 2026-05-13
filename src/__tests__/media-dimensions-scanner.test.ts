@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { scanSource } from '../../scripts/check-media-dimensions';
+import { scanSource, type ScanOptions } from '../../scripts/check-media-dimensions';
 
 /* ─── Fixture builders ─── */
 
@@ -53,11 +53,11 @@ function indent(s: string, n = 2): string {
 }
 
 /** Assertion helpers */
-function expectPasses(src: string, msg?: string) {
-  expect(scanSource(src), msg).toEqual([]);
+function expectPasses(src: string, msg?: string, scanOpts?: ScanOptions) {
+  expect(scanSource(src, '<inline>', scanOpts), msg).toEqual([]);
 }
-function expectFails(src: string, opts?: { tag?: string; contains?: string; count?: number }) {
-  const v = scanSource(src);
+function expectFails(src: string, opts?: { tag?: string; contains?: string; count?: number; scanOpts?: ScanOptions }) {
+  const v = scanSource(src, '<inline>', opts?.scanOpts);
   if (opts?.count !== undefined) expect(v).toHaveLength(opts.count);
   else expect(v.length).toBeGreaterThan(0);
   if (opts?.tag) expect(v[0].tag).toBe(opts.tag);
