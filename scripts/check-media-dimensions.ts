@@ -122,9 +122,10 @@ export function scanSource(src: string, file = '<inline>'): Violation[] {
     if (isInlineExempt(src, m.index)) continue;
     if (hasDimensions(attrs)) continue;
     // Parent-wrapper allowance: accept if the nearest enclosing JSX element
-    // reserves dimensions via className utilities.
-    const parentClass = parentClassNameAt(src, m.index);
-    if (parentClass && classHasSizing(parentClass)) continue;
+    // reserves dimensions via className utilities or inline style aspectRatio.
+    const parent = parentAttrsAt(src, m.index);
+    if (parent.className && classHasSizing(parent.className)) continue;
+    if (parent.style && /aspectRatio\s*:/.test(parent.style)) continue;
     const line = src.slice(0, m.index).split('\n').length;
     violations.push({
       file,
