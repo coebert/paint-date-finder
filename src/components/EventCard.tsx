@@ -84,10 +84,15 @@ export function EventCard({ event, onEdit, distanceMiles }: EventCardProps) {
 
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <MapPin className="h-4 w-4 text-accent" />
-          <span className="truncate">
+          <span className="truncate flex-1">
             {event.venue_name}
             {event.venue_location && `, ${event.venue_location}`}
           </span>
+          {typeof distanceMiles === 'number' && (
+            <span className="shrink-0 rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">
+              {distanceMiles < 10 ? distanceMiles.toFixed(1) : Math.round(distanceMiles)} mi
+            </span>
+          )}
         </div>
 
         {event.price_info && (
