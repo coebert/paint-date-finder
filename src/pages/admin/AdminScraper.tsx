@@ -41,11 +41,12 @@ import {
   useDeleteTrustedSource,
   useRunScrape,
   useScrapeRuns,
+  useSetTrustedSourceActive,
   useTrustedSources,
   useUpsertTrustedSource,
   type TrustedSource,
 } from "@/hooks/useScraper";
-import { Loader2, Play, Plus, Trash2, ExternalLink, Pencil } from "lucide-react";
+import { Loader2, Play, Plus, Trash2, ExternalLink, Pencil, RotateCcw } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { AdminFlyerImportCard } from "@/components/admin/AdminFlyerImportCard";
 
@@ -184,6 +185,7 @@ export default function AdminScraper() {
   const { data: sources = [], isLoading } = useTrustedSources();
   const { data: runs = [] } = useScrapeRuns();
   const remove = useDeleteTrustedSource();
+  const setActive = useSetTrustedSourceActive();
   const runScrape = useRunScrape();
 
   return (
@@ -327,6 +329,21 @@ export default function AdminScraper() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
+                          {s.source_type === "facebook_group" && !s.is_active ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 gap-1"
+                              disabled={setActive.isPending}
+                              onClick={() =>
+                                setActive.mutate({ id: s.id, is_active: true })
+                              }
+                              title="Re-enable this Facebook group source"
+                            >
+                              <RotateCcw className="h-3.5 w-3.5" />
+                              Re-enable
+                            </Button>
+                          ) : null}
                           <SourceDialog
                             source={s}
                             trigger={

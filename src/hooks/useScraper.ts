@@ -103,6 +103,25 @@ export function useUpsertTrustedSource() {
   });
 }
 
+export function useSetTrustedSourceActive() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const { error } = await supabase
+        .from('trusted_venue_sources')
+        .update({ is_active })
+        .eq('id', id);
+      if (error) throw error;
+      return { id, is_active };
+    },
+    onSuccess: ({ is_active }) => {
+      qc.invalidateQueries({ queryKey: ['trusted_venue_sources'] });
+      toast.success(is_active ? 'Source re-enabled' : 'Source disabled');
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
 export function useDeleteTrustedSource() {
   const qc = useQueryClient();
   return useMutation({
