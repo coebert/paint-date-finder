@@ -185,6 +185,7 @@ export default function AdminScraper() {
   const { data: sources = [], isLoading } = useTrustedSources();
   const { data: runs = [] } = useScrapeRuns();
   const remove = useDeleteTrustedSource();
+  const setActive = useSetTrustedSourceActive();
   const runScrape = useRunScrape();
 
   return (
