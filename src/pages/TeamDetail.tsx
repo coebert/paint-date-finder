@@ -1,4 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { useTeamById, useTeamRoster } from '@/hooks/useTeamDetail';
 import { useEvents } from '@/hooks/useEvents';
 import { format } from 'date-fns';
@@ -64,6 +65,17 @@ export default function TeamDetail() {
   const social = (team.social_media || {}) as Record<string, string>;
 
   return (
+    <>
+      <Helmet>
+        <title>{`${team.name} | UK Paintball Team | Find A Walk-On`}</title>
+        <meta name="description" content={`${team.name} — ${team.division ?? 'paintball team'} profile, roster and upcoming events on Find A Walk-On.`} />
+        <link rel="canonical" href={`https://findawalkon.com/teams/${team.id}`} />
+        <meta property="og:title" content={`${team.name} | UK Paintball Team`} />
+        <meta property="og:description" content={`${team.name} team profile, roster and upcoming events.`} />
+        <meta property="og:url" content={`https://findawalkon.com/teams/${team.id}`} />
+        <meta property="og:type" content="profile" />
+        {team.logo_url ? <meta property="og:image" content={team.logo_url} /> : null}
+      </Helmet>
     <div className="min-h-screen bg-background">
       {/* Hero Header */}
       <header className="tactical-gradient border-b border-border/50">

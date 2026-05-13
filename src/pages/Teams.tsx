@@ -260,5 +260,6 @@ export default function Teams() {
         </Tabs>
       </main>
     </div>
+    </>
   );
 }
