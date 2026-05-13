@@ -329,6 +329,21 @@ export default function AdminScraper() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
+                          {s.source_type === "facebook_group" && !s.is_active ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 gap-1"
+                              disabled={setActive.isPending}
+                              onClick={() =>
+                                setActive.mutate({ id: s.id, is_active: true })
+                              }
+                              title="Re-enable this Facebook group source"
+                            >
+                              <RotateCcw className="h-3.5 w-3.5" />
+                              Re-enable
+                            </Button>
+                          ) : null}
                           <SourceDialog
                             source={s}
                             trigger={
