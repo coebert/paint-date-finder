@@ -98,6 +98,16 @@ export default function Index() {
             address: e.venue_location ?? undefined,
           },
           organizer: { '@type': 'Organization', name: e.venue_name },
+          ...(e.price_info
+            ? {
+                offers: {
+                  '@type': 'Offer',
+                  description: e.price_info,
+                  availability: 'https://schema.org/InStock',
+                  url: e.booking_url ?? undefined,
+                },
+              }
+            : {}),
         },
       })),
     };

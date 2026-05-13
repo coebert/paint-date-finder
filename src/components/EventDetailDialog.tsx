@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { PaintballEvent } from '@/types/events';
 import { EventTypeBadge } from './EventTypeBadge';
 import { FlagEventDialog } from './FlagEventDialog';
@@ -39,6 +40,44 @@ export function EventDetailDialog({ event, open, onOpenChange, onEdit }: EventDe
   const eventDate = parseISO(event.event_date);
   const venueWebsite = venueDetails?.get(event.venue_name)?.website ?? null;
 
+  const eventSchema = useMemo(() => {
+    const startDate = event.start_time
+      ? `${event.event_date}T${event.start_time}`
+      : event.event_date;
+    const endDate = event.end_time
+      ? `${event.event_date}T${event.end_time}`
+      : undefined;
+
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'Event',
+      name: event.title,
+      description: event.description ?? undefined,
+      image: event.image_url ?? undefined,
+      startDate,
+      endDate,
+      eventStatus: 'https://schema.org/EventScheduled',
+      eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+      url: event.booking_url ?? `https://findawalkon.com/`,
+      location: {
+        '@type': 'Place',
+        name: event.venue_name,
+        address: event.venue_location ?? undefined,
+      },
+      organizer: { '@type': 'Organization', name: event.venue_name },
+      ...(event.price_info
+        ? {
+            offers: {
+              '@type': 'Offer',
+              description: event.price_info,
+              availability: 'https://schema.org/InStock',
+              url: event.booking_url ?? undefined,
+            },
+          }
+        : {}),
+    };
+  }, [event]);
+
   const handleWithdraw = () => {
     if (!storedFlag) return;
     withdrawFlag.mutate({
@@ -50,6 +89,9 @@ export function EventDetailDialog({ event, open, onOpenChange, onEdit }: EventDe
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
+      <Helmet>
+        <script type="application/ld+json">{JSON.stringify(eventSchema)}</script>
+      </Helmet>
       <DialogContent className="max-w-lg bg-card border-border" aria-describedby="event-dialog-description">
         <DialogHeader>
           <div className="flex items-start justify-between gap-4">
