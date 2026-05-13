@@ -23,7 +23,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { AlertTriangle, CheckCircle, Trash2, Flag } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Trash2, Flag, CalendarCheck } from 'lucide-react';
 import { format } from 'date-fns';
 
 const REASON_LABELS: Record<string, string> = {
