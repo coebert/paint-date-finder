@@ -2,7 +2,24 @@ import { useState, useMemo } from 'react';
 import { PaintballEvent, EVENT_TYPE_LABELS, EventType } from '@/types/events';
 import { EventTypeBadge } from './EventTypeBadge';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, X, Calendar, Clock, ShieldCheck, ShieldAlert, AlertTriangle } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Calendar,
+  Clock,
+  ShieldCheck,
+  ShieldAlert,
+  AlertTriangle,
+  MapPin,
+} from 'lucide-react';
 import { useFlaggedEventIds } from '@/hooks/useEventFlags';
 import {
   format,
@@ -23,6 +40,11 @@ import { cn } from '@/lib/utils';
 interface EventCalendarProps {
   events: PaintballEvent[];
   onEventClick?: (event: PaintballEvent) => void;
+  eventType?: EventType;
+  venue?: string;
+  venues?: string[];
+  onEventTypeChange?: (type: EventType | undefined) => void;
+  onVenueChange?: (venue: string) => void;
 }
 
 export function EventCalendar({ events, onEventClick }: EventCalendarProps) {
