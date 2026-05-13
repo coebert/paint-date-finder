@@ -24,6 +24,31 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@FindAWalkOn" />
     <meta name="twitter:image" content="https://findawalkon.com/og-image.jpg" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://findawalkon.com/#organization",
+            "name": "Find A Walk-On",
+            "url": "https://findawalkon.com/",
+            "logo": "https://findawalkon.com/favicon.png",
+            "sameAs": ["https://twitter.com/FindAWalkOn"]
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://findawalkon.com/#website",
+            "url": "https://findawalkon.com/",
+            "name": "Find A Walk-On",
+            "description": "Find and book walk-on paintball events across the United Kingdom",
+            "publisher": { "@id": "https://findawalkon.com/#organization" },
+            "inLanguage": "en-GB"
+          }
+        ]
+      }
+    </script>
   </head>
 
   <body>
