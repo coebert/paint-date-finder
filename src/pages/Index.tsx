@@ -123,14 +123,16 @@ export default function Index() {
         description="Find and book walk-on paintball events across the UK. Browse upcoming dates, venues and event types on a map, calendar or list."
         path="/"
       >
-        <link rel="preload" as="image" href={woodsballBg} fetchPriority="high" />
+        <link rel="preload" as="image" href={woodsballBgAvif} type="image/avif" fetchPriority="high" />
         {eventListJsonLd && (
           <script type="application/ld+json">{JSON.stringify(eventListJsonLd)}</script>
         )}
       </RouteHead>
-      <div 
+      <div
         className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${woodsballBg})` }}
+        style={{
+          backgroundImage: `image-set(url(${woodsballBgAvif}) type("image/avif"), url(${woodsballBgWebp}) type("image/webp"), url(${woodsballBgJpg}) type("image/jpeg"))`,
+        }}
       />
       <div className="fixed inset-0 z-0 bg-background/35" />
       <div className="relative z-10">
