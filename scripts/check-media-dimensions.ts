@@ -108,19 +108,31 @@ function scanFile(file: string): Violation[] {
   return scanSource(readFileSync(file, 'utf8'), relative(process.cwd(), file));
 }
 
-const files = walk(ROOT).filter((f) => !EXEMPT.has(relative(process.cwd(), f)));
-const all = files.flatMap(scanFile);
+// Only run as a CLI when executed directly (not when imported by tests).
+const isMain = (() => {
+  try {
+    const argv1 = process.argv[1] ?? '';
+    return argv1.includes('check-media-dimensions');
+  } catch {
+    return false;
+  }
+})();
 
-if (all.length === 0) {
-  console.log(`✓ media-dimensions: ${files.length} files scanned, no CLS-prone <${TAGS.join('|')}> found.`);
-  process.exit(0);
-}
+if (isMain) {
+  const files = walk(ROOT).filter((f) => !EXEMPT.has(relative(process.cwd(), f)));
+  const all = files.flatMap(scanFile);
 
-console.error(`✗ media-dimensions: ${all.length} element(s) missing width/height/aspect-ratio:\n`);
-for (const v of all) {
-  console.error(`  ${v.file}:${v.line}  <${v.tag}>  ${v.snippet}`);
+  if (all.length === 0) {
+    console.log(`✓ media-dimensions: ${files.length} files scanned, no CLS-prone <${TAGS.join('|')}> found.`);
+    process.exit(0);
+  }
+
+  console.error(`✗ media-dimensions: ${all.length} element(s) missing width/height/aspect-ratio:\n`);
+  for (const v of all) {
+    console.error(`  ${v.file}:${v.line}  <${v.tag}>  ${v.snippet}`);
+  }
+  console.error(
+    `\nFix: add width+height attributes, a sized parent with h-*/w-* classes on the element, an aspect-* class, or style={{ aspectRatio: ... }}.`,
+  );
+  process.exit(1);
 }
-console.error(
-  `\nFix: add width+height attributes, a sized parent with h-*/w-* classes on the element, an aspect-* class, or style={{ aspectRatio: ... }}.`,
-);
-process.exit(1);
