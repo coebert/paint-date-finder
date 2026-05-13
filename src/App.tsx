@@ -91,6 +91,14 @@ const App = () => (
               </AdminRoute>
             }
           />
+          <Route
+            path="/admin/vitals"
+            element={
+              <AdminRoute>
+                <AdminVitals />
+              </AdminRoute>
+            }
+          />
           
           {/* Legacy route redirect */}
           <Route
