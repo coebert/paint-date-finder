@@ -309,3 +309,69 @@ describe('check-media-dimensions: Tailwind arbitrary value patterns', () => {
     );
   });
 });
+
+/* ─── Snapshot-style assertions ─── */
+
+/**
+ * Strip volatile fields (file path) so snapshots remain stable across environments.
+ * Returns a deterministic, structurally-comparable shape suitable for `toMatchInlineSnapshot`.
+ */
+function shape(src: string) {
+  return scanSource(src).map((v) => ({
+    line: v.line,
+    tag: v.tag,
+    snippet: v.snippet,
+    nearestParent: v.nearestParent,
+  }));
+}
+
+describe('check-media-dimensions: snapshot-style nested-wrapper assertions', () => {
+  it('unsized <img> inside bare <div> — captures exact snippet + nearest parent', () => {
+    expect(shape(raw('div', img()))).toMatchInlineSnapshot();
+  });
+
+  it('3-level nest where only outer is sized — nearest parent is the unsized <div>', () => {
+    const src = wrap('section', { className: 'h-96 w-96' },
+      raw('article', { className: 'p-4' },
+        raw('div', { className: 'm-2' }, img('/b.png'))
+      )
+    );
+    expect(shape(src)).toMatchInlineSnapshot();
+  });
+
+  it('siblings — only one fails, snapshot pinpoints it with its nearest parent', () => {
+    const src = `<section>
+  ${wrap('div', { className: 'h-20 w-20' }, img('/ok.png'))}
+  ${raw('span', img('/bad.png'))}
+</section>`;
+    expect(shape(src)).toMatchInlineSnapshot();
+  });
+
+  it('component wrapper without sizing — nearest parent is the JSX component name', () => {
+    const src = raw('Card',
+      raw('CardContent', img())
+    );
+    expect(shape(src)).toMatchInlineSnapshot();
+  });
+
+  it('grandparent has aspectRatio style but nearest <div> does not — snapshot shows the unsized parent', () => {
+    const src = wrap('section', { style: "{ aspectRatio: '16/9' }" },
+      raw('div', img())
+    );
+    expect(shape(src)).toMatchInlineSnapshot();
+  });
+
+  it('two nested unsized wrappers, two media tags — both violations captured with their parents', () => {
+    const src = raw('section',
+      `${raw('div', img('/one.png'))}\n${raw('span', media('iframe', 'src="/two"'))}`
+    );
+    expect(shape(src)).toMatchInlineSnapshot();
+  });
+
+  it('back-to-back wrappers — sized sibling passes, unsized sibling captured with exact parent class', () => {
+    const src = wrap('div', { className: 'aspect-video' },
+      `${wrap('div', { className: 'h-10 w-10' }, img('/inner-ok.png'))}\n${raw('div', { className: 'm-2' }, img('/inner-bad.png'))}`
+    );
+    expect(shape(src)).toMatchInlineSnapshot();
+  });
+});
