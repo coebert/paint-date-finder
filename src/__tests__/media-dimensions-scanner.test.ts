@@ -21,12 +21,17 @@ function wrap(tag: string, opts: { className?: string; style?: string }, childre
 }
 
 /** Create a raw wrapper with optional className/style. */
-function raw(tag: string, opts?: { className?: string; style?: string }, children?: string): string {
+function raw(tag: string, children: string): string;
+function raw(tag: string, opts: { className?: string; style?: string }, children: string): string;
+function raw(tag: string, ...rest: any[]): string {
+  if (rest.length === 1) {
+    return `<${tag}>\n${indent(rest[0])}\n</${tag}>`;
+  }
+  const [opts, children] = rest as [{ className?: string; style?: string }, string];
   const attrs: string[] = [];
-  if (opts?.className) attrs.push(`className="${opts.className}"`);
-  if (opts?.style) attrs.push(`style={${opts.style}}`);
+  if (opts.className) attrs.push(`className="${opts.className}"`);
+  if (opts.style) attrs.push(`style={${opts.style}}`);
   const openTag = `<${tag}${attrs.length ? ' ' + attrs.join(' ') : ''}>`;
-  if (children === undefined) return openTag;
   return `${openTag}\n${indent(children)}\n</${tag}>`;
 }
 
