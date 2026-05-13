@@ -17,6 +17,7 @@ import AdminFlags from "./pages/admin/AdminFlags";
 import AdminScraper from "./pages/admin/AdminScraper";
 import AdminBulkImport from "./pages/admin/AdminBulkImport";
 import AdminVitals from "./pages/admin/AdminVitals";
+import AdminTypography from "./pages/admin/AdminTypography";
 import FieldLayout from "./pages/FieldLayout";
 
 const queryClient = new QueryClient();
@@ -96,6 +97,14 @@ const App = () => (
             element={
               <AdminRoute>
                 <AdminVitals />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/typography"
+            element={
+              <AdminRoute>
+                <AdminTypography />
               </AdminRoute>
             }
           />
