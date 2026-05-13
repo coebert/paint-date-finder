@@ -38,6 +38,7 @@ export default function AdminFlags() {
   const { data: flags, isLoading, error } = useAdminEventFlags();
   const resolveFlag = useResolveFlag();
   const deleteFlag = useDeleteFlag();
+  const applySuggestedDate = useApplySuggestedDate();
 
   const unresolvedFlags = flags?.filter((f: any) => !f.is_resolved) ?? [];
   const resolvedFlags = flags?.filter((f: any) => f.is_resolved) ?? [];
