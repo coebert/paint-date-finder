@@ -806,11 +806,11 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
             </p>
           )}
           {previewUrl && (
-            <div className="h-64 rounded-md border border-border bg-muted/30 flex items-center justify-center overflow-hidden">
-              <img
+            <div className="relative h-64 rounded-md border border-border bg-muted/30 flex items-center justify-center overflow-hidden">
+              <ImageWithSkeleton
                 src={previewUrl}
                 alt="Flyer preview"
-                decoding="async"
+                loading="eager"
                 className="max-h-full max-w-full object-contain"
               />
             </div>

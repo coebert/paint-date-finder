@@ -27,9 +27,9 @@ function TeamCard({ team }: { team: Team }) {
     <Card className="bg-card border-border/50 hover:border-accent/30 transition-all duration-200 group cursor-pointer">
       <CardContent className="p-4">
         <div className="flex items-start gap-4">
-          <div className="w-16 h-16 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0 overflow-hidden border border-border/50">
+          <div className="relative w-16 h-16 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0 overflow-hidden border border-border/50">
             {team.logo_url ? (
-              <img src={team.logo_url} alt={`${team.name} paintball team logo`} loading="lazy" decoding="async" className="w-full h-full object-contain p-1" />
+              <ImageWithSkeleton src={team.logo_url} alt={`${team.name} paintball team logo`} className="w-full h-full object-contain p-1" />
             ) : (
               <Users className="w-7 h-7 text-muted-foreground" />
             )}

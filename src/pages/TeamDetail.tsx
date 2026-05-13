@@ -97,9 +97,9 @@ export default function TeamDetail() {
           </Button>
 
           <div className="flex items-start gap-5">
-            <div className="w-20 h-20 md:w-24 md:h-24 rounded-xl bg-secondary border border-border/50 flex items-center justify-center overflow-hidden flex-shrink-0">
+            <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-xl bg-secondary border border-border/50 flex items-center justify-center overflow-hidden flex-shrink-0">
               {team.logo_url ? (
-                <img src={team.logo_url} alt={`${team.name} paintball team logo`} decoding="async" className="w-full h-full object-contain p-2" />
+                <ImageWithSkeleton src={team.logo_url} alt={`${team.name} paintball team logo`} loading="eager" className="w-full h-full object-contain p-2" />
               ) : (
                 <Users className="w-10 h-10 text-muted-foreground" />
               )}
