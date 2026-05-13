@@ -23,25 +23,16 @@ const FILES = [
 const SIZING_RE = /\b(h-|w-|size-|aspect-|max-h-|min-h-)/;
 
 function findParentClassName(src: string, idx: number): string | null {
-  // Walk backwards to find the nearest enclosing JSX opening tag.
-  let depth = 0;
-  for (let i = idx - 1; i > 0; i--) {
-    const ch = src[i];
-    if (ch === '>') depth++;
-    else if (ch === '<') {
-      if (depth > 0) {
-        depth--;
-        continue;
-      }
-      // Found enclosing opening tag start. Slice up to its '>'.
-      const end = src.indexOf('>', i);
-      if (end === -1) return null;
-      const tag = src.slice(i, end);
-      const m = tag.match(/className\s*=\s*["'`]([^"'`]+)["'`]/);
-      return m ? m[1] : '';
-    }
-  }
-  return null;
+  // Heuristic: scan up to ~20 lines back, collect every `className="..."` on
+  // an opening tag, and return the nearest one preceding the match. JSX
+  // wrappers around ImageWithSkeleton are always within this window.
+  const start = Math.max(0, idx - 2000);
+  const window = src.slice(start, idx);
+  const re = /<\w[^<>]*?className\s*=\s*["'`]([^"'`]+)["'`][^<>]*?>/g;
+  let last: string | null = null;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(window)) !== null) last = m[1];
+  return last;
 }
 
 describe('ImageWithSkeleton wrapper contract', () => {
