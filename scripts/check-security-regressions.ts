@@ -43,11 +43,14 @@ async function main() {
     process.exit(0);
   }
 
+  // Strip any sslmode query param so our explicit ssl object wins
+  // (newer pg versions force verify-full when sslmode is set in the URL).
+  const cleanUrl = url.replace(/([?&])sslmode=[^&]*(&|$)/, (_, p1, p2) =>
+    p2 === "&" ? p1 : "",
+  );
   const client = new Client({
-    connectionString: url,
-    ssl: url.includes("sslmode=disable")
-      ? false
-      : { rejectUnauthorized: false },
+    connectionString: cleanUrl,
+    ssl: { rejectUnauthorized: false },
   });
   await client.connect();
   const violations: Violation[] = [];
