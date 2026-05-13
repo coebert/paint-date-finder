@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useSubmissions, useApproveSubmission, useRejectSubmission, useDeleteSubmission } from '@/hooks/useSubmissions';
 import { EventSubmission, SubmissionStatus, SUBMISSION_STATUS_LABELS } from '@/types/submissions';
 import { EVENT_TYPE_LABELS } from '@/types/events';
