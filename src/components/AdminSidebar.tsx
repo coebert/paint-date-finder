@@ -25,6 +25,7 @@ const menuItems = [
   { title: "Flags", url: "/admin/flags", icon: Flag },
   { title: "Teams", url: "/admin/teams", icon: Users },
   { title: "Auto-Scraper", url: "/admin/scraper", icon: Radar },
+  { title: "Web Vitals", url: "/admin/vitals", icon: Activity },
 ];
 
 export function AdminSidebar() {
