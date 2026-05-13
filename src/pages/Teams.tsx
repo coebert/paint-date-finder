@@ -29,7 +29,7 @@ function TeamCard({ team }: { team: Team }) {
         <div className="flex items-start gap-4">
           <div className="w-16 h-16 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0 overflow-hidden border border-border/50">
             {team.logo_url ? (
-              <img src={team.logo_url} alt={`${team.name} paintball team logo`} className="w-full h-full object-contain p-1" />
+              <img src={team.logo_url} alt={`${team.name} paintball team logo`} loading="lazy" decoding="async" className="w-full h-full object-contain p-1" />
             ) : (
               <Users className="w-7 h-7 text-muted-foreground" />
             )}

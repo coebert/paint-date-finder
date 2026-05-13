@@ -166,7 +166,7 @@ export function TeamEditDialog({ team, open, onOpenChange }: TeamEditDialogProps
           <div className="flex items-center gap-4">
             <div className="w-20 h-20 rounded-lg bg-secondary border border-border/50 flex items-center justify-center overflow-hidden flex-shrink-0">
               {form.logo_url ? (
-                <img src={form.logo_url} alt="Team logo" className="w-full h-full object-contain p-1" />
+                <img src={form.logo_url} alt="Team logo" loading="lazy" decoding="async" className="w-full h-full object-contain p-1" />
               ) : (
                 <Users className="w-8 h-8 text-muted-foreground" />
               )}
