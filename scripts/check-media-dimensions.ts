@@ -147,6 +147,9 @@ export function scanSource(src: string, file = '<inline>'): Violation[] {
       line,
       tag,
       snippet: full.replace(/\s+/g, ' ').slice(0, 120),
+      nearestParent: parent.tag
+        ? { tag: parent.tag, className: parent.className ?? '', style: parent.style ?? '' }
+        : null,
     });
   }
   return violations;
