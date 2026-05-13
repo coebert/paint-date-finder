@@ -11,11 +11,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://findawalkon.com/teams/:id</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://findawalkon.com/field-layout</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
