@@ -51,8 +51,8 @@ export function classNameBlob(attrs: string): string {
 }
 
 function classHasSizing(blob: string): boolean {
-  if (/\baspect-[\w./-]+/.test(blob)) return true;
-  if (/\bsize-[\w./-]+/.test(blob)) return true;
+  if (/\baspect-[\w./[\]-]+/.test(blob)) return true;
+  if (/\bsize-[\w./[\]-]+/.test(blob)) return true;
   const hasH = /\b(?:h|min-h|max-h)-[\w./[\]-]+/.test(blob);
   const hasW = /\b(?:w|min-w|max-w)-[\w./[\]-]+/.test(blob);
   return hasH && hasW;

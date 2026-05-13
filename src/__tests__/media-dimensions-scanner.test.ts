@@ -137,3 +137,150 @@ describe('check-media-dimensions: parent-wrapper allowance', () => {
     expect(v).toHaveLength(1);
   });
 });
+
+describe('check-media-dimensions: nested wrapper resolution', () => {
+  it('3 levels deep — innermost sized wrapper satisfies the rule', () => {
+    const src = `
+      <section>
+        <article>
+          <div className="h-32 w-32">
+            <img src="/a.png" />
+          </div>
+        </article>
+      </section>
+    `;
+    expect(scanSource(src)).toEqual([]);
+  });
+
+  it('3 levels deep — only outermost sized, all inner unsized = FAILS (nearest wins)', () => {
+    const src = `
+      <section className="h-96 w-96">
+        <article className="p-4">
+          <div className="m-2">
+            <img src="/a.png" />
+          </div>
+        </article>
+      </section>
+    `;
+    const v = scanSource(src);
+    expect(v).toHaveLength(1);
+    expect(v[0].tag).toBe('img');
+  });
+
+  it('4 levels deep — middle wrapper sized, intermediate unsized — middle wins', () => {
+    const src = `
+      <section>
+        <main className="aspect-video w-full">
+          <article>
+            <div>
+              <img src="/a.png" />
+            </div>
+          </article>
+        </main>
+      </section>
+    `;
+    // The nearest ancestor (<div>) is unsized — should fail.
+    const v = scanSource(src);
+    expect(v).toHaveLength(1);
+  });
+
+  it('multiple sibling subtrees — each evaluated against its own nearest parent', () => {
+    const src = `
+      <section>
+        <div className="h-20 w-20">
+          <img src="/a.png" />
+        </div>
+        <div className="h-20 w-20">
+          <img src="/b.png" />
+        </div>
+        <div>
+          <div className="h-20 w-20">
+            <img src="/c.png" />
+          </div>
+        </div>
+        <div>
+          <span>
+            <img src="/d.png" />
+          </span>
+        </div>
+      </section>
+    `;
+    const v = scanSource(src);
+    // a, b, c all have a sized nearest parent. d's nearest parent is <span> (unsized).
+    expect(v).toHaveLength(1);
+    expect(v[0].snippet).toContain('d.png');
+  });
+
+  it('mixed JSX components and DOM tags as wrappers', () => {
+    const src = `
+      <Card>
+        <CardContent className="aspect-square">
+          <img src="/a.png" />
+        </CardContent>
+      </Card>
+    `;
+    expect(scanSource(src)).toEqual([]);
+  });
+
+  it('component wrapper without sizing className does not satisfy rule', () => {
+    const src = `
+      <Card>
+        <CardContent>
+          <img src="/a.png" />
+        </CardContent>
+      </Card>
+    `;
+    const v = scanSource(src);
+    expect(v).toHaveLength(1);
+  });
+
+  it('self-closing siblings between sized parent and img do not break detection', () => {
+    const src = `
+      <div className="h-40 w-40">
+        <input type="hidden" />
+        <br />
+        <img src="/a.png" />
+      </div>
+    `;
+    expect(scanSource(src)).toEqual([]);
+  });
+
+  it('sized fragment-like wrapper followed by inner unsized wrapper = FAILS', () => {
+    const src = `
+      <div className="h-40 w-40">
+        <header>
+          <h2>Title</h2>
+          <img src="/a.png" />
+        </header>
+      </div>
+    `;
+    // <header> is the nearest ancestor and is unsized → should fail.
+    const v = scanSource(src);
+    expect(v).toHaveLength(1);
+  });
+
+  it('back-to-back nested wrappers — each img resolves to its own nearest parent', () => {
+    const src = `
+      <div className="aspect-video">
+        <div className="h-10 w-10"><img src="/inner-ok.png" /></div>
+        <div><img src="/inner-bad.png" /></div>
+      </div>
+    `;
+    const v = scanSource(src);
+    expect(v).toHaveLength(1);
+    expect(v[0].snippet).toContain('inner-bad.png');
+  });
+
+  it('aspect-* on a deeply nested intermediate wrapper is honored', () => {
+    const src = `
+      <section className="p-4">
+        <div className="grid">
+          <figure className="aspect-[16/9]">
+            <img src="/a.png" />
+          </figure>
+        </div>
+      </section>
+    `;
+    expect(scanSource(src)).toEqual([]);
+  });
+});
