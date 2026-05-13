@@ -38,6 +38,8 @@ interface FlagEventDialogProps {
 export function FlagEventDialog({ eventId, eventTitle, open, onOpenChange }: FlagEventDialogProps) {
   const [reason, setReason] = useState<string>('');
   const [details, setDetails] = useState('');
+  const [suggestedDate, setSuggestedDate] = useState<Date | undefined>();
+  const [datePopoverOpen, setDatePopoverOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
 
@@ -47,12 +49,21 @@ export function FlagEventDialog({ eventId, eventTitle, open, onOpenChange }: Fla
       return;
     }
 
+    if (reason === 'wrong_date' && !suggestedDate) {
+      toast.error('Please pick the correct date so admins can apply your suggestion.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const { data, error } = await supabase.rpc('create_event_flag' as any, {
         _event_id: eventId,
         _reason: reason,
         _details: details.trim() || null,
+        _suggested_date:
+          reason === 'wrong_date' && suggestedDate
+            ? format(suggestedDate, 'yyyy-MM-dd')
+            : null,
       });
 
       if (error) throw error;
@@ -67,6 +78,7 @@ export function FlagEventDialog({ eventId, eventTitle, open, onOpenChange }: Fla
       queryClient.invalidateQueries({ queryKey: ['flagged-event-ids'] });
       setReason('');
       setDetails('');
+      setSuggestedDate(undefined);
       onOpenChange(false);
     } catch (err) {
       console.error('Error submitting flag:', err);
