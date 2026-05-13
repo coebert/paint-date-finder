@@ -2,7 +2,24 @@ import { useState, useMemo } from 'react';
 import { PaintballEvent, EVENT_TYPE_LABELS, EventType } from '@/types/events';
 import { EventTypeBadge } from './EventTypeBadge';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, X, Calendar, Clock, ShieldCheck, ShieldAlert, AlertTriangle } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Calendar,
+  Clock,
+  ShieldCheck,
+  ShieldAlert,
+  AlertTriangle,
+  MapPin,
+} from 'lucide-react';
 import { useFlaggedEventIds } from '@/hooks/useEventFlags';
 import {
   format,
@@ -23,9 +40,22 @@ import { cn } from '@/lib/utils';
 interface EventCalendarProps {
   events: PaintballEvent[];
   onEventClick?: (event: PaintballEvent) => void;
+  eventType?: EventType;
+  venue?: string;
+  venues?: string[];
+  onEventTypeChange?: (type: EventType | undefined) => void;
+  onVenueChange?: (venue: string) => void;
 }
 
-export function EventCalendar({ events, onEventClick }: EventCalendarProps) {
+export function EventCalendar({
+  events,
+  onEventClick,
+  eventType,
+  venue,
+  venues,
+  onEventTypeChange,
+  onVenueChange,
+}: EventCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
   const { data: flaggedIds } = useFlaggedEventIds();
@@ -71,28 +101,92 @@ export function EventCalendar({ events, onEventClick }: EventCalendarProps) {
   return (
     <div className="bg-card border border-border/50 rounded-lg overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border/50 tactical-gradient">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={prevMonth}
-          aria-label="Previous month"
-          className="text-foreground hover:bg-primary/20"
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </Button>
-        <h2 className="font-display text-2xl tracking-wider text-foreground">
-          {format(currentMonth, 'MMMM yyyy').toUpperCase()}
-        </h2>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={nextMonth}
-          aria-label="Next month"
-          className="text-foreground hover:bg-primary/20"
-        >
-          <ChevronRight className="h-5 w-5" />
-        </Button>
+      <div className="p-4 border-b border-border/50 tactical-gradient space-y-3">
+        <div className="flex items-center justify-between">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={prevMonth}
+            aria-label="Previous month"
+            className="text-foreground hover:bg-primary/20"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+          <h2 className="font-display text-2xl tracking-wider text-foreground">
+            {format(currentMonth, 'MMMM yyyy').toUpperCase()}
+          </h2>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={nextMonth}
+            aria-label="Next month"
+            className="text-foreground hover:bg-primary/20"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </Button>
+        </div>
+
+        {/* Inline filters */}
+        {(onEventTypeChange || onVenueChange) && (
+          <div className="flex flex-wrap items-center gap-2">
+            {onEventTypeChange && (
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  onClick={() => onEventTypeChange(undefined)}
+                  className={cn(
+                    'px-2.5 py-1 rounded-full text-xs font-medium uppercase tracking-wide transition-colors',
+                    !eventType
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
+                  )}
+                >
+                  All
+                </button>
+                {(Object.keys(EVENT_TYPE_LABELS) as EventType[]).map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => onEventTypeChange(eventType === type ? undefined : type)}
+                    className={cn(
+                      'px-2.5 py-1 rounded-full text-xs font-medium uppercase tracking-wide transition-colors',
+                      eventType === type
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
+                    )}
+                  >
+                    {EVENT_TYPE_LABELS[type]}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {onVenueChange && venues && venues.length > 0 && (
+              <div className="ml-auto">
+                <Select
+                  value={venue || 'all'}
+                  onValueChange={(value) => onVenueChange(value === 'all' ? '' : value)}
+                >
+                  <SelectTrigger
+                    className="h-8 min-w-[140px] w-fit bg-input border-border text-xs"
+                    aria-label="Filter by venue"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="h-3 w-3 text-accent shrink-0" />
+                      <SelectValue placeholder="All Venues" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Venues</SelectItem>
+                    {venues.map((v) => (
+                      <SelectItem key={v} value={v}>
+                        {v}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Day headers */}
