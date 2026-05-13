@@ -1,3 +1,4 @@
+import { createElement } from 'react';
 import { AdminLayout } from '@/layouts/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +13,8 @@ const INTER_WEIGHTS = [
   { weight: 700, label: 'Bold' },
 ];
 
-const HEADINGS: { tag: keyof JSX.IntrinsicElements; classes: string; label: string }[] = [
+type HeadingTag = 'h1' | 'h2' | 'h3' | 'h4' | 'h5';
+const HEADINGS: { tag: HeadingTag; classes: string; label: string }[] = [
   { tag: 'h1', classes: 'text-5xl md:text-6xl font-display tracking-wider', label: 'H1 · Page hero' },
   { tag: 'h2', classes: 'text-3xl md:text-4xl font-display tracking-wider', label: 'H2 · Section title' },
   { tag: 'h3', classes: 'text-2xl font-display tracking-wider', label: 'H3 · Card title' },
@@ -105,17 +107,14 @@ export default function AdminTypography() {
             <CardTitle className="font-display tracking-wider text-sm">Heading scale</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
-            {HEADINGS.map(({ tag, classes, label }) => {
-              const Tag = tag as keyof JSX.IntrinsicElements;
-              return (
-                <div key={tag} className="border-b border-border/40 pb-4 last:border-0">
-                  <p className="text-xs text-muted-foreground mb-1">
-                    {label} · <code>{`<${tag}>`}</code> · <code>{classes}</code>
-                  </p>
-                  <Tag className={classes}>{SAMPLE}</Tag>
-                </div>
-              );
-            })}
+            {HEADINGS.map(({ tag, classes, label }) => (
+              <div key={tag} className="border-b border-border/40 pb-4 last:border-0">
+                <p className="text-xs text-muted-foreground mb-1">
+                  {label} · <code>{`<${tag}>`}</code> · <code>{classes}</code>
+                </p>
+                {createElement(tag, { className: classes }, SAMPLE)}
+              </div>
+            ))}
           </CardContent>
         </Card>
 
