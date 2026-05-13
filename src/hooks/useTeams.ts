@@ -26,9 +26,10 @@ export function useTeams(filters?: { division?: string; search?: string; league?
   return useQuery({
     queryKey: ['teams', filters],
     queryFn: async () => {
-      const columns = filters?.includeContact
-        ? '*'
-        : 'id,name,division,league,position,points,captain_name,website,logo_url,region,home_venue,description,is_active,created_at,updated_at,social_media';
+      // Public-safe column list — contact_email/contact_phone are admin-only
+      // and must be fetched via the get_admin_team_contacts RPC.
+      const columns =
+        'id,name,division,league,position,points,captain_name,website,logo_url,region,home_venue,description,is_active,created_at,updated_at,social_media';
       let query = supabase
         .from('teams')
         .select(columns)
@@ -50,7 +51,31 @@ export function useTeams(filters?: { division?: string; search?: string; league?
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as unknown as Team[];
+      const teams = (data as unknown as Team[]).map((t) => ({
+        ...t,
+        contact_email: null,
+        contact_phone: null,
+      }));
+
+      if (filters?.includeContact) {
+        const { data: contacts, error: cErr } = await supabase.rpc('get_admin_team_contacts');
+        if (!cErr && contacts) {
+          const byId = new Map(
+            (contacts as Array<{ id: string; contact_email: string | null; contact_phone: string | null }>).map(
+              (c) => [c.id, c],
+            ),
+          );
+          for (const t of teams) {
+            const c = byId.get(t.id);
+            if (c) {
+              t.contact_email = c.contact_email;
+              t.contact_phone = c.contact_phone;
+            }
+          }
+        }
+      }
+
+      return teams;
     },
   });
 }
