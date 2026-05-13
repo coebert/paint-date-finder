@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { PaintballEvent } from '@/types/events';
 import { EventCard } from './EventCard';
-import { format, parseISO, isAfter, isBefore, startOfDay } from 'date-fns';
+import { format, parseISO, isBefore, startOfDay } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -157,3 +157,20 @@ export function EventList({ events, onEdit }: EventListProps) {
         </div>
       ) : (
         <div className="space-y-8">
+          {Object.entries(eventsByMonth).map(([month, monthEvents]) => (
+            <div key={month}>
+              <h2 className="font-display text-2xl text-accent mb-4 tracking-wide border-b border-border/50 pb-2">
+                {month.toUpperCase()}
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {monthEvents.map((event) => (
+                  <EventCard key={event.id} event={event} onEdit={onEdit} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
