@@ -101,9 +101,7 @@ describe('check-media-dimensions: parent-wrapper allowance', () => {
 
   it('passes when innermost ancestor is sized even if outer ancestor is not', () => {
     const src = raw('section',
-      wrap('div', { className: 'h-40 w-40' },
-        raw('div', img())
-      )
+      wrap('div', { className: 'h-40 w-40' }, img())
     );
     expectPasses(src);
   });
