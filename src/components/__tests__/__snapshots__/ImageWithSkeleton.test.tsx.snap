@@ -1,0 +1,33 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ImageWithSkeleton — visual contract > matches structural snapshot (initial render) 1`] = `
+<div
+  class="relative h-16 w-16"
+>
+  <div
+    aria-hidden="true"
+    class="animate-pulse rounded-md bg-muted absolute inset-0 h-full w-full"
+  />
+  <img
+    alt="snap"
+    class="transition-opacity duration-300 opacity-0"
+    decoding="async"
+    loading="lazy"
+    src="/x.png"
+  />
+</div>
+`;
+
+exports[`ImageWithSkeleton — visual contract > matches structural snapshot (loaded state) 1`] = `
+<div
+  class="relative h-16 w-16"
+>
+  <img
+    alt="snap"
+    class="transition-opacity duration-300 opacity-100"
+    decoding="async"
+    loading="lazy"
+    src="/x.png"
+  />
+</div>
+`;
