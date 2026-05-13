@@ -472,20 +472,37 @@ Deno.serve(async (req) => {
     );
   }
 
-  // Light auth context — we don't gate on a user, but knowing if there's a
-  // logged-in user lets us trace abuse via logs if needed.
+  // Admin-only: this endpoint consumes paid AI/Firecrawl credits.
   const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
   let userId: string | null = null;
-  if (authHeader?.startsWith("Bearer ")) {
-    try {
-      const supabase = createClient(SUPABASE_URL, SERVICE_KEY, {
-        global: { headers: { Authorization: authHeader } },
+  try {
+    const supabase = createClient(SUPABASE_URL, SERVICE_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: userData } = await supabase.auth.getUser();
+    userId = userData.user?.id ?? null;
+    if (!userId) throw new Error("no user");
+    const { data: isAdmin, error: roleErr } = await supabase.rpc("has_role", {
+      _user_id: userId,
+      _role: "admin",
+    });
+    if (roleErr || !isAdmin) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
-      const { data } = await supabase.auth.getUser();
-      userId = data.user?.id ?? null;
-    } catch {
-      // ignore
     }
+  } catch {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   let body: RequestBody;
