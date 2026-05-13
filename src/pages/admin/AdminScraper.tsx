@@ -41,11 +41,12 @@ import {
   useDeleteTrustedSource,
   useRunScrape,
   useScrapeRuns,
+  useSetTrustedSourceActive,
   useTrustedSources,
   useUpsertTrustedSource,
   type TrustedSource,
 } from "@/hooks/useScraper";
-import { Loader2, Play, Plus, Trash2, ExternalLink, Pencil } from "lucide-react";
+import { Loader2, Play, Plus, Trash2, ExternalLink, Pencil, RotateCcw } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { AdminFlyerImportCard } from "@/components/admin/AdminFlyerImportCard";
 
