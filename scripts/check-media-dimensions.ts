@@ -12,6 +12,7 @@
  *     - data-cls-exempt attribute
  *   …or on the nearest enclosing JSX wrapper element:
  *     - any of the above className utilities
+ *     - inline style containing `aspectRatio`
  *   …or inline comment immediately before the tag:
  *     - JSX comment with "cls-exempt"
  *     - HTML comment with "cls-exempt"
@@ -50,6 +51,12 @@ export function classNameBlob(attrs: string): string {
     .join(' ');
 }
 
+function styleBlob(attrs: string): string {
+  return [...attrs.matchAll(/style\s*=\s*(?:"([^"]*)"|'([^']*)'|\{(\{[^}]*\})\})/g)]
+    .map((m) => m[1] ?? m[2] ?? m[3] ?? '')
+    .join(' ');
+}
+
 function classHasSizing(blob: string): boolean {
   if (/\baspect-[\w./[\]-]+/.test(blob)) return true;
   if (/\bsize-[\w./[\]-]+/.test(blob)) return true;
@@ -60,29 +67,33 @@ function classHasSizing(blob: string): boolean {
 
 function hasDimensions(attrs: string): boolean {
   if (/\bwidth\s*=/.test(attrs) && /\bheight\s*=/.test(attrs)) return true;
-  if (/aspectRatio\s*:/.test(attrs)) return true;
+  if (/aspectRatio\s*:/.test(styleBlob(attrs))) return true;
   return classHasSizing(classNameBlob(attrs));
 }
 
 /**
  * Build the JSX open-tag stack at every byte offset in `src`.
- * Returns parents[i] = className of nearest enclosing JSX element opened
+ * Returns the className and style blobs of the nearest enclosing JSX element opened
  * before offset i (or null if none / not yet sized-checkable).
  */
-function parentClassNameAt(src: string, offset: number): string | null {
-  const stack: string[] = []; // className blobs of currently-open ancestors
+function parentAttrsAt(src: string, offset: number): { className: string | null; style: string | null } {
+  const classStack: string[] = [];
+  const styleStack: string[] = [];
   const tokenRe = /<(\/?)([A-Za-z][\w.-]*)([^<>]*?)(\/?)>/g;
   let m: RegExpExecArray | null;
   while ((m = tokenRe.exec(src)) !== null) {
     if (m.index >= offset) break;
     const [, slash, , attrs, selfClose] = m;
     if (slash) {
-      stack.pop();
+      classStack.pop();
+      styleStack.pop();
     } else if (!selfClose) {
-      stack.push(classNameBlob(attrs));
+      classStack.push(classNameBlob(attrs));
+      styleStack.push(styleBlob(attrs));
     }
   }
-  return stack.length ? stack[stack.length - 1] : null;
+  const i = classStack.length;
+  return { className: i ? classStack[i - 1] : null, style: i ? styleStack[i - 1] : null };
 }
 
 /**
@@ -112,9 +123,10 @@ export function scanSource(src: string, file = '<inline>'): Violation[] {
     if (isInlineExempt(src, m.index)) continue;
     if (hasDimensions(attrs)) continue;
     // Parent-wrapper allowance: accept if the nearest enclosing JSX element
-    // reserves dimensions via className utilities.
-    const parentClass = parentClassNameAt(src, m.index);
-    if (parentClass && classHasSizing(parentClass)) continue;
+    // reserves dimensions via className utilities or inline style aspectRatio.
+    const parent = parentAttrsAt(src, m.index);
+    if (parent.className && classHasSizing(parent.className)) continue;
+    if (parent.style && /aspectRatio\s*:/.test(parent.style)) continue;
     const line = src.slice(0, m.index).split('\n').length;
     violations.push({
       file,
@@ -245,7 +257,7 @@ if (isMain) {
       console.error(`      → ${suggestFix(v)}`);
     }
     console.error(
-      `\nFix: add width+height attributes, a sized parent with h-*/w-* classes, an aspect-* class, or style={{ aspectRatio: ... }}.\n` +
+      `\nFix: add width+height attributes, a sized parent with h-*/w-* classes, an aspect-* class, style={{ aspectRatio: ... }}, or data-cls-exempt.\n` +
         `       To suppress a false positive inline, add data-cls-exempt or a {/* cls-exempt */} comment before the tag.`,
     );
     if (jsonOut) console.error(`\nJSON report written to ${jsonOut}`);
