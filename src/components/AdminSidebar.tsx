@@ -1,4 +1,4 @@
-import { BarChart3, Calendar, FileText, Flag, Home, Radar, Settings, Users, Layers, Activity, Type } from "lucide-react";
+import { BarChart3, Calendar, FileText, Flag, Home, Radar, Settings, Users, Layers, Activity, Type, Search } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 
@@ -26,6 +26,7 @@ const menuItems = [
   { title: "Teams", url: "/admin/teams", icon: Users },
   { title: "Auto-Scraper", url: "/admin/scraper", icon: Radar },
   { title: "Web Vitals", url: "/admin/vitals", icon: Activity },
+  { title: "SEO Monitor", url: "/admin/seo", icon: Search },
   { title: "Typography QA", url: "/admin/typography", icon: Type },
 ];
 
