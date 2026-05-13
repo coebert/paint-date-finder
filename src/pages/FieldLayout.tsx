@@ -1,6 +1,6 @@
 import { useState, useCallback, Suspense, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import { RouteHead } from '@/components/RouteHead';
 import { ArrowLeft, Eye, PenTool, RotateCcw, RotateCw, Trash2, Download, Copy, Compass, Maximize, Minimize, Tag, Columns2 } from 'lucide-react';
 import { SaveLayoutDialog } from '@/components/field/SaveLayoutDialog';
 import { CommunityLayoutsDialog } from '@/components/field/CommunityLayoutsDialog';
