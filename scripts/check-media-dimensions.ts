@@ -118,21 +118,126 @@ const isMain = (() => {
   }
 })();
 
+/**
+ * Suggested-fix heuristic: looks at the offending tag's attributes to
+ * recommend the lowest-friction remediation.
+ */
+export function suggestFix(v: Violation): string {
+  const s = v.snippet;
+  if (/<img\b/.test(s)) {
+    return 'Wrap in a parent with `relative` + reserved dimensions (e.g. `<div className="relative aspect-video">…</div>`), use <ImageWithSkeleton>, or add explicit width/height attributes.';
+  }
+  if (/<iframe\b/.test(s) || /<embed\b/.test(s) || /<object\b/.test(s)) {
+    return 'Add `className="aspect-video w-full"` (or another aspect-* utility) on the tag, or wrap in a sized parent.';
+  }
+  if (/<video\b/.test(s)) {
+    return 'Add `width` + `height` attributes, or `className="aspect-video w-full"`, or wrap in a sized parent.';
+  }
+  return 'Add width+height, an aspect-* class, a size-* class, or wrap in a sized parent.';
+}
+
+export function toJsonReport(violations: Violation[]) {
+  const byFile: Record<string, Array<Omit<Violation, 'file'> & { fix: string }>> = {};
+  for (const v of violations) {
+    (byFile[v.file] ??= []).push({ line: v.line, tag: v.tag, snippet: v.snippet, fix: suggestFix(v) });
+  }
+  return {
+    schemaVersion: 1,
+    generatedAt: new Date().toISOString(),
+    summary: {
+      totalViolations: violations.length,
+      filesAffected: Object.keys(byFile).length,
+    },
+    files: Object.entries(byFile).map(([file, items]) => ({ file, count: items.length, items })),
+  };
+}
+
+export function toMarkdownReport(violations: Violation[]): string {
+  const json = toJsonReport(violations);
+  const lines: string[] = [];
+  lines.push('# Media Dimensions Report');
+  lines.push('');
+  lines.push(`_Generated ${json.generatedAt}_`);
+  lines.push('');
+  if (violations.length === 0) {
+    lines.push('All media tags reserve dimensions. No CLS-prone elements found.');
+    return lines.join('\n');
+  }
+  lines.push(
+    `**${json.summary.totalViolations}** violation(s) across **${json.summary.filesAffected}** file(s).`,
+  );
+  lines.push('');
+  lines.push('## Violations by file');
+  lines.push('');
+  for (const f of json.files) {
+    lines.push(`### \`${f.file}\` (${f.count})`);
+    lines.push('');
+    lines.push('| Line | Tag | Snippet | Suggested fix |');
+    lines.push('| ---: | --- | --- | --- |');
+    for (const it of f.items) {
+      const snip = it.snippet.replace(/\|/g, '\\|');
+      const fix = it.fix.replace(/\|/g, '\\|');
+      lines.push(`| ${it.line} | \`<${it.tag}>\` | \`${snip}\` | ${fix} |`);
+    }
+    lines.push('');
+  }
+  return lines.join('\n');
+}
+
+// Only run as a CLI when executed directly (not when imported by tests).
+const isMain = (() => {
+  try {
+    const argv1 = process.argv[1] ?? '';
+    return argv1.includes('check-media-dimensions');
+  } catch {
+    return false;
+  }
+})();
+
+function getArg(name: string): string | undefined {
+  const eq = process.argv.find((a) => a.startsWith(`--${name}=`));
+  if (eq) return eq.slice(name.length + 3);
+  const idx = process.argv.indexOf(`--${name}`);
+  if (idx >= 0 && process.argv[idx + 1] && !process.argv[idx + 1].startsWith('--')) {
+    return process.argv[idx + 1];
+  }
+  return undefined;
+}
+
+function writeReport(path: string, contents: string) {
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, contents, 'utf8');
+}
+
 if (isMain) {
   const files = walk(ROOT).filter((f) => !EXEMPT.has(relative(process.cwd(), f)));
   const all = files.flatMap(scanFile);
 
-  if (all.length === 0) {
+  const jsonOut = getArg('json');
+  const mdOut = getArg('md');
+  const stdoutFormat = getArg('format'); // 'json' | 'md' (writes report to stdout)
+
+  if (jsonOut) writeReport(jsonOut, JSON.stringify(toJsonReport(all), null, 2) + '\n');
+  if (mdOut) writeReport(mdOut, toMarkdownReport(all) + '\n');
+
+  if (stdoutFormat === 'json') {
+    process.stdout.write(JSON.stringify(toJsonReport(all), null, 2) + '\n');
+  } else if (stdoutFormat === 'md') {
+    process.stdout.write(toMarkdownReport(all) + '\n');
+  } else if (all.length === 0) {
     console.log(`✓ media-dimensions: ${files.length} files scanned, no CLS-prone <${TAGS.join('|')}> found.`);
-    process.exit(0);
+  } else {
+    console.error(`✗ media-dimensions: ${all.length} element(s) missing width/height/aspect-ratio:\n`);
+    for (const v of all) {
+      console.error(`  ${v.file}:${v.line}  <${v.tag}>  ${v.snippet}`);
+      console.error(`      → ${suggestFix(v)}`);
+    }
+    console.error(
+      `\nFix: add width+height attributes, a sized parent with h-*/w-* classes, an aspect-* class, or style={{ aspectRatio: ... }}.`,
+    );
+    if (jsonOut) console.error(`\nJSON report written to ${jsonOut}`);
+    if (mdOut) console.error(`Markdown report written to ${mdOut}`);
   }
 
-  console.error(`✗ media-dimensions: ${all.length} element(s) missing width/height/aspect-ratio:\n`);
-  for (const v of all) {
-    console.error(`  ${v.file}:${v.line}  <${v.tag}>  ${v.snippet}`);
-  }
-  console.error(
-    `\nFix: add width+height attributes, a sized parent with h-*/w-* classes on the element, an aspect-* class, or style={{ aspectRatio: ... }}.`,
-  );
-  process.exit(1);
+  process.exit(all.length === 0 ? 0 : 1);
 }
