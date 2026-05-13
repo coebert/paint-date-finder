@@ -287,19 +287,22 @@ export default function ResetPassword() {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md bg-card border-border">
-          <CardContent className="pt-6">
-            <div className="flex flex-col items-center gap-4">
-              <CheckCircle className="h-16 w-16 text-primary" />
-              <h1 className="font-display text-2xl tracking-wide">PASSWORD UPDATED</h1>
-              <p className="text-muted-foreground text-center">
-                Your password has been reset successfully. Redirecting...
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <>
+        <ResetPasswordHead />
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+          <Card className="w-full max-w-md bg-card border-border">
+            <CardContent className="pt-6">
+              <div className="flex flex-col items-center gap-4">
+                <CheckCircle className="h-16 w-16 text-primary" />
+                <h1 className="font-display text-2xl tracking-wide">PASSWORD UPDATED</h1>
+                <p className="text-muted-foreground text-center">
+                  Your password has been reset successfully. Redirecting...
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </>
     );
   }
 
