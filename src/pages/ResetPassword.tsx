@@ -18,6 +18,16 @@ import {
 } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, KeyRound, CheckCircle } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
+
+const ResetPasswordHead = () => (
+  <Helmet>
+    <title>Reset password | Find A Walk-On</title>
+    <meta name="description" content="Set a new password for your Find A Walk-On account to regain access to UK paintball events and team tools." />
+    <meta name="robots" content="noindex,nofollow" />
+    <link rel="canonical" href="https://findawalkon.com/reset-password" />
+  </Helmet>
+);
 
 const resetPasswordSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
@@ -232,64 +242,75 @@ export default function ResetPassword() {
 
   if (isChecking) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md bg-card border-border">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-accent" />
-            </div>
-            <p className="text-center text-muted-foreground mt-4">Validating reset link...</p>
-          </CardContent>
-        </Card>
-      </div>
+      <>
+        <ResetPasswordHead />
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+          <Card className="w-full max-w-md bg-card border-border">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-accent" />
+              </div>
+              <p className="text-center text-muted-foreground mt-4">Validating reset link...</p>
+            </CardContent>
+          </Card>
+        </div>
+      </>
     );
   }
 
   if (!isValidSession) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md bg-card border-border">
-          <CardContent className="pt-6">
-            <div className="flex flex-col items-center gap-4">
-              <KeyRound className="h-12 w-12 text-destructive" />
-              <h1 className="font-display text-xl tracking-wide">INVALID OR EXPIRED LINK</h1>
-              <p className="text-muted-foreground text-center text-sm">
-                This password reset link is invalid or has expired. Please request a new one.
-              </p>
-              <Button
-                onClick={() => navigate('/')}
-                className="bg-accent text-accent-foreground hover:bg-accent/90"
-              >
-                Back to Home
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <>
+        <ResetPasswordHead />
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+          <Card className="w-full max-w-md bg-card border-border">
+            <CardContent className="pt-6">
+              <div className="flex flex-col items-center gap-4">
+                <KeyRound className="h-12 w-12 text-destructive" />
+                <h1 className="font-display text-xl tracking-wide">INVALID OR EXPIRED LINK</h1>
+                <p className="text-muted-foreground text-center text-sm">
+                  This password reset link is invalid or has expired. Please request a new one.
+                </p>
+                <Button
+                  onClick={() => navigate('/')}
+                  className="bg-accent text-accent-foreground hover:bg-accent/90"
+                >
+                  Back to Home
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </>
     );
   }
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md bg-card border-border">
-          <CardContent className="pt-6">
-            <div className="flex flex-col items-center gap-4">
-              <CheckCircle className="h-16 w-16 text-primary" />
-              <h1 className="font-display text-2xl tracking-wide">PASSWORD UPDATED</h1>
-              <p className="text-muted-foreground text-center">
-                Your password has been reset successfully. Redirecting...
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <>
+        <ResetPasswordHead />
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+          <Card className="w-full max-w-md bg-card border-border">
+            <CardContent className="pt-6">
+              <div className="flex flex-col items-center gap-4">
+                <CheckCircle className="h-16 w-16 text-primary" />
+                <h1 className="font-display text-2xl tracking-wide">PASSWORD UPDATED</h1>
+                <p className="text-muted-foreground text-center">
+                  Your password has been reset successfully. Redirecting...
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-card border-border">
+    <>
+      <ResetPasswordHead />
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md bg-card border-border">
         <CardHeader>
           <h1 className="font-display text-2xl tracking-wide leading-none">SET NEW PASSWORD</h1>
           <CardDescription>
@@ -354,6 +375,7 @@ export default function ResetPassword() {
           </Form>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </>
   );
 }
