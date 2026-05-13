@@ -26,7 +26,15 @@ export function Header({ view, onViewChange, onAddEvent, onSubmitEvent, onImport
       <div className="container mx-auto px-4 py-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <img src={logo} alt="Find A Walk-On logo" className="w-16 h-16 md:w-20 md:h-20 drop-shadow-lg" />
+            <img
+              src={logo}
+              alt="Find A Walk-On logo"
+              width={80}
+              height={80}
+              fetchPriority="high"
+              decoding="async"
+              className="w-16 h-16 md:w-20 md:h-20 drop-shadow-lg"
+            />
             <div>
               <h1 className="font-display text-3xl md:text-4xl tracking-wider text-foreground">
                 FIND A WALK-ON
