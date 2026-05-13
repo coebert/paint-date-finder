@@ -109,6 +109,8 @@ export default function Index() {
         <title>Find A Walk-On | UK Paintball Events & Walk-On Days</title>
         <meta name="description" content="Find and book walk-on paintball events across the UK. Browse upcoming dates, venues and event types on a map, calendar or list." />
         <link rel="canonical" href="https://findawalkon.com/" />
+        <link rel="preload" as="image" href={woodsballBg} fetchpriority="high" />
+        <link rel="preload" as="image" href={logo} fetchpriority="high" />
         <meta property="og:title" content="Find A Walk-On | UK Paintball Events" />
         <meta property="og:description" content="Find and book walk-on paintball events across the United Kingdom." />
         <meta property="og:url" content="https://findawalkon.com/" />
