@@ -1,0 +1,1 @@
+REVOKE SELECT (delete_token) ON public.event_flags FROM anon, authenticated;
