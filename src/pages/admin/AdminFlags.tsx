@@ -1,5 +1,5 @@
 import { AdminLayout } from "@/layouts/AdminLayout";
-import { useAdminEventFlags, useResolveFlag, useDeleteFlag } from '@/hooks/useEventFlags';
+import { useAdminEventFlags, useResolveFlag, useDeleteFlag, useApplySuggestedDate } from '@/hooks/useEventFlags';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -23,7 +23,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { AlertTriangle, CheckCircle, Trash2, Flag } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Trash2, Flag, CalendarCheck } from 'lucide-react';
 import { format } from 'date-fns';
 
 const REASON_LABELS: Record<string, string> = {
@@ -38,6 +38,7 @@ export default function AdminFlags() {
   const { data: flags, isLoading, error } = useAdminEventFlags();
   const resolveFlag = useResolveFlag();
   const deleteFlag = useDeleteFlag();
+  const applySuggestedDate = useApplySuggestedDate();
 
   const unresolvedFlags = flags?.filter((f: any) => !f.is_resolved) ?? [];
   const resolvedFlags = flags?.filter((f: any) => f.is_resolved) ?? [];
@@ -129,9 +130,19 @@ export default function AdminFlags() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <p className="text-sm text-muted-foreground max-w-[250px] truncate">
-                          {flag.details || '—'}
-                        </p>
+                        <div className="space-y-1 max-w-[280px]">
+                          {flag.suggested_date && (
+                            <div className="flex items-center gap-1.5 text-xs">
+                              <CalendarCheck className="h-3.5 w-3.5 text-accent shrink-0" />
+                              <span className="text-foreground font-medium">
+                                Suggested: {format(new Date(flag.suggested_date), 'd MMM yyyy')}
+                              </span>
+                            </div>
+                          )}
+                          <p className="text-sm text-muted-foreground truncate">
+                            {flag.details || (flag.suggested_date ? '' : '—')}
+                          </p>
+                        </div>
                       </TableCell>
                       <TableCell>
                         <p className="text-sm text-muted-foreground">
@@ -140,6 +151,25 @@ export default function AdminFlags() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
+                          {flag.suggested_date && flag.event_id && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() =>
+                                applySuggestedDate.mutate({
+                                  flagId: flag.id,
+                                  eventId: flag.event_id,
+                                  suggestedDate: flag.suggested_date,
+                                })
+                              }
+                              disabled={applySuggestedDate.isPending}
+                              className="gap-1 bg-accent text-accent-foreground hover:bg-accent/90"
+                              title="Apply suggested date and mark event for revalidation"
+                            >
+                              <CalendarCheck className="h-3.5 w-3.5" />
+                              Apply date
+                            </Button>
+                          )}
                           <Button
                             variant="outline"
                             size="sm"

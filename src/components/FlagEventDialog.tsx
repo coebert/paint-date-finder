@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { format } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -11,7 +12,10 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Flag, AlertTriangle, Loader2 } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { Flag, AlertTriangle, Loader2, CalendarIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { storeFlagToken } from '@/hooks/useEventFlags';
@@ -34,6 +38,8 @@ interface FlagEventDialogProps {
 export function FlagEventDialog({ eventId, eventTitle, open, onOpenChange }: FlagEventDialogProps) {
   const [reason, setReason] = useState<string>('');
   const [details, setDetails] = useState('');
+  const [suggestedDate, setSuggestedDate] = useState<Date | undefined>();
+  const [datePopoverOpen, setDatePopoverOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
 
@@ -43,12 +49,21 @@ export function FlagEventDialog({ eventId, eventTitle, open, onOpenChange }: Fla
       return;
     }
 
+    if (reason === 'wrong_date' && !suggestedDate) {
+      toast.error('Please pick the correct date so admins can apply your suggestion.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const { data, error } = await supabase.rpc('create_event_flag' as any, {
         _event_id: eventId,
         _reason: reason,
         _details: details.trim() || null,
+        _suggested_date:
+          reason === 'wrong_date' && suggestedDate
+            ? format(suggestedDate, 'yyyy-MM-dd')
+            : null,
       });
 
       if (error) throw error;
@@ -63,6 +78,7 @@ export function FlagEventDialog({ eventId, eventTitle, open, onOpenChange }: Fla
       queryClient.invalidateQueries({ queryKey: ['flagged-event-ids'] });
       setReason('');
       setDetails('');
+      setSuggestedDate(undefined);
       onOpenChange(false);
     } catch (err) {
       console.error('Error submitting flag:', err);
@@ -109,6 +125,48 @@ export function FlagEventDialog({ eventId, eventTitle, open, onOpenChange }: Fla
               ))}
             </RadioGroup>
           </div>
+
+          {reason === 'wrong_date' && (
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2">
+              <Label className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                <CalendarIcon className="h-3.5 w-3.5 text-accent" />
+                What's the correct date?
+              </Label>
+              <Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      'w-full justify-start text-left font-normal bg-background',
+                      !suggestedDate && 'text-muted-foreground'
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {suggestedDate ? format(suggestedDate, 'EEEE, d MMMM yyyy') : 'Pick the correct date'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={suggestedDate}
+                    onSelect={(d) => {
+                      setSuggestedDate(d);
+                      setDatePopoverOpen(false);
+                    }}
+                    disabled={(date) =>
+                      date < new Date(new Date().setHours(0, 0, 0, 0)) ||
+                      date > new Date(new Date().setFullYear(new Date().getFullYear() + 5))
+                    }
+                    initialFocus
+                    className={cn('p-3 pointer-events-auto')}
+                  />
+                </PopoverContent>
+              </Popover>
+              <p className="text-xs text-muted-foreground">
+                Admins can apply your suggested date with one click.
+              </p>
+            </div>
+          )}
 
           <div>
             <Label htmlFor="flag-details" className="text-sm font-medium text-foreground mb-2 block">
