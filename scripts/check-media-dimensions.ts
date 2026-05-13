@@ -40,7 +40,7 @@ interface Violation {
   snippet: string;
 }
 
-function classNameBlob(attrs: string): string {
+export function classNameBlob(attrs: string): string {
   return [...attrs.matchAll(/className\s*=\s*(?:"([^"]*)"|'([^']*)'|\{`([^`]*)`\}|\{"([^"]*)"\}|\{'([^']*)'\})/g)]
     .map((m) => m[1] ?? m[2] ?? m[3] ?? m[4] ?? m[5] ?? '')
     .join(' ');
@@ -81,8 +81,7 @@ function parentClassNameAt(src: string, offset: number): string | null {
   return stack.length ? stack[stack.length - 1] : null;
 }
 
-function scanFile(file: string): Violation[] {
-  const src = readFileSync(file, 'utf8');
+export function scanSource(src: string, file = '<inline>'): Violation[] {
   const violations: Violation[] = [];
   const tagRe = new RegExp(`<(${TAGS.join('|')})(\\s[^>]*?)?/?>`, 'gs');
   let m: RegExpExecArray | null;
@@ -96,7 +95,7 @@ function scanFile(file: string): Violation[] {
     if (parentClass && classHasSizing(parentClass)) continue;
     const line = src.slice(0, m.index).split('\n').length;
     violations.push({
-      file: relative(process.cwd(), file),
+      file,
       line,
       tag,
       snippet: full.replace(/\s+/g, ' ').slice(0, 120),
@@ -105,19 +104,35 @@ function scanFile(file: string): Violation[] {
   return violations;
 }
 
-const files = walk(ROOT).filter((f) => !EXEMPT.has(relative(process.cwd(), f)));
-const all = files.flatMap(scanFile);
-
-if (all.length === 0) {
-  console.log(`✓ media-dimensions: ${files.length} files scanned, no CLS-prone <${TAGS.join('|')}> found.`);
-  process.exit(0);
+function scanFile(file: string): Violation[] {
+  return scanSource(readFileSync(file, 'utf8'), relative(process.cwd(), file));
 }
 
-console.error(`✗ media-dimensions: ${all.length} element(s) missing width/height/aspect-ratio:\n`);
-for (const v of all) {
-  console.error(`  ${v.file}:${v.line}  <${v.tag}>  ${v.snippet}`);
+// Only run as a CLI when executed directly (not when imported by tests).
+const isMain = (() => {
+  try {
+    const argv1 = process.argv[1] ?? '';
+    return argv1.includes('check-media-dimensions');
+  } catch {
+    return false;
+  }
+})();
+
+if (isMain) {
+  const files = walk(ROOT).filter((f) => !EXEMPT.has(relative(process.cwd(), f)));
+  const all = files.flatMap(scanFile);
+
+  if (all.length === 0) {
+    console.log(`✓ media-dimensions: ${files.length} files scanned, no CLS-prone <${TAGS.join('|')}> found.`);
+    process.exit(0);
+  }
+
+  console.error(`✗ media-dimensions: ${all.length} element(s) missing width/height/aspect-ratio:\n`);
+  for (const v of all) {
+    console.error(`  ${v.file}:${v.line}  <${v.tag}>  ${v.snippet}`);
+  }
+  console.error(
+    `\nFix: add width+height attributes, a sized parent with h-*/w-* classes on the element, an aspect-* class, or style={{ aspectRatio: ... }}.`,
+  );
+  process.exit(1);
 }
-console.error(
-  `\nFix: add width+height attributes, a sized parent with h-*/w-* classes on the element, an aspect-* class, or style={{ aspectRatio: ... }}.`,
-);
-process.exit(1);
