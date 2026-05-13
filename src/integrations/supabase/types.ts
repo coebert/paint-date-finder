@@ -220,6 +220,42 @@ export type Database = {
         }
         Relationships: []
       }
+      freshness_snapshots: {
+        Row: {
+          alert_sent: boolean
+          captured_at: string
+          details: Json | null
+          id: string
+          last_event_update_at: string | null
+          last_successful_scrape_at: string | null
+          scrape_stale: boolean
+          stale_event_count: number
+          updates_stale: boolean
+        }
+        Insert: {
+          alert_sent?: boolean
+          captured_at?: string
+          details?: Json | null
+          id?: string
+          last_event_update_at?: string | null
+          last_successful_scrape_at?: string | null
+          scrape_stale?: boolean
+          stale_event_count?: number
+          updates_stale?: boolean
+        }
+        Update: {
+          alert_sent?: boolean
+          captured_at?: string
+          details?: Json | null
+          id?: string
+          last_event_update_at?: string | null
+          last_successful_scrape_at?: string | null
+          scrape_stale?: boolean
+          stale_event_count?: number
+          updates_stale?: boolean
+        }
+        Relationships: []
+      }
       scrape_runs: {
         Row: {
           candidates_created: number
