@@ -89,6 +89,9 @@ export function EventDetailDialog({ event, open, onOpenChange, onEdit }: EventDe
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
+      <Helmet>
+        <script type="application/ld+json">{JSON.stringify(eventSchema)}</script>
+      </Helmet>
       <DialogContent className="max-w-lg bg-card border-border" aria-describedby="event-dialog-description">
         <DialogHeader>
           <div className="flex items-start justify-between gap-4">
