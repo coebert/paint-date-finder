@@ -181,6 +181,49 @@ function statusBadge(status: string | null) {
   return <Badge variant="destructive">{status}</Badge>;
 }
 
+// Extract an HTTP status code from a free-text error message, e.g.
+// "Firecrawl 403: {...}" or "fetch failed: 502 Bad Gateway".
+function extractHttpStatus(msg: string | null): number | null {
+  if (!msg) return null;
+  const m = msg.match(/\b(?:status\s*[:=]?\s*)?(\d{3})\b/);
+  if (!m) return null;
+  const code = Number(m[1]);
+  return code >= 100 && code <= 599 ? code : null;
+}
+
+function ErrorDetails({ message }: { message: string }) {
+  const status = extractHttpStatus(message);
+  const onCopy = () => {
+    void navigator.clipboard?.writeText(message);
+  };
+  return (
+    <div className="mt-1 w-full max-w-[420px] rounded border border-destructive/30 bg-destructive/5 p-2">
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1">
+          <Badge variant="destructive" className="text-[10px]">
+            error
+          </Badge>
+          {status ? (
+            <Badge variant="outline" className="border-destructive/40 text-destructive text-[10px]">
+              HTTP {status}
+            </Badge>
+          ) : null}
+        </div>
+        <button
+          type="button"
+          onClick={onCopy}
+          className="text-[10px] text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+        >
+          copy
+        </button>
+      </div>
+      <pre className="whitespace-pre-wrap break-words font-mono text-[11px] leading-snug text-destructive">
+        {message}
+      </pre>
+    </div>
+  );
+}
+
 export default function AdminScraper() {
   const { data: sources = [], isLoading } = useTrustedSources();
   const { data: runs = [] } = useScrapeRuns();
@@ -292,12 +335,7 @@ export default function AdminScraper() {
                             </Badge>
                           ) : null}
                           {s.last_error_message ? (
-                            <span
-                              className="max-w-[220px] truncate text-xs text-destructive"
-                              title={s.last_error_message}
-                            >
-                              {s.last_error_message}
-                            </span>
+                            <ErrorDetails message={s.last_error_message} />
                           ) : null}
                         </div>
                       </TableCell>
