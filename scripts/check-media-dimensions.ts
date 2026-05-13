@@ -40,7 +40,7 @@ interface Violation {
   snippet: string;
 }
 
-function classNameBlob(attrs: string): string {
+export function classNameBlob(attrs: string): string {
   return [...attrs.matchAll(/className\s*=\s*(?:"([^"]*)"|'([^']*)'|\{`([^`]*)`\}|\{"([^"]*)"\}|\{'([^']*)'\})/g)]
     .map((m) => m[1] ?? m[2] ?? m[3] ?? m[4] ?? m[5] ?? '')
     .join(' ');
