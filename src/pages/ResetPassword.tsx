@@ -307,8 +307,10 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-card border-border">
+    <>
+      <ResetPasswordHead />
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md bg-card border-border">
         <CardHeader>
           <h1 className="font-display text-2xl tracking-wide leading-none">SET NEW PASSWORD</h1>
           <CardDescription>
