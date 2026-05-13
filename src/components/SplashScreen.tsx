@@ -473,6 +473,9 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
               <img
                 src={logo}
                 alt="Find A Walk-On"
+                width={144}
+                height={144}
+                decoding="async"
                 className="w-28 h-28 md:w-36 md:h-36 drop-shadow-2xl"
                 style={{ filter: 'drop-shadow(0 0 30px rgba(0,0,0,0.8))', animation: 'logo-pulse-glow 2s 0.9s ease-in-out infinite' }}
               />
