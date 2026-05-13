@@ -16,7 +16,9 @@ import { SplashScreen } from '@/components/SplashScreen';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle } from 'lucide-react';
 import { useVisitTracking } from '@/hooks/useVisitTracking';
-import woodsballBg from '@/assets/woodsball-bg.jpg';
+import woodsballBgJpg from '@/assets/woodsball-bg.jpg';
+import woodsballBgWebp from '@/assets/woodsball-bg.webp';
+import woodsballBgAvif from '@/assets/woodsball-bg.avif';
 
 
 export default function Index() {
