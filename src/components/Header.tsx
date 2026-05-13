@@ -38,6 +38,7 @@ export function Header({ view, onViewChange, onAddEvent, onSubmitEvent, onImport
             <div>
               <h1 className="font-display text-3xl md:text-4xl tracking-wider text-foreground">
                 FIND A WALK-ON
+                <span className="sr-only"> — UK paintball events and walk-on days</span>
               </h1>
               <p className="text-sm text-muted-foreground">
                 Find and book paintball events across the United Kingdom
@@ -139,9 +140,10 @@ export function Header({ view, onViewChange, onAddEvent, onSubmitEvent, onImport
                 variant="ghost"
                 size="icon"
                 asChild
+                aria-label="Open admin dashboard"
                 className="text-muted-foreground hover:text-foreground"
               >
-                <Link to="/admin">
+                <Link to="/admin" aria-label="Admin dashboard">
                   <Settings className="h-4 w-4" />
                 </Link>
               </Button>

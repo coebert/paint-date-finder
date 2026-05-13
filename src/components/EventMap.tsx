@@ -371,6 +371,7 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
               size="icon"
               onClick={handleZoomIn}
               disabled={zoom >= MAX_ZOOM}
+              aria-label="Zoom in"
               className="bg-card/90 backdrop-blur-sm border border-border/50 shadow-md"
               title="Zoom in"
             >
@@ -381,6 +382,7 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
               size="icon"
               onClick={handleZoomOut}
               disabled={zoom <= MIN_ZOOM}
+              aria-label="Zoom out"
               className="bg-card/90 backdrop-blur-sm border border-border/50 shadow-md"
               title="Zoom out"
             >
@@ -543,6 +545,7 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
                   <Button
                     variant="ghost"
                     size="icon"
+                    aria-label="Close venue popover"
                     className="h-6 w-6 shrink-0"
                     onClick={handleClosePopover}
                   >
@@ -655,6 +658,7 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
                 <Button
                   variant="ghost"
                   size="icon"
+                  aria-label="Close venue details"
                   onClick={() => setSelectedVenue(null)}
                 >
                   <X className="h-4 w-4" />
@@ -746,6 +750,7 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
                         <Button
                           variant="ghost"
                           size="icon"
+                          aria-label={`Visit ${venueName} website`}
                           className="text-muted-foreground hover:text-primary"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -759,6 +764,7 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
                       <Button
                         variant="ghost"
                         size="icon"
+                        aria-label={`Get directions to ${venueName}`}
                         className="text-muted-foreground hover:text-accent"
                         onClick={(e) => {
                           e.stopPropagation();

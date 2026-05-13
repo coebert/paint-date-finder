@@ -29,7 +29,7 @@ function TeamCard({ team }: { team: Team }) {
         <div className="flex items-start gap-4">
           <div className="w-16 h-16 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0 overflow-hidden border border-border/50">
             {team.logo_url ? (
-              <img src={team.logo_url} alt={`${team.name} logo`} className="w-full h-full object-contain p-1" />
+              <img src={team.logo_url} alt={`${team.name} paintball team logo`} className="w-full h-full object-contain p-1" />
             ) : (
               <Users className="w-7 h-7 text-muted-foreground" />
             )}
@@ -194,7 +194,7 @@ export default function Teams() {
       <header className="tactical-gradient border-b border-border/50">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center gap-3 mb-4">
-            <Button variant="ghost" size="icon" asChild className="text-muted-foreground hover:text-foreground">
+            <Button variant="ghost" size="icon" asChild aria-label="Back to home" className="text-muted-foreground hover:text-foreground">
               <Link to="/">
                 <ArrowLeft className="w-5 h-5" />
               </Link>
