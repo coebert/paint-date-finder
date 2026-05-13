@@ -192,7 +192,15 @@ export default function Index() {
           ) : (
             <>
               {view === 'calendar' && (
-                <EventCalendar events={events || []} onEventClick={handleEventClick} />
+                <EventCalendar
+                  events={events || []}
+                  onEventClick={handleEventClick}
+                  eventType={eventType}
+                  venue={venue}
+                  venues={venues}
+                  onEventTypeChange={setEventType}
+                  onVenueChange={setVenue}
+                />
               )}
               {view === 'list' && (
                 <EventList events={events || []} onEdit={handleEdit} />
