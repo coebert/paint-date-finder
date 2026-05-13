@@ -81,6 +81,22 @@ function parentClassNameAt(src: string, offset: number): string | null {
   return stack.length ? stack[stack.length - 1] : null;
 }
 
+/**
+ * Look for an inline exemption comment immediately before a tag.
+ * Supports JSX `{/* cls-exempt */}` and HTML `<!-- cls-exempt -->`.
+ */
+function isInlineExempt(src: string, tagIndex: number): boolean {
+  const before = src.slice(0, tagIndex);
+  // Match the last comment before this tag (JSX or HTML style)
+  const m = before.match(/\{[/*\s]*cls-exempt[/*\s]*\}|<!--\s*cls-exempt\s*-->/g);
+  if (!m) return false;
+  // Ensure the comment is on the same or immediately preceding line
+  const lastMatch = m[m.length - 1];
+  const commentIdx = before.lastIndexOf(lastMatch);
+  const textBetween = src.slice(commentIdx + lastMatch.length, tagIndex);
+  return /^[\s\n]*$/.test(textBetween);
+}
+
 export function scanSource(src: string, file = '<inline>'): Violation[] {
   const violations: Violation[] = [];
   const tagRe = new RegExp(`<(${TAGS.join('|')})(\\s[^>]*?)?/?>`, 'gs');
@@ -88,6 +104,8 @@ export function scanSource(src: string, file = '<inline>'): Violation[] {
   while ((m = tagRe.exec(src)) !== null) {
     const [full, tag, attrsRaw] = m;
     const attrs = attrsRaw ?? '';
+    if (/\bdata-cls-exempt\b/.test(attrs)) continue;
+    if (isInlineExempt(src, m.index)) continue;
     if (hasDimensions(attrs)) continue;
     // Parent-wrapper allowance: accept if the nearest enclosing JSX element
     // reserves dimensions via className utilities.
