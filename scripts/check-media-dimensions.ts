@@ -38,11 +38,13 @@ function walk(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-interface Violation {
+export interface Violation {
   file: string;
   line: number;
   tag: string;
   snippet: string;
+  /** className+style of the nearest enclosing JSX wrapper (or null if none) — useful for diagnostics. */
+  nearestParent?: { tag: string | null; className: string; style: string } | null;
 }
 
 export function classNameBlob(attrs: string): string {
@@ -78,24 +80,34 @@ function hasDimensions(attrs: string): boolean {
  * Returns the className and style blobs of the nearest enclosing JSX element opened
  * before offset i (or null if none / not yet sized-checkable).
  */
-function parentAttrsAt(src: string, offset: number): { className: string | null; style: string | null } {
+function parentAttrsAt(
+  src: string,
+  offset: number,
+): { tag: string | null; className: string | null; style: string | null } {
+  const tagStack: string[] = [];
   const classStack: string[] = [];
   const styleStack: string[] = [];
   const tokenRe = /<(\/?)([A-Za-z][\w.-]*)([^<>]*?)(\/?)>/g;
   let m: RegExpExecArray | null;
   while ((m = tokenRe.exec(src)) !== null) {
     if (m.index >= offset) break;
-    const [, slash, , attrs, selfClose] = m;
+    const [, slash, name, attrs, selfClose] = m;
     if (slash) {
+      tagStack.pop();
       classStack.pop();
       styleStack.pop();
     } else if (!selfClose) {
+      tagStack.push(name);
       classStack.push(classNameBlob(attrs));
       styleStack.push(styleBlob(attrs));
     }
   }
   const i = classStack.length;
-  return { className: i ? classStack[i - 1] : null, style: i ? styleStack[i - 1] : null };
+  return {
+    tag: i ? tagStack[i - 1] : null,
+    className: i ? classStack[i - 1] : null,
+    style: i ? styleStack[i - 1] : null,
+  };
 }
 
 /**
@@ -135,6 +147,9 @@ export function scanSource(src: string, file = '<inline>'): Violation[] {
       line,
       tag,
       snippet: full.replace(/\s+/g, ' ').slice(0, 120),
+      nearestParent: parent.tag
+        ? { tag: parent.tag, className: parent.className ?? '', style: parent.style ?? '' }
+        : null,
     });
   }
   return violations;
