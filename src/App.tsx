@@ -16,6 +16,7 @@ import AdminTeams from "./pages/admin/AdminTeams";
 import AdminFlags from "./pages/admin/AdminFlags";
 import AdminScraper from "./pages/admin/AdminScraper";
 import AdminBulkImport from "./pages/admin/AdminBulkImport";
+import AdminVitals from "./pages/admin/AdminVitals";
 import FieldLayout from "./pages/FieldLayout";
 
 const queryClient = new QueryClient();
