@@ -72,23 +72,27 @@ function hasDimensions(attrs: string): boolean {
 
 /**
  * Build the JSX open-tag stack at every byte offset in `src`.
- * Returns parents[i] = className of nearest enclosing JSX element opened
+ * Returns the className and style blobs of the nearest enclosing JSX element opened
  * before offset i (or null if none / not yet sized-checkable).
  */
-function parentClassNameAt(src: string, offset: number): string | null {
-  const stack: string[] = []; // className blobs of currently-open ancestors
+function parentAttrsAt(src: string, offset: number): { className: string | null; style: string | null } {
+  const classStack: string[] = [];
+  const styleStack: string[] = [];
   const tokenRe = /<(\/?)([A-Za-z][\w.-]*)([^<>]*?)(\/?)>/g;
   let m: RegExpExecArray | null;
   while ((m = tokenRe.exec(src)) !== null) {
     if (m.index >= offset) break;
     const [, slash, , attrs, selfClose] = m;
     if (slash) {
-      stack.pop();
+      classStack.pop();
+      styleStack.pop();
     } else if (!selfClose) {
-      stack.push(classNameBlob(attrs));
+      classStack.push(classNameBlob(attrs));
+      styleStack.push(styleBlob(attrs));
     }
   }
-  return stack.length ? stack[stack.length - 1] : null;
+  const i = classStack.length;
+  return { className: i ? classStack[i - 1] : null, style: i ? styleStack[i - 1] : null };
 }
 
 /**
