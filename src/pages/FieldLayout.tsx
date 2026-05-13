@@ -203,7 +203,7 @@ export default function FieldLayout() {
       <header className="tactical-gradient border-b border-border/50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" asChild>
+            <Button variant="ghost" size="icon" asChild aria-label="Back to home">
               <Link to="/">
                 <ArrowLeft className="h-5 w-5" />
               </Link>
@@ -285,7 +285,7 @@ export default function FieldLayout() {
                       <Button variant={showLabels ? 'default' : 'outline'} size="sm" className="h-8 gap-1 text-xs" onClick={() => setShowLabels(v => !v)}>
                         <Tag className="w-3.5 h-3.5" /> Callouts
                       </Button>
-                      <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => toggleFullscreen(fieldContainerRef, setIsFieldFullscreen)}>
+                      <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Toggle fullscreen field view" onClick={() => toggleFullscreen(fieldContainerRef, setIsFieldFullscreen)}>
                         {isFieldFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
                       </Button>
                     </div>
@@ -526,7 +526,7 @@ export default function FieldLayout() {
                       FIELD STREET VIEW
                       <Badge variant="outline" className="border-accent/50 text-accent">3D</Badge>
                     </CardTitle>
-                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => toggleFullscreen(streetViewContainerRef, setIs3DFullscreen)}>
+                    <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Toggle fullscreen 3D view" onClick={() => toggleFullscreen(streetViewContainerRef, setIs3DFullscreen)}>
                       {is3DFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
                     </Button>
                   </div>

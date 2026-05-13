@@ -76,6 +76,7 @@ export function EventCalendar({ events, onEventClick }: EventCalendarProps) {
           variant="ghost"
           size="icon"
           onClick={prevMonth}
+          aria-label="Previous month"
           className="text-foreground hover:bg-primary/20"
         >
           <ChevronLeft className="h-5 w-5" />
@@ -87,6 +88,7 @@ export function EventCalendar({ events, onEventClick }: EventCalendarProps) {
           variant="ghost"
           size="icon"
           onClick={nextMonth}
+          aria-label="Next month"
           className="text-foreground hover:bg-primary/20"
         >
           <ChevronRight className="h-5 w-5" />
@@ -226,6 +228,7 @@ export function EventCalendar({ events, onEventClick }: EventCalendarProps) {
                 variant="ghost"
                 size="icon"
                 onClick={() => setExpandedDate(null)}
+                aria-label="Close day events"
                 className="h-8 w-8"
               >
                 <X className="h-4 w-4" />

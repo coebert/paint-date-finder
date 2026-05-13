@@ -252,7 +252,7 @@ export default function ResetPassword() {
           <CardContent className="pt-6">
             <div className="flex flex-col items-center gap-4">
               <KeyRound className="h-12 w-12 text-destructive" />
-              <h2 className="font-display text-xl tracking-wide">INVALID OR EXPIRED LINK</h2>
+              <h1 className="font-display text-xl tracking-wide">INVALID OR EXPIRED LINK</h1>
               <p className="text-muted-foreground text-center text-sm">
                 This password reset link is invalid or has expired. Please request a new one.
               </p>
@@ -276,7 +276,7 @@ export default function ResetPassword() {
           <CardContent className="pt-6">
             <div className="flex flex-col items-center gap-4">
               <CheckCircle className="h-16 w-16 text-primary" />
-              <h2 className="font-display text-2xl tracking-wide">PASSWORD UPDATED</h2>
+              <h1 className="font-display text-2xl tracking-wide">PASSWORD UPDATED</h1>
               <p className="text-muted-foreground text-center">
                 Your password has been reset successfully. Redirecting...
               </p>
@@ -291,7 +291,7 @@ export default function ResetPassword() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md bg-card border-border">
         <CardHeader>
-          <CardTitle className="font-display text-2xl tracking-wide">SET NEW PASSWORD</CardTitle>
+          <h1 className="font-display text-2xl tracking-wide leading-none">SET NEW PASSWORD</h1>
           <CardDescription>
             Enter your new password below
           </CardDescription>
