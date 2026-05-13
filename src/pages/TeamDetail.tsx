@@ -64,6 +64,16 @@ export default function TeamDetail() {
 
   const social = (team.social_media || {}) as Record<string, string>;
 
+  const teamJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SportsTeam',
+    name: team.name,
+    sport: 'Paintball',
+    url: `https://findawalkon.com/teams/${team.id}`,
+    logo: team.logo_url ?? undefined,
+    memberOf: team.division ? { '@type': 'SportsOrganization', name: team.division } : undefined,
+  };
+
   return (
     <>
       <Helmet>
@@ -75,6 +85,7 @@ export default function TeamDetail() {
         <meta property="og:url" content={`https://findawalkon.com/teams/${team.id}`} />
         <meta property="og:type" content="profile" />
         {team.logo_url ? <meta property="og:image" content={team.logo_url} /> : null}
+        <script type="application/ld+json">{JSON.stringify(teamJsonLd)}</script>
       </Helmet>
     <div className="min-h-screen bg-background">
       {/* Hero Header */}
