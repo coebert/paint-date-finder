@@ -18,6 +18,7 @@ import AdminScraper from "./pages/admin/AdminScraper";
 import AdminBulkImport from "./pages/admin/AdminBulkImport";
 import AdminVitals from "./pages/admin/AdminVitals";
 import AdminTypography from "./pages/admin/AdminTypography";
+import AdminSEO from "./pages/admin/AdminSEO";
 import FieldLayout from "./pages/FieldLayout";
 
 const queryClient = new QueryClient();
@@ -105,6 +106,14 @@ const App = () => (
             element={
               <AdminRoute>
                 <AdminTypography />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/seo"
+            element={
+              <AdminRoute>
+                <AdminSEO />
               </AdminRoute>
             }
           />

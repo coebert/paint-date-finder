@@ -250,6 +250,66 @@ export type Database = {
         }
         Relationships: []
       }
+      seo_snapshots: {
+        Row: {
+          alert_sent: boolean
+          avg_ctr: number | null
+          avg_position: number | null
+          captured_at: string
+          id: string
+          raw: Json | null
+          regressions: Json | null
+          sitemap_errors: number | null
+          sitemap_indexed: number | null
+          sitemap_last_downloaded: string | null
+          sitemap_path: string | null
+          sitemap_submitted: number | null
+          sitemap_warnings: number | null
+          top_pages: Json | null
+          top_queries: Json | null
+          total_clicks: number | null
+          total_impressions: number | null
+        }
+        Insert: {
+          alert_sent?: boolean
+          avg_ctr?: number | null
+          avg_position?: number | null
+          captured_at?: string
+          id?: string
+          raw?: Json | null
+          regressions?: Json | null
+          sitemap_errors?: number | null
+          sitemap_indexed?: number | null
+          sitemap_last_downloaded?: string | null
+          sitemap_path?: string | null
+          sitemap_submitted?: number | null
+          sitemap_warnings?: number | null
+          top_pages?: Json | null
+          top_queries?: Json | null
+          total_clicks?: number | null
+          total_impressions?: number | null
+        }
+        Update: {
+          alert_sent?: boolean
+          avg_ctr?: number | null
+          avg_position?: number | null
+          captured_at?: string
+          id?: string
+          raw?: Json | null
+          regressions?: Json | null
+          sitemap_errors?: number | null
+          sitemap_indexed?: number | null
+          sitemap_last_downloaded?: string | null
+          sitemap_path?: string | null
+          sitemap_submitted?: number | null
+          sitemap_warnings?: number | null
+          top_pages?: Json | null
+          top_queries?: Json | null
+          total_clicks?: number | null
+          total_impressions?: number | null
+        }
+        Relationships: []
+      }
       team_roster: {
         Row: {
           created_at: string
