@@ -1,3 +1,4 @@
+import { ImageWithSkeleton } from '@/components/ImageWithSkeleton';
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { RouteHead } from '@/components/RouteHead';

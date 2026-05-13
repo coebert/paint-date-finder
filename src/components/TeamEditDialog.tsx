@@ -1,3 +1,4 @@
+import { ImageWithSkeleton } from '@/components/ImageWithSkeleton';
 import { useState, useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';

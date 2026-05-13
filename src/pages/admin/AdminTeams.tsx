@@ -1,3 +1,4 @@
+import { ImageWithSkeleton } from '@/components/ImageWithSkeleton';
 import { useState } from 'react';
 import { AdminLayout } from "@/layouts/AdminLayout";
 import { useTeams, useTeamDivisions, Team } from '@/hooks/useTeams';

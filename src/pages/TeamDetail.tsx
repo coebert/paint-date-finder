@@ -1,3 +1,4 @@
+import { ImageWithSkeleton } from '@/components/ImageWithSkeleton';
 import { useParams, Link } from 'react-router-dom';
 import { RouteHead } from '@/components/RouteHead';
 import { useTeamById, useTeamRoster } from '@/hooks/useTeamDetail';
