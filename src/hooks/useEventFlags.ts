@@ -121,6 +121,44 @@ export function useResolveFlag() {
   });
 }
 
+/** Admin: apply a flag's suggested date to its event, mark unverified for revalidation, then resolve the flag */
+export function useApplySuggestedDate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      flagId,
+      eventId,
+      suggestedDate,
+    }: {
+      flagId: string;
+      eventId: string;
+      suggestedDate: string;
+    }) => {
+      const { error: updateErr } = await supabase
+        .from('events')
+        .update({ event_date: suggestedDate, is_verified: false })
+        .eq('id', eventId);
+      if (updateErr) throw updateErr;
+
+      const { error: resolveErr } = await supabase
+        .from('event_flags' as any)
+        .update({ is_resolved: true, resolved_at: new Date().toISOString() })
+        .eq('id', flagId);
+      if (resolveErr) throw resolveErr;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-event-flags'] });
+      queryClient.invalidateQueries({ queryKey: ['flagged-event-ids'] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      toast.success('Date corrected. Event marked unverified pending revalidation.');
+    },
+    onError: (err: any) => {
+      toast.error('Failed to apply correction: ' + (err?.message ?? 'unknown error'));
+    },
+  });
+}
+
 /** Admin: delete a flag permanently */
 export function useDeleteFlag() {
   const queryClient = useQueryClient();
