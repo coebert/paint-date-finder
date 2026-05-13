@@ -9,8 +9,11 @@
  *     - className with aspect-* (e.g. aspect-video, aspect-square)
  *     - className with size-* (Tailwind shorthand for w+h)
  *     - style containing aspectRatio
+ *     - data-cls-exempt attribute
  *   …or on the nearest enclosing JSX wrapper element:
  *     - any of the above className utilities
+ *   …or inline comment immediately before the tag:
+ *     - {/* cls-exempt */}  (JSX) or <!-- cls-exempt --> (HTML)
  *
  * Run via: bun run lint:media
  */
