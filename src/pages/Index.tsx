@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useEvents, useVenues } from '@/hooks/useEvents';
 import { useRegions } from '@/hooks/useRegions';
 import { EventType, PaintballEvent } from '@/types/events';
@@ -69,8 +70,45 @@ export default function Index() {
     setVerifiedOnly(false);
   };
 
+  const eventListJsonLd = useMemo(() => {
+    const upcoming = (events ?? [])
+      .filter((e) => new Date(e.event_date) >= new Date())
+      .slice(0, 20);
+    if (upcoming.length === 0) return null;
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      itemListElement: upcoming.map((e, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        item: {
+          '@type': 'Event',
+          name: e.title,
+          startDate: e.start_time ? `${e.event_date}T${e.start_time}` : e.event_date,
+          endDate: e.end_time ? `${e.event_date}T${e.end_time}` : undefined,
+          eventStatus: 'https://schema.org/EventScheduled',
+          eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+          description: e.description ?? undefined,
+          image: e.image_url ?? undefined,
+          url: e.booking_url ?? `https://findawalkon.com/`,
+          location: {
+            '@type': 'Place',
+            name: e.venue_name,
+            address: e.venue_location ?? undefined,
+          },
+          organizer: { '@type': 'Organization', name: e.venue_name },
+        },
+      })),
+    };
+  }, [events]);
+
   return (
     <div className="min-h-screen bg-background relative">
+      {eventListJsonLd && (
+        <Helmet>
+          <script type="application/ld+json">{JSON.stringify(eventListJsonLd)}</script>
+        </Helmet>
+      )}
       <div 
         className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: `url(${woodsballBg})` }}

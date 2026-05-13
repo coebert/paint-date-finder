@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Search, ArrowLeft, Trophy, Globe, Users, Filter, Shield, Swords } from 'lucide-react';
@@ -160,6 +160,22 @@ export default function Teams() {
     search: search || undefined,
   });
 
+  const teamsListJsonLd = useMemo(() => {
+    const all = [...(cppsTeams ?? []), ...(otherTeams ?? [])].slice(0, 50);
+    if (all.length === 0) return null;
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      name: 'UK Paintball Teams',
+      itemListElement: all.map((t, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        url: `https://findawalkon.com/teams/${t.id}`,
+        name: t.name,
+      })),
+    };
+  }, [cppsTeams, otherTeams]);
+
   return (
     <>
       <Helmet>
@@ -170,6 +186,9 @@ export default function Teams() {
         <meta property="og:description" content="Browse the UK paintball team directory — divisions, rosters, and CPPS-listed teams." />
         <meta property="og:url" content="https://findawalkon.com/teams" />
         <meta property="og:type" content="website" />
+        {teamsListJsonLd && (
+          <script type="application/ld+json">{JSON.stringify(teamsListJsonLd)}</script>
+        )}
       </Helmet>
     <div className="min-h-screen bg-background">
       <header className="tactical-gradient border-b border-border/50">
