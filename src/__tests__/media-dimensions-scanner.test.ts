@@ -20,9 +20,14 @@ function wrap(tag: string, opts: { className?: string; style?: string }, childre
   return `${open(tag, opts)}\n${indent(children)}\n${close(tag)}`;
 }
 
-/** Create a raw wrapper with no attributes. */
-function raw(tag: string, children: string): string {
-  return `<${tag}>\n${indent(children)}\n</${tag}>`;
+/** Create a raw wrapper with optional className/style. */
+function raw(tag: string, opts?: { className?: string; style?: string }, children?: string): string {
+  const attrs: string[] = [];
+  if (opts?.className) attrs.push(`className="${opts.className}"`);
+  if (opts?.style) attrs.push(`style={${opts.style}}`);
+  const openTag = `<${tag}${attrs.length ? ' ' + attrs.join(' ') : ''}>`;
+  if (children === undefined) return openTag;
+  return `${openTag}\n${indent(children)}\n</${tag}>`;
 }
 
 /** Shorthand for an <img> tag. */
