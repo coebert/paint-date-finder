@@ -108,16 +108,6 @@ function scanFile(file: string): Violation[] {
   return scanSource(readFileSync(file, 'utf8'), relative(process.cwd(), file));
 }
 
-// Only run as a CLI when executed directly (not when imported by tests).
-const isMain = (() => {
-  try {
-    const argv1 = process.argv[1] ?? '';
-    return argv1.includes('check-media-dimensions');
-  } catch {
-    return false;
-  }
-})();
-
 /**
  * Suggested-fix heuristic: looks at the offending tag's attributes to
  * recommend the lowest-friction remediation.
