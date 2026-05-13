@@ -242,16 +242,19 @@ export default function ResetPassword() {
 
   if (isChecking) {
     return (
-      <><ResetPasswordHead /><div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-md bg-card border-border">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-accent" />
-            </div>
-            <p className="text-center text-muted-foreground mt-4">Validating reset link...</p>
-          </CardContent>
-        </Card>
-      </div>
+      <>
+        <ResetPasswordHead />
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+          <Card className="w-full max-w-md bg-card border-border">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-accent" />
+              </div>
+              <p className="text-center text-muted-foreground mt-4">Validating reset link...</p>
+            </CardContent>
+          </Card>
+        </div>
+      </>
     );
   }
 
