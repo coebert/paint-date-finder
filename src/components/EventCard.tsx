@@ -12,9 +12,10 @@ import { cn } from '@/lib/utils';
 interface EventCardProps {
   event: PaintballEvent;
   onEdit?: (event: PaintballEvent) => void;
+  distanceMiles?: number;
 }
 
-export function EventCard({ event, onEdit }: EventCardProps) {
+export function EventCard({ event, onEdit, distanceMiles }: EventCardProps) {
   const eventDate = parseISO(event.event_date);
   const { data: isAdmin } = useIsAdmin();
   const { data: flaggedIds } = useFlaggedEventIds();
