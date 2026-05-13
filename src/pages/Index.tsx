@@ -17,7 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle } from 'lucide-react';
 import { useVisitTracking } from '@/hooks/useVisitTracking';
 import woodsballBg from '@/assets/woodsball-bg.jpg';
-import logo from '@/assets/logo.png';
+
 
 export default function Index() {
   const [showSplash, setShowSplash] = useState(() => !sessionStorage.getItem('splashShown'));
