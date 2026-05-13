@@ -134,7 +134,8 @@ function isInlineExempt(src: string, tagIndex: number): boolean {
   return /^[\s\n]*$/.test(textBetween);
 }
 
-export function scanSource(src: string, file = '<inline>'): Violation[] {
+export function scanSource(src: string, file = '<inline>', opts: ScanOptions = {}): Violation[] {
+  const strategy = opts.parentStrategy ?? 'nearest';
   const violations: Violation[] = [];
   const tagRe = new RegExp(`<(${TAGS.join('|')})(\\s[^>]*?)?/?>`, 'gs');
   let m: RegExpExecArray | null;
@@ -144,27 +145,38 @@ export function scanSource(src: string, file = '<inline>'): Violation[] {
     if (/\bdata-cls-exempt\b/.test(attrs)) continue;
     if (isInlineExempt(src, m.index)) continue;
     if (hasDimensions(attrs)) continue;
-    // Parent-wrapper allowance: accept if the nearest enclosing JSX element
-    // reserves dimensions via className utilities or inline style aspectRatio.
-    const parent = parentAttrsAt(src, m.index);
-    if (parent.className && classHasSizing(parent.className)) continue;
-    if (parent.style && /aspectRatio\s*:/.test(parent.style)) continue;
+
+    const parents = parentAttrsAt(src, m.index);
+    const nearest = parents[0] ?? null;
+
+    let parentSized = false;
+    if (strategy === 'any') {
+      parentSized = parents.some(
+        (p) => (p.className && classHasSizing(p.className)) || (p.style && /aspectRatio\s*:/.test(p.style)),
+      );
+    } else {
+      parentSized =
+        (nearest?.className && classHasSizing(nearest.className)) ||
+        (nearest?.style && /aspectRatio\s*:/.test(nearest.style));
+    }
+    if (parentSized) continue;
+
     const line = src.slice(0, m.index).split('\n').length;
     violations.push({
       file,
       line,
       tag,
       snippet: full.replace(/\s+/g, ' ').slice(0, 120),
-      nearestParent: parent.tag
-        ? { tag: parent.tag, className: parent.className ?? '', style: parent.style ?? '' }
+      nearestParent: nearest
+        ? { tag: nearest.tag, className: nearest.className ?? '', style: nearest.style ?? '' }
         : null,
     });
   }
   return violations;
 }
 
-function scanFile(file: string): Violation[] {
-  return scanSource(readFileSync(file, 'utf8'), relative(process.cwd(), file));
+function scanFile(file: string, opts: ScanOptions = {}): Violation[] {
+  return scanSource(readFileSync(file, 'utf8'), relative(process.cwd(), file), opts);
 }
 
 /**
