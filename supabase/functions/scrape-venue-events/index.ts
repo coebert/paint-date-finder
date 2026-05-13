@@ -258,6 +258,38 @@ Deno.serve(async (req) => {
 
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 
+  // Admin-only: this endpoint runs paid scrape jobs.
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  try {
+    const userClient = createClient(SUPABASE_URL, SERVICE_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: userData } = await userClient.auth.getUser();
+    const userId = userData.user?.id;
+    if (!userId) throw new Error("no user");
+    const { data: isAdmin, error: roleErr } = await userClient.rpc("has_role", {
+      _user_id: userId,
+      _role: "admin",
+    });
+    if (roleErr || !isAdmin) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+  } catch {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   let triggeredBy = "cron";
   try {
     if (req.method === "POST") {
