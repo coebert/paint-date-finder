@@ -3,8 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { AdminLayout } from '@/layouts/AdminLayout';
-import { RefreshCw, Activity } from 'lucide-react';
+import { RefreshCw, Activity, Type } from 'lucide-react';
 import type { Metric } from 'web-vitals';
+import { FontMetrics } from '@/components/admin/FontMetrics';
 
 type MetricName = 'LCP' | 'CLS' | 'INP' | 'FCP' | 'TTFB';
 
@@ -92,6 +93,14 @@ export default function AdminVitals() {
               </Card>
             );
           })}
+        </div>
+
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-sm font-display tracking-wider text-foreground">
+            <Type className="h-4 w-4" />
+            FONT PERFORMANCE
+          </div>
+          <FontMetrics />
         </div>
 
         <Card>
