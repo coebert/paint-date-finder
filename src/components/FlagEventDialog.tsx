@@ -126,6 +126,48 @@ export function FlagEventDialog({ eventId, eventTitle, open, onOpenChange }: Fla
             </RadioGroup>
           </div>
 
+          {reason === 'wrong_date' && (
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2">
+              <Label className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                <CalendarIcon className="h-3.5 w-3.5 text-accent" />
+                What's the correct date?
+              </Label>
+              <Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      'w-full justify-start text-left font-normal bg-background',
+                      !suggestedDate && 'text-muted-foreground'
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {suggestedDate ? format(suggestedDate, 'EEEE, d MMMM yyyy') : 'Pick the correct date'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={suggestedDate}
+                    onSelect={(d) => {
+                      setSuggestedDate(d);
+                      setDatePopoverOpen(false);
+                    }}
+                    disabled={(date) =>
+                      date < new Date(new Date().setHours(0, 0, 0, 0)) ||
+                      date > new Date(new Date().setFullYear(new Date().getFullYear() + 5))
+                    }
+                    initialFocus
+                    className={cn('p-3 pointer-events-auto')}
+                  />
+                </PopoverContent>
+              </Popover>
+              <p className="text-xs text-muted-foreground">
+                Admins can apply your suggested date with one click.
+              </p>
+            </div>
+          )}
+
           <div>
             <Label htmlFor="flag-details" className="text-sm font-medium text-foreground mb-2 block">
               Additional details <span className="text-muted-foreground font-normal">(optional)</span>
