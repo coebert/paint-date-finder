@@ -35,7 +35,7 @@ export function EventCard({ event, onEdit }: EventCardProps) {
                   <ShieldCheck className="h-3 w-3" /> Verified
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground/60">
+                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
                   <ShieldAlert className="h-3 w-3" /> Unverified
                 </span>
               )}
