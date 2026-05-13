@@ -130,9 +130,19 @@ export default function AdminFlags() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <p className="text-sm text-muted-foreground max-w-[250px] truncate">
-                          {flag.details || '—'}
-                        </p>
+                        <div className="space-y-1 max-w-[280px]">
+                          {flag.suggested_date && (
+                            <div className="flex items-center gap-1.5 text-xs">
+                              <CalendarCheck className="h-3.5 w-3.5 text-accent shrink-0" />
+                              <span className="text-foreground font-medium">
+                                Suggested: {format(new Date(flag.suggested_date), 'd MMM yyyy')}
+                              </span>
+                            </div>
+                          )}
+                          <p className="text-sm text-muted-foreground truncate">
+                            {flag.details || (flag.suggested_date ? '' : '—')}
+                          </p>
+                        </div>
                       </TableCell>
                       <TableCell>
                         <p className="text-sm text-muted-foreground">
