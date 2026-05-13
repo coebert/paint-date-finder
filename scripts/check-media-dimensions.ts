@@ -14,8 +14,8 @@
  *
  * Run via: bun run lint:media
  */
-import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { readdirSync, readFileSync, statSync, writeFileSync, mkdirSync } from 'node:fs';
+import { dirname, join, relative } from 'node:path';
 
 const ROOT = join(process.cwd(), 'src');
 const TAGS = ['img', 'iframe', 'embed', 'video', 'object'];
