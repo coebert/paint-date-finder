@@ -24,6 +24,7 @@ export type Database = {
           is_resolved: boolean
           reason: Database["public"]["Enums"]["event_flag_reason"]
           resolved_at: string | null
+          suggested_date: string | null
         }
         Insert: {
           created_at?: string
@@ -34,6 +35,7 @@ export type Database = {
           is_resolved?: boolean
           reason: Database["public"]["Enums"]["event_flag_reason"]
           resolved_at?: string | null
+          suggested_date?: string | null
         }
         Update: {
           created_at?: string
@@ -44,6 +46,7 @@ export type Database = {
           is_resolved?: boolean
           reason?: Database["public"]["Enums"]["event_flag_reason"]
           resolved_at?: string | null
+          suggested_date?: string | null
         }
         Relationships: [
           {
@@ -548,17 +551,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      create_event_flag: {
-        Args: {
-          _details: string
-          _event_id: string
-          _reason: Database["public"]["Enums"]["event_flag_reason"]
-        }
-        Returns: {
-          delete_token: string
-          id: string
-        }[]
-      }
+      create_event_flag:
+        | {
+            Args: {
+              _details: string
+              _event_id: string
+              _reason: Database["public"]["Enums"]["event_flag_reason"]
+            }
+            Returns: {
+              delete_token: string
+              id: string
+            }[]
+          }
+        | {
+            Args: {
+              _details: string
+              _event_id: string
+              _reason: Database["public"]["Enums"]["event_flag_reason"]
+              _suggested_date?: string
+            }
+            Returns: {
+              delete_token: string
+              id: string
+            }[]
+          }
       create_field_layout: {
         Args: {
           _author_name: string
