@@ -83,7 +83,7 @@ function parentClassNameAt(src: string, offset: number): string | null {
 
 /**
  * Look for an inline exemption comment immediately before a tag.
- * Supports JSX `{/* cls-exempt */}` and HTML `<!-- cls-exempt -->`.
+ * Supports JSX `{/\* cls-exempt *\ /}` and HTML `<!-- cls-exempt -->`.
  */
 function isInlineExempt(src: string, tagIndex: number): boolean {
   const before = src.slice(0, tagIndex);
