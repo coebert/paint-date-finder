@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { Search, ArrowLeft, Trophy, Globe, Users, Filter, Shield, Swords } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -160,6 +161,16 @@ export default function Teams() {
   });
 
   return (
+    <>
+      <Helmet>
+        <title>UK Paintball Teams Directory | Find A Walk-On</title>
+        <meta name="description" content="Browse the UK paintball team directory — divisions, rosters, and CPPS-listed teams across the country." />
+        <link rel="canonical" href="https://findawalkon.com/teams" />
+        <meta property="og:title" content="UK Paintball Teams Directory" />
+        <meta property="og:description" content="Browse the UK paintball team directory — divisions, rosters, and CPPS-listed teams." />
+        <meta property="og:url" content="https://findawalkon.com/teams" />
+        <meta property="og:type" content="website" />
+      </Helmet>
     <div className="min-h-screen bg-background">
       <header className="tactical-gradient border-b border-border/50">
         <div className="container mx-auto px-4 py-6">
