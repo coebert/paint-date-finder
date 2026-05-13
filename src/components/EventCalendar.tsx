@@ -47,7 +47,15 @@ interface EventCalendarProps {
   onVenueChange?: (venue: string) => void;
 }
 
-export function EventCalendar({ events, onEventClick }: EventCalendarProps) {
+export function EventCalendar({
+  events,
+  onEventClick,
+  eventType,
+  venue,
+  venues,
+  onEventTypeChange,
+  onVenueChange,
+}: EventCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
   const { data: flaggedIds } = useFlaggedEventIds();
