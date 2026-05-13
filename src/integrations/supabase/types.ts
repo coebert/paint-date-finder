@@ -488,6 +488,31 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_event_flag: {
+        Args: {
+          _details: string
+          _event_id: string
+          _reason: Database["public"]["Enums"]["event_flag_reason"]
+        }
+        Returns: {
+          delete_token: string
+          id: string
+        }[]
+      }
+      create_field_layout: {
+        Args: {
+          _author_name: string
+          _description: string
+          _name: string
+          _obstacle_count: number
+          _obstacles: Json
+          _tags: string[]
+        }
+        Returns: {
+          delete_token: string
+          id: string
+        }[]
+      }
       delete_event_flag: {
         Args: { _id: string; _token: string }
         Returns: boolean
@@ -495,6 +520,14 @@ export type Database = {
       delete_field_layout: {
         Args: { _id: string; _token: string }
         Returns: boolean
+      }
+      get_admin_team_contacts: {
+        Args: never
+        Returns: {
+          contact_email: string
+          contact_phone: string
+          id: string
+        }[]
       }
       get_visit_stats: {
         Args: { days_back?: number }
