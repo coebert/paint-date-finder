@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { Helmet } from "react-helmet-async";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { UserMenu } from "@/components/UserMenu";
