@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import { RouteHead } from '@/components/RouteHead';
 import { useTeamById, useTeamRoster } from '@/hooks/useTeamDetail';
 import { useEvents } from '@/hooks/useEvents';
 import { format } from 'date-fns';
@@ -76,17 +76,15 @@ export default function TeamDetail() {
 
   return (
     <>
-      <Helmet>
-        <title>{`${team.name} | UK Paintball Team | Find A Walk-On`}</title>
-        <meta name="description" content={`${team.name} — ${team.division ?? 'paintball team'} profile, roster and upcoming events on Find A Walk-On.`} />
-        <link rel="canonical" href={`https://findawalkon.com/teams/${team.id}`} />
-        <meta property="og:title" content={`${team.name} | UK Paintball Team`} />
-        <meta property="og:description" content={`${team.name} team profile, roster and upcoming events.`} />
-        <meta property="og:url" content={`https://findawalkon.com/teams/${team.id}`} />
-        <meta property="og:type" content="profile" />
-        {team.logo_url ? <meta property="og:image" content={team.logo_url} /> : null}
+      <RouteHead
+        title={`${team.name} | UK Paintball Team`}
+        description={`${team.name} — ${team.division ?? 'paintball team'} profile, roster and upcoming events on Find A Walk-On.`}
+        path={`/teams/${team.id}`}
+        ogType="profile"
+        ogImage={team.logo_url || undefined}
+      >
         <script type="application/ld+json">{JSON.stringify(teamJsonLd)}</script>
-      </Helmet>
+      </RouteHead>
     <div className="min-h-screen bg-background">
       {/* Hero Header */}
       <header className="tactical-gradient border-b border-border/50">

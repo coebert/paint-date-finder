@@ -18,15 +18,15 @@ import {
 } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, KeyRound, CheckCircle } from 'lucide-react';
-import { Helmet } from 'react-helmet-async';
+import { RouteHead } from '@/components/RouteHead';
 
 const ResetPasswordHead = () => (
-  <Helmet>
-    <title>Reset password | Find A Walk-On</title>
-    <meta name="description" content="Set a new password for your Find A Walk-On account to regain access to UK paintball events and team tools." />
-    <meta name="robots" content="noindex,nofollow" />
-    <link rel="canonical" href="https://findawalkon.com/reset-password" />
-  </Helmet>
+  <RouteHead
+    title="Reset password"
+    description="Set a new password for your Find A Walk-On account to regain access to UK paintball events and team tools."
+    path="/reset-password"
+    robots="noindex,nofollow"
+  />
 );
 
 const resetPasswordSchema = z.object({

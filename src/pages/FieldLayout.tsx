@@ -1,6 +1,6 @@
 import { useState, useCallback, Suspense, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import { RouteHead } from '@/components/RouteHead';
 import { ArrowLeft, Eye, PenTool, RotateCcw, RotateCw, Trash2, Download, Copy, Compass, Maximize, Minimize, Tag, Columns2 } from 'lucide-react';
 import { SaveLayoutDialog } from '@/components/field/SaveLayoutDialog';
 import { CommunityLayoutsDialog } from '@/components/field/CommunityLayoutsDialog';
@@ -189,15 +189,11 @@ export default function FieldLayout() {
 
   return (
     <>
-      <Helmet>
-        <title>Paintball Field Layout Designer | Find A Walk-On</title>
-        <meta name="description" content="Design and explore paintball field layouts in 2D and 3D. CPPS, NXL and custom presets — annotate, compare and share." />
-        <link rel="canonical" href="https://findawalkon.com/field-layout" />
-        <meta property="og:title" content="Paintball Field Layout Designer" />
-        <meta property="og:description" content="2D/3D paintball field designer with CPPS and NXL presets." />
-        <meta property="og:url" content="https://findawalkon.com/field-layout" />
-        <meta property="og:type" content="website" />
-      </Helmet>
+      <RouteHead
+        title="Paintball Field Layout Designer"
+        description="Design and explore paintball field layouts in 2D and 3D. CPPS, NXL and custom presets — annotate, compare and share."
+        path="/field-layout"
+      />
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="tactical-gradient border-b border-border/50">

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Helmet } from 'react-helmet-async';
+import { RouteHead } from '@/components/RouteHead';
 import { useSubmissions, useApproveSubmission, useRejectSubmission, useDeleteSubmission } from '@/hooks/useSubmissions';
 import { EventSubmission, SubmissionStatus, SUBMISSION_STATUS_LABELS } from '@/types/submissions';
 import { EVENT_TYPE_LABELS } from '@/types/events';
@@ -92,12 +92,12 @@ export default function Submissions() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Helmet>
-        <title>Event submissions | Find A Walk-On</title>
-        <meta name="description" content="Review pending paintball event submissions for the Find A Walk-On UK directory: approve, reject, or follow up on community-suggested walk-on events." />
-        <meta name="robots" content="noindex,nofollow" />
-        <link rel="canonical" href="https://findawalkon.com/submissions" />
-      </Helmet>
+      <RouteHead
+        title="Event submissions"
+        description="Review pending paintball event submissions for the Find A Walk-On UK directory: approve, reject, or follow up on community-suggested walk-on events."
+        path="/submissions"
+        robots="noindex,nofollow"
+      />
       <header className="tactical-gradient border-b border-border/50">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center gap-4">
