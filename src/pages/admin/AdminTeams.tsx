@@ -115,7 +115,7 @@ export default function AdminTeams() {
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded bg-secondary flex items-center justify-center overflow-hidden flex-shrink-0">
                               {team.logo_url ? (
-                                <img src={team.logo_url} alt="" className="w-full h-full object-contain" />
+                                <img src={team.logo_url} alt="" loading="lazy" decoding="async" className="w-full h-full object-contain" />
                               ) : (
                                 <Users className="w-4 h-4 text-muted-foreground" />
                               )}
