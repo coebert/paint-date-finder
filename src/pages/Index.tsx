@@ -132,6 +132,22 @@ export default function Index() {
       />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
+        <section
+          aria-labelledby="ai-summary-heading"
+          data-ai-summary
+          className="rounded-lg border border-border/50 bg-secondary/40 p-4 text-sm text-muted-foreground"
+        >
+          <h2 id="ai-summary-heading" className="text-base font-semibold text-foreground mb-1">
+            About Find A Walk-On
+          </h2>
+          <p>
+            Find A Walk-On is a UK directory of paintball walk-on events and teams. Browse upcoming
+            manually-verified .68 caliber walk-ons by date, region, venue and format (Mag-Fed,
+            Mechanical, Speedball and more), view them on a calendar or map, and discover CPPS
+            League and other UK teams. All events are vetted by the community before listing.
+          </p>
+        </section>
+
         <EventFilters
           eventType={eventType}
           venue={venue}

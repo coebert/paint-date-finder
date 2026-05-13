@@ -238,6 +238,22 @@ export default function Teams() {
       </header>
 
       <main className="container mx-auto px-4 py-6">
+        <section
+          aria-labelledby="teams-ai-summary-heading"
+          data-ai-summary
+          className="mb-6 rounded-lg border border-border/50 bg-secondary/40 p-4 text-sm text-muted-foreground"
+        >
+          <h2 id="teams-ai-summary-heading" className="text-base font-semibold text-foreground mb-1">
+            About this directory
+          </h2>
+          <p>
+            A directory of UK paintball teams, including the official CPPS League roster (synced
+            from the league) and a community-maintained list of other active UK clubs and squads.
+            Each team profile shows division, region and logo where available. Team contact details
+            are protected to prevent spam.
+          </p>
+        </section>
+
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="bg-secondary border border-border/50">
             <TabsTrigger value="cpps" className="gap-2 data-[state=active]:bg-accent/20">
