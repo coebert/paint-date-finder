@@ -104,11 +104,18 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background relative">
-      {eventListJsonLd && (
-        <Helmet>
+      <Helmet>
+        <title>Find A Walk-On | UK Paintball Events & Walk-On Days</title>
+        <meta name="description" content="Find and book walk-on paintball events across the UK. Browse upcoming dates, venues and event types on a map, calendar or list." />
+        <link rel="canonical" href="https://findawalkon.com/" />
+        <meta property="og:title" content="Find A Walk-On | UK Paintball Events" />
+        <meta property="og:description" content="Find and book walk-on paintball events across the United Kingdom." />
+        <meta property="og:url" content="https://findawalkon.com/" />
+        <meta property="og:type" content="website" />
+        {eventListJsonLd && (
           <script type="application/ld+json">{JSON.stringify(eventListJsonLd)}</script>
-        </Helmet>
-      )}
+        )}
+      </Helmet>
       <div 
         className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: `url(${woodsballBg})` }}
