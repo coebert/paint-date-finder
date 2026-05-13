@@ -33,15 +33,13 @@ export function AdminLayout({ children, title, description }: AdminLayoutProps) 
 
   return (
     <SidebarProvider>
-      <Helmet>
-        <title>{`${title} | Admin · Find A Walk-On`}</title>
-        <meta
-          name="description"
-          content={description || `${title} admin tools for managing the Find A Walk-On UK paintball directory.`}
-        />
-        <meta name="robots" content="noindex,nofollow" />
-        <link rel="canonical" href={`https://findawalkon.com${location.pathname}`} />
-      </Helmet>
+      <RouteHead
+        title={`${title} | Admin · Find A Walk-On`}
+        titleFull
+        description={description || `${title} admin tools for managing the Find A Walk-On UK paintball directory.`}
+        path={location.pathname}
+        robots="noindex,nofollow"
+      />
       <div className="min-h-screen flex w-full bg-background">
         <AdminSidebar />
         <SidebarInset className="flex-1">
