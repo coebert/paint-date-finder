@@ -1,399 +1,311 @@
 import { describe, it, expect } from 'vitest';
 import { scanSource } from '../../scripts/check-media-dimensions';
 
-/**
- * Unit tests for the parent-wrapper allowance in the media-dimensions scanner.
- * These ensure that sizing utilities applied to a wrapping JSX element
- * satisfy the CLS contract even when the media tag itself is unsized.
- */
+/* ─── Fixture builders ─── */
+
+/** Build a JSX opening tag with optional className and/or style. */
+function open(tag: string, opts?: { className?: string; style?: string }): string {
+  const attrs: string[] = [];
+  if (opts?.className) attrs.push(`className="${opts.className}"`);
+  if (opts?.style) attrs.push(`style={${opts.style}}`);
+  return `<${tag}${attrs.length ? ' ' + attrs.join(' ') : ''}>`;
+}
+
+function close(tag: string): string {
+  return `</${tag}>`;
+}
+
+/** Nest children inside a wrapper tag. */
+function wrap(tag: string, opts: { className?: string; style?: string }, children: string): string {
+  return `${open(tag, opts)}\n${indent(children)}\n${close(tag)}`;
+}
+
+/** Create a raw wrapper with optional className/style. */
+function raw(tag: string, children: string): string;
+function raw(tag: string, opts: { className?: string; style?: string }, children: string): string;
+function raw(tag: string, ...rest: any[]): string {
+  if (rest.length === 1) {
+    return `<${tag}>\n${indent(rest[0])}\n</${tag}>`;
+  }
+  const [opts, children] = rest as [{ className?: string; style?: string }, string];
+  const attrs: string[] = [];
+  if (opts.className) attrs.push(`className="${opts.className}"`);
+  if (opts.style) attrs.push(`style={${opts.style}}`);
+  const openTag = `<${tag}${attrs.length ? ' ' + attrs.join(' ') : ''}>`;
+  return `${openTag}\n${indent(children)}\n</${tag}>`;
+}
+
+/** Shorthand for an <img> tag. */
+function img(src = '/a.png', extra = ''): string {
+  return `<img src="${src}"${extra ? ' ' + extra : ''} />`;
+}
+
+/** Generic media tag factory. */
+function media(tag: string, extra = ''): string {
+  return `<${tag}${extra ? ' ' + extra : ''} />`;
+}
+
+function indent(s: string, n = 2): string {
+  return s
+    .split('\n')
+    .map((l) => (l.trim() === '' ? '' : ' '.repeat(n) + l))
+    .join('\n');
+}
+
+/** Assertion helpers */
+function expectPasses(src: string, msg?: string) {
+  expect(scanSource(src), msg).toEqual([]);
+}
+function expectFails(src: string, opts?: { tag?: string; contains?: string; count?: number }) {
+  const v = scanSource(src);
+  if (opts?.count !== undefined) expect(v).toHaveLength(opts.count);
+  else expect(v.length).toBeGreaterThan(0);
+  if (opts?.tag) expect(v[0].tag).toBe(opts.tag);
+  if (opts?.contains) expect(v[0].snippet).toContain(opts.contains);
+}
+
+/* ─── Tests ─── */
+
 describe('check-media-dimensions: parent-wrapper allowance', () => {
   it('flags an unsized <img> with no sized ancestor', () => {
-    const src = `
-      <div>
-        <img src="/a.png" alt="a" />
-      </div>
-    `;
-    const v = scanSource(src);
-    expect(v).toHaveLength(1);
-    expect(v[0].tag).toBe('img');
+    expectFails(raw('div', img()), { tag: 'img' });
   });
 
   it('passes when parent has h-* AND w-* utilities', () => {
-    const src = `
-      <div className="relative h-20 w-20">
-        <img src="/a.png" alt="a" />
-      </div>
-    `;
-    expect(scanSource(src)).toEqual([]);
+    expectPasses(wrap('div', { className: 'relative h-20 w-20' }, img()));
   });
 
   it('passes when parent has aspect-* utility', () => {
-    const src = `
-      <div className="relative aspect-video">
-        <img src="/a.png" alt="a" />
-      </div>
-    `;
-    expect(scanSource(src)).toEqual([]);
+    expectPasses(wrap('div', { className: 'relative aspect-video' }, img()));
   });
 
   it('passes when parent has size-* shorthand', () => {
-    const src = `
-      <div className="relative size-12">
-        <img src="/a.png" alt="a" />
-      </div>
-    `;
-    expect(scanSource(src)).toEqual([]);
+    expectPasses(wrap('div', { className: 'relative size-12' }, img()));
   });
 
   it('passes when parent uses min-h-* and max-w-* utilities', () => {
-    const src = `
-      <div className="relative min-h-[200px] max-w-md min-w-[100px] max-h-[400px]">
-        <iframe src="/x" />
-      </div>
-    `;
-    expect(scanSource(src)).toEqual([]);
+    expectPasses(
+      wrap('div', { className: 'relative min-h-[200px] max-w-md min-w-[100px] max-h-[400px]' },
+        media('iframe', 'src="/x"')),
+    );
   });
 
   it('uses the NEAREST ancestor — sized grandparent + unsized parent fails', () => {
-    const src = `
-      <section className="h-40 w-40">
-        <div className="p-2">
-          <img src="/a.png" alt="a" />
-        </div>
-      </section>
-    `;
-    const v = scanSource(src);
-    expect(v).toHaveLength(1);
+    const src = wrap('section', { className: 'h-40 w-40' },
+      raw('article',
+        raw('div', img())
+      )
+    );
+    expectFails(src, { tag: 'img' });
   });
 
   it('passes when innermost ancestor is sized even if outer ancestor is not', () => {
-    const src = `
-      <section className="p-4">
-        <div className="h-40 w-40">
-          <img src="/a.png" alt="a" />
-        </div>
-      </section>
-    `;
-    expect(scanSource(src)).toEqual([]);
+    const src = raw('section',
+      wrap('div', { className: 'h-40 w-40' }, img())
+    );
+    expectPasses(src);
   });
 
   it('does not leak sizing across sibling subtrees', () => {
-    const src = `
-      <section>
-        <div className="h-40 w-40"><img src="/ok.png" /></div>
-        <div className="p-2"><img src="/bad.png" /></div>
-      </section>
-    `;
-    const v = scanSource(src);
-    expect(v).toHaveLength(1);
-    expect(v[0].snippet).toContain('bad.png');
+    const src = `<section>
+  ${wrap('div', { className: 'h-40 w-40' }, img('/ok.png'))}
+  ${raw('div', img('/bad.png'))}
+</section>`;
+    expectFails(src, { contains: 'bad.png', count: 1 });
   });
 
   it('still passes when the tag itself is sized regardless of parent', () => {
-    const src = `
-      <div className="p-2">
-        <img src="/a.png" className="h-10 w-10" />
-      </div>
-    `;
-    expect(scanSource(src)).toEqual([]);
+    const src = raw('div', { className: 'p-2' },
+      img('/a.png', 'className="h-10 w-10"')
+    );
+    expectPasses(src);
   });
-
 
   it('applies parent-wrapper allowance to <video>, <iframe>, <embed>, <object>', () => {
     for (const tag of ['video', 'iframe', 'embed', 'object'] as const) {
-      const src = `<div className="aspect-video"><${tag} src="/x" /></div>`;
-      expect(scanSource(src), `tag=${tag}`).toEqual([]);
+      expectPasses(
+        wrap('div', { className: 'aspect-video' }, media(tag, 'src="/x"')),
+        `tag=${tag}`,
+      );
     }
   });
 
   it('passes via data-cls-exempt attribute', () => {
-    const src = `<img src="/a.png" data-cls-exempt alt="a" />`;
-    expect(scanSource(src)).toEqual([]);
+    expectPasses(img('/a.png', 'data-cls-exempt alt="a"'));
   });
 
   it('passes via JSX comment {/* cls-exempt */}', () => {
-    const src = `
-      {/* cls-exempt */}
-      <img src="/a.png" />
-    `;
-    expect(scanSource(src)).toEqual([]);
+    const src = `{/* cls-exempt */}\n<img src="/a.png" />`;
+    expectPasses(src);
   });
 
   it('passes via HTML-style comment <!-- cls-exempt -->', () => {
-    const src = `
-      <!-- cls-exempt -->
-      <img src="/a.png" />
-    `;
-    expect(scanSource(src)).toEqual([]);
+    const src = `<!-- cls-exempt -->\n<img src="/a.png" />`;
+    expectPasses(src);
   });
 
   it('does NOT exempt when comment is on a different unrelated line with other content between', () => {
-    const src = `
-      {/* cls-exempt */}
-      <div> unrelated </div>
-      <img src="/a.png" />
-    `;
-    const v = scanSource(src);
-    expect(v).toHaveLength(1);
+    const src = `{/* cls-exempt */}\n<div> unrelated </div>\n<img src="/a.png" />`;
+    expectFails(src, { count: 1 });
   });
 });
 
 describe('check-media-dimensions: nested wrapper resolution', () => {
   it('3 levels deep — innermost sized wrapper satisfies the rule', () => {
-    const src = `
-      <section>
-        <article>
-          <div className="h-32 w-32">
-            <img src="/a.png" />
-          </div>
-        </article>
-      </section>
-    `;
-    expect(scanSource(src)).toEqual([]);
+    const src = raw('section',
+      raw('article',
+        wrap('div', { className: 'h-32 w-32' }, img())
+      )
+    );
+    expectPasses(src);
   });
 
   it('3 levels deep — only outermost sized, all inner unsized = FAILS (nearest wins)', () => {
-    const src = `
-      <section className="h-96 w-96">
-        <article className="p-4">
-          <div className="m-2">
-            <img src="/a.png" />
-          </div>
-        </article>
-      </section>
-    `;
-    const v = scanSource(src);
-    expect(v).toHaveLength(1);
-    expect(v[0].tag).toBe('img');
+    const src = wrap('section', { className: 'h-96 w-96' },
+      raw('article', { className: 'p-4' },
+        raw('div', { className: 'm-2' }, img())
+      )
+    );
+    expectFails(src, { tag: 'img' });
   });
 
   it('4 levels deep — middle wrapper sized, intermediate unsized — middle wins', () => {
-    const src = `
-      <section>
-        <main className="aspect-video w-full">
-          <article>
-            <div>
-              <img src="/a.png" />
-            </div>
-          </article>
-        </main>
-      </section>
-    `;
+    const src = raw('section',
+      wrap('main', { className: 'aspect-video w-full' },
+        raw('article',
+          raw('div', img())
+        )
+      )
+    );
     // The nearest ancestor (<div>) is unsized — should fail.
-    const v = scanSource(src);
-    expect(v).toHaveLength(1);
+    expectFails(src, { count: 1 });
   });
 
   it('multiple sibling subtrees — each evaluated against its own nearest parent', () => {
-    const src = `
-      <section>
-        <div className="h-20 w-20">
-          <img src="/a.png" />
-        </div>
-        <div className="h-20 w-20">
-          <img src="/b.png" />
-        </div>
-        <div>
-          <div className="h-20 w-20">
-            <img src="/c.png" />
-          </div>
-        </div>
-        <div>
-          <span>
-            <img src="/d.png" />
-          </span>
-        </div>
-      </section>
-    `;
-    const v = scanSource(src);
+    const src = `<section>
+  ${wrap('div', { className: 'h-20 w-20' }, img('/a.png'))}
+  ${wrap('div', { className: 'h-20 w-20' }, img('/b.png'))}
+  ${raw('div', wrap('div', { className: 'h-20 w-20' }, img('/c.png')))}
+  ${raw('div', raw('span', img('/d.png')))}
+</section>`;
     // a, b, c all have a sized nearest parent. d's nearest parent is <span> (unsized).
-    expect(v).toHaveLength(1);
-    expect(v[0].snippet).toContain('d.png');
+    expectFails(src, { contains: 'd.png', count: 1 });
   });
 
   it('mixed JSX components and DOM tags as wrappers', () => {
-    const src = `
-      <Card>
-        <CardContent className="aspect-square">
-          <img src="/a.png" />
-        </CardContent>
-      </Card>
-    `;
-    expect(scanSource(src)).toEqual([]);
+    const src = raw('Card',
+      wrap('CardContent', { className: 'aspect-square' }, img())
+    );
+    expectPasses(src);
   });
 
   it('component wrapper without sizing className does not satisfy rule', () => {
-    const src = `
-      <Card>
-        <CardContent>
-          <img src="/a.png" />
-        </CardContent>
-      </Card>
-    `;
-    const v = scanSource(src);
-    expect(v).toHaveLength(1);
+    const src = raw('Card',
+      raw('CardContent', img())
+    );
+    expectFails(src, { count: 1 });
   });
 
   it('self-closing siblings between sized parent and img do not break detection', () => {
-    const src = `
-      <div className="h-40 w-40">
-        <input type="hidden" />
-        <br />
-        <img src="/a.png" />
-      </div>
-    `;
-    expect(scanSource(src)).toEqual([]);
+    const src = wrap('div', { className: 'h-40 w-40' },
+      `<input type="hidden" />\n<br />\n${img()}`
+    );
+    expectPasses(src);
   });
 
   it('sized fragment-like wrapper followed by inner unsized wrapper = FAILS', () => {
-    const src = `
-      <div className="h-40 w-40">
-        <header>
-          <h2>Title</h2>
-          <img src="/a.png" />
-        </header>
-      </div>
-    `;
+    const src = wrap('div', { className: 'h-40 w-40' },
+      `<header>\n  <h2>Title</h2>\n  ${img()}\n</header>`
+    );
     // <header> is the nearest ancestor and is unsized → should fail.
-    const v = scanSource(src);
-    expect(v).toHaveLength(1);
+    expectFails(src, { count: 1 });
   });
 
   it('back-to-back nested wrappers — each img resolves to its own nearest parent', () => {
-    const src = `
-      <div className="aspect-video">
-        <div className="h-10 w-10"><img src="/inner-ok.png" /></div>
-        <div><img src="/inner-bad.png" /></div>
-      </div>
-    `;
-    const v = scanSource(src);
-    expect(v).toHaveLength(1);
-    expect(v[0].snippet).toContain('inner-bad.png');
+    const src = wrap('div', { className: 'aspect-video' },
+      `${wrap('div', { className: 'h-10 w-10' }, img('/inner-ok.png'))}\n${raw('div', img('/inner-bad.png'))}`
+    );
+    expectFails(src, { contains: 'inner-bad.png', count: 1 });
   });
 
   it('aspect-* on a deeply nested intermediate wrapper is honored', () => {
-    const src = `
-      <section className="p-4">
-        <div className="grid">
-          <figure className="aspect-[16/9]">
-            <img src="/a.png" />
-          </figure>
-        </div>
-      </section>
-    `;
-    expect(scanSource(src)).toEqual([]);
+    const src = raw('section', { className: 'p-4' },
+      raw('div', { className: 'grid' },
+        wrap('figure', { className: 'aspect-[16/9]' }, img())
+      )
+    );
+    expectPasses(src);
   });
 
   it('passes when nearest parent has style={{ aspectRatio: ... }}', () => {
-    const src = `
-      <div style={{ aspectRatio: '16/9' }}>
-        <img src="/a.png" />
-      </div>
-    `;
-    expect(scanSource(src)).toEqual([]);
+    expectPasses(wrap('div', { style: "{ aspectRatio: '16/9' }" }, img()));
   });
 
   it('passes when nearest parent has style={{ aspectRatio: 16/9 }} (numeric)', () => {
-    const src = `
-      <div style={{ aspectRatio: 16 / 9 }}>
-        <img src="/a.png" />
-      </div>
-    `;
-    expect(scanSource(src)).toEqual([]);
+    expectPasses(wrap('div', { style: '{ aspectRatio: 16 / 9 }' }, img()));
   });
 
   it('fails when a grandparent has style={{ aspectRatio }} but nearest parent does not', () => {
-    const src = `
-      <section style={{ aspectRatio: '16/9' }}>
-        <div>
-          <img src="/a.png" />
-        </div>
-      </section>
-    `;
-    const v = scanSource(src);
-    expect(v).toHaveLength(1);
-    expect(v[0].tag).toBe('img');
+    const src = wrap('section', { style: "{ aspectRatio: '16/9' }" },
+      raw('div', img())
+    );
+    expectFails(src, { tag: 'img' });
   });
 
   it('style aspectRatio on parent takes precedence over unsized className on parent', () => {
-    const src = `
-      <div style={{ aspectRatio: '4/3' }} className="p-4">
-        <img src="/a.png" />
-      </div>
-    `;
-    expect(scanSource(src)).toEqual([]);
+    expectPasses(wrap('div', { className: 'p-4', style: "{ aspectRatio: '4/3' }" }, img()));
   });
 });
 
 describe('check-media-dimensions: Tailwind arbitrary value patterns', () => {
   it('w-[42px] + h-[24rem] on tag passes', () => {
-    const src = `<img src="/a.png" className="w-[42px] h-[24rem]" />`;
-    expect(scanSource(src)).toEqual([]);
+    expectPasses(img('/a.png', 'className="w-[42px] h-[24rem]"'));
   });
 
   it('aspect-[9/16] on tag passes', () => {
-    const src = `<img src="/a.png" className="aspect-[9/16]" />`;
-    expect(scanSource(src)).toEqual([]);
+    expectPasses(img('/a.png', 'className="aspect-[9/16]"'));
   });
 
   it('w-[calc(100vh-4rem)] + h-[50%] on parent wrapper passes', () => {
-    const src = `
-      <div className="w-[calc(100vh-4rem)] h-[50%]">
-        <img src="/a.png" />
-      </div>
-    `;
-    expect(scanSource(src)).toEqual([]);
+    expectPasses(
+      wrap('div', { className: 'w-[calc(100vh-4rem)] h-[50%]' }, img()),
+    );
   });
 
   it('min-w-[200px] + max-h-[50vh] on parent passes', () => {
-    const src = `
-      <div className="min-w-[200px] max-h-[50vh]">
-        <img src="/a.png" />
-      </div>
-    `;
-    expect(scanSource(src)).toEqual([]);
+    expectPasses(
+      wrap('div', { className: 'min-w-[200px] max-h-[50vh]' }, img()),
+    );
   });
 
   it('size-[100%] on tag passes', () => {
-    const src = `<img src="/a.png" className="size-[100%]" />`;
-    expect(scanSource(src)).toEqual([]);
+    expectPasses(img('/a.png', 'className="size-[100%]"'));
   });
 
   it('w-[clamp(100px,50%,200px)] on tag passes', () => {
-    const src = `<img src="/a.png" className="w-[clamp(100px,50%,200px)] h-[24rem]" />`;
-    expect(scanSource(src)).toEqual([]);
+    expectPasses(img('/a.png', 'className="w-[clamp(100px,50%,200px)] h-[24rem]"'));
   });
 
   it('h-[calc(100vh_-_4rem)] with underscores for spaces passes', () => {
-    const src = `
-      <div className="h-[calc(100vh_-_4rem)] w-[50vw]">
-        <img src="/a.png" />
-      </div>
-    `;
-    expect(scanSource(src)).toEqual([]);
+    expectPasses(
+      wrap('div', { className: 'h-[calc(100vh_-_4rem)] w-[50vw]' }, img()),
+    );
   });
 
   it('fractional non-arbitrary w-1/2 + h-3/4 passes', () => {
-    const src = `<img src="/a.png" className="w-1/2 h-3/4" />`;
-    expect(scanSource(src)).toEqual([]);
+    expectPasses(img('/a.png', 'className="w-1/2 h-3/4"'));
   });
 
   it('parent with only w-[200px] but no h-* still fails', () => {
-    const src = `
-      <div className="w-[200px]">
-        <img src="/a.png" />
-      </div>
-    `;
-    const v = scanSource(src);
-    expect(v).toHaveLength(1);
+    expectFails(
+      wrap('div', { className: 'w-[200px]' }, img()),
+      { count: 1 },
+    );
   });
 
   it('parent with aspect-[21/9] arbitrary passes', () => {
-    const src = `
-      <div className="aspect-[21/9]">
-        <iframe src="/x" />
-      </div>
-    `;
-    expect(scanSource(src)).toEqual([]);
+    expectPasses(
+      wrap('div', { className: 'aspect-[21/9]' }, media('iframe', 'src="/x"')),
+    );
   });
 });
