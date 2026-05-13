@@ -18,6 +18,16 @@ import {
 } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, KeyRound, CheckCircle } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
+
+const ResetPasswordHead = () => (
+  <Helmet>
+    <title>Reset password | Find A Walk-On</title>
+    <meta name="description" content="Set a new password for your Find A Walk-On account to regain access to UK paintball events and team tools." />
+    <meta name="robots" content="noindex,nofollow" />
+    <link rel="canonical" href="https://findawalkon.com/reset-password" />
+  </Helmet>
+);
 
 const resetPasswordSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
