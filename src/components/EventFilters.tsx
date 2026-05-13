@@ -52,7 +52,7 @@ export function EventFilters({
             value={eventType || 'all'}
             onValueChange={(value) => onEventTypeChange(value === 'all' ? undefined : value as EventType)}
           >
-            <SelectTrigger className="bg-input border-border">
+            <SelectTrigger className="bg-input border-border" aria-label="Filter by event type">
               <SelectValue placeholder="All Types" />
             </SelectTrigger>
             <SelectContent>
@@ -75,7 +75,7 @@ export function EventFilters({
             value={region || 'all'}
             onValueChange={(value) => onRegionChange(value === 'all' ? '' : value)}
           >
-            <SelectTrigger className="bg-input border-border">
+            <SelectTrigger className="bg-input border-border" aria-label="Filter by region">
               <SelectValue placeholder="All Regions" />
             </SelectTrigger>
             <SelectContent>
@@ -97,6 +97,7 @@ export function EventFilters({
                 variant="outline"
                 role="combobox"
                 aria-expanded={venueOpen}
+                aria-label="Filter by venue"
                 className="w-full justify-between bg-input border-border font-normal h-10"
               >
                 <span className="truncate">
@@ -107,7 +108,7 @@ export function EventFilters({
             </PopoverTrigger>
             <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
               <Command>
-                <CommandInput placeholder="Search venues..." />
+                <CommandInput placeholder="Search venues..." aria-label="Search venues" />
                 <CommandList>
                   <CommandEmpty>No venue found.</CommandEmpty>
                   <CommandGroup>

@@ -479,7 +479,8 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
                 className="w-28 h-28 md:w-36 md:h-36 drop-shadow-2xl"
                 style={{ filter: 'drop-shadow(0 0 30px rgba(0,0,0,0.8))', animation: 'logo-pulse-glow 2s 0.9s ease-in-out infinite' }}
               />
-              <h1
+              <p
+                aria-hidden="true"
                 className="text-2xl md:text-3xl font-black tracking-wider text-white mt-3"
                 style={{
                   textShadow: '0 2px 20px rgba(0,0,0,0.9), 0 0 40px rgba(0,0,0,0.5)',
@@ -487,7 +488,7 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
                 }}
               >
                 FIND A WALK-ON
-              </h1>
+              </p>
             </div>
           )}
         </>
