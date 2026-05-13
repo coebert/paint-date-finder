@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { PaintballEvent } from '@/types/events';
 import { EventTypeBadge } from './EventTypeBadge';
 import { FlagEventDialog } from './FlagEventDialog';
