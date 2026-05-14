@@ -153,7 +153,23 @@ export function NearMeFilter({ location, hiddenNoCoords = 0 }: NearMeFilterProps
         </div>
       )}
       {(error || placeError) && (
-        <span className="text-xs text-destructive">{placeError || error}</span>
+        <div className="space-y-1.5">
+          <span className="block text-xs text-destructive">{placeError || error}</span>
+          {suggestions.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {suggestions.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => onPickSuggestion(s)}
+                  className="inline-flex items-center rounded-full border border-border bg-secondary/50 px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:border-accent hover:bg-accent/10 hover:text-accent"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
