@@ -11,10 +11,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, ArrowDownUp, MapPin, Loader2, X } from 'lucide-react';
+import { Search, ArrowDownUp, MapPin, Loader2, X, Navigation } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { getVenueCoords, haversineMiles } from '@/lib/geo';
+import { geocodeUK } from '@/lib/geocode';
 
 interface EventListProps {
   events: PaintballEvent[];
