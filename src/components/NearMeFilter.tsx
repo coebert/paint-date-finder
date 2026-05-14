@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2, MapPin, Navigation, X } from 'lucide-react';
-import { geocodeUK } from '@/lib/geocode';
+import { geocodeUK, GeocodeError } from '@/lib/geocode';
 import type { useUserLocation } from '@/hooks/useUserLocation';
 
 type Loc = ReturnType<typeof useUserLocation>;
@@ -38,29 +38,47 @@ export function NearMeFilter({ location, hiddenNoCoords = 0 }: NearMeFilterProps
   const [placeQuery, setPlaceQuery] = useState('');
   const [placeStatus, setPlaceStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [placeError, setPlaceError] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
 
   const radiusActive = !!coords;
 
-  const onSubmitPlace = async (e: FormEvent) => {
-    e.preventDefault();
-    const q = placeQuery.trim();
-    if (!q) return;
+  const runGeocode = async (q: string) => {
     setPlaceStatus('loading');
     setPlaceError(null);
+    setSuggestions([]);
     try {
       const result = await geocodeUK(q);
       setManualLocation(result.coords, result.label);
       setPlaceStatus('idle');
+      setPlaceQuery('');
     } catch (err) {
       setPlaceStatus('error');
-      setPlaceError(err instanceof Error ? err.message : 'Could not find that location.');
+      if (err instanceof GeocodeError) {
+        setPlaceError(err.message);
+        setSuggestions(err.suggestions);
+      } else {
+        setPlaceError(err instanceof Error ? err.message : 'Could not find that location.');
+      }
     }
+  };
+
+  const onSubmitPlace = (e: FormEvent) => {
+    e.preventDefault();
+    const q = placeQuery.trim();
+    if (!q) return;
+    runGeocode(q);
+  };
+
+  const onPickSuggestion = (s: string) => {
+    setPlaceQuery(s);
+    runGeocode(s);
   };
 
   const onClear = () => {
     clear();
     setPlaceQuery('');
     setPlaceError(null);
+    setSuggestions([]);
     setPlaceStatus('idle');
   };
 
@@ -135,7 +153,23 @@ export function NearMeFilter({ location, hiddenNoCoords = 0 }: NearMeFilterProps
         </div>
       )}
       {(error || placeError) && (
-        <span className="text-xs text-destructive">{placeError || error}</span>
+        <div className="space-y-1.5">
+          <span className="block text-xs text-destructive">{placeError || error}</span>
+          {suggestions.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {suggestions.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => onPickSuggestion(s)}
+                  className="inline-flex items-center rounded-full border border-border bg-secondary/50 px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:border-accent hover:bg-accent/10 hover:text-accent"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
