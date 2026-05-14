@@ -240,8 +240,6 @@ export default function Index() {
             </>
           )}
         </div>
-          )}
-        </div>
 
         {/* Stats footer */}
         {events && events.length > 0 && (
