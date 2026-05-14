@@ -141,7 +141,27 @@ export function EventList({ events, onEdit }: EventListProps) {
 
   const onClearLocation = () => {
     clearLocation();
+    setPlaceQuery('');
+    setPlaceError(null);
+    setPlaceStatus('idle');
     if (sortBy === 'distance-asc') setSortBy('date-asc');
+  };
+
+  const onSubmitPlace = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = placeQuery.trim();
+    if (!q) return;
+    setPlaceStatus('loading');
+    setPlaceError(null);
+    try {
+      const result = await geocodeUK(q);
+      setManualLocation(result.coords, result.label);
+      setSortBy('distance-asc');
+      setPlaceStatus('idle');
+    } catch (err) {
+      setPlaceStatus('error');
+      setPlaceError(err instanceof Error ? err.message : 'Could not find that location.');
+    }
   };
 
   if (events.length === 0) {
