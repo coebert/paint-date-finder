@@ -1,9 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { PaintballEvent } from '@/types/events';
 import { EventCard } from './EventCard';
 import { format, parseISO, isBefore, startOfDay } from 'date-fns';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -11,43 +10,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, ArrowDownUp, MapPin, Loader2, X, Navigation } from 'lucide-react';
+import { Search, ArrowDownUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useUserLocation } from '@/hooks/useUserLocation';
-import { getVenueCoords, haversineMiles } from '@/lib/geo';
-import { geocodeUK } from '@/lib/geocode';
+import { getVenueCoords, haversineMiles, type LatLng } from '@/lib/geo';
 
 interface EventListProps {
   events: PaintballEvent[];
   onEdit?: (event: PaintballEvent) => void;
+  userCoords?: LatLng | null;
 }
 
 type SortOption = 'distance-asc' | 'date-asc' | 'date-desc' | 'name-asc' | 'venue-asc';
 
-const RADIUS_OPTIONS = [5, 10, 25, 50, 100, 200] as const;
-
-export function EventList({ events, onEdit }: EventListProps) {
+export function EventList({ events, onEdit, userCoords }: EventListProps) {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('date-asc');
   const [showPast, setShowPast] = useState(false);
-  const {
-    coords,
-    status: locStatus,
-    error: locError,
-    radiusMiles,
-    source: locSource,
-    label: locLabel,
-    setRadiusMiles,
-    request: requestLocation,
-    setManualLocation,
-    clear: clearLocation,
-  } = useUserLocation(25);
-  const [placeQuery, setPlaceQuery] = useState('');
-  const [placeStatus, setPlaceStatus] = useState<'idle' | 'loading' | 'error'>('idle');
-  const [placeError, setPlaceError] = useState<string | null>(null);
 
   const today = startOfDay(new Date());
-  const radiusActive = !!coords;
+  const hasUserCoords = !!userCoords;
+
+  // Default to nearest sort when a user location is set; revert when cleared.
+  useEffect(() => {
+    if (hasUserCoords) {
+      setSortBy((prev) => (prev === 'date-asc' ? 'distance-asc' : prev));
+    } else {
+      setSortBy((prev) => (prev === 'distance-asc' ? 'date-asc' : prev));
+    }
+  }, [hasUserCoords]);
+
 
   // Decorate events with distance (when location is set).
   const decorated = useMemo(() => {
