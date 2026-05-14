@@ -356,7 +356,15 @@ export function EventCalendar({
                     )}
                   </div>
                   <p className="font-semibold text-foreground text-sm">{event.title}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{event.venue_name}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {event.venue_name}
+                    {userCoords && (() => {
+                      const vc = getVenueCoords(event.venue_name);
+                      if (!vc) return null;
+                      const d = Math.round(haversineMiles(userCoords, vc));
+                      return <span className="text-accent"> · {d} mi away</span>;
+                    })()}
+                  </p>
                   {event.start_time && (
                     <div className="flex items-center gap-1 text-xs text-muted-foreground mt-2">
                       <Clock className="h-3 w-3 text-accent" />
