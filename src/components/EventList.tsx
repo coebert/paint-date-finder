@@ -208,9 +208,9 @@ export function EventList({ events, onEdit }: EventListProps) {
       </div>
 
       {/* Near-me filter */}
-      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border/50 bg-card p-3">
+      <div className="flex flex-col gap-3 rounded-lg border border-border/50 bg-card p-3">
         {!radiusActive ? (
-          <>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
             <Button
               size="sm"
               variant="outline"
@@ -221,19 +221,40 @@ export function EventList({ events, onEdit }: EventListProps) {
               {locStatus === 'loading' ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <MapPin className="h-4 w-4" />
+                <Navigation className="h-4 w-4" />
               )}
-              Use my location
+              Use my GPS
             </Button>
-            <span className="text-xs text-muted-foreground">
-              Find walk-ons within a radius of where you are.
-            </span>
-          </>
+            <span className="text-xs text-muted-foreground">or</span>
+            <form onSubmit={onSubmitPlace} className="flex flex-1 items-center gap-2 min-w-[220px]">
+              <div className="relative flex-1">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Input
+                  value={placeQuery}
+                  onChange={(e) => setPlaceQuery(e.target.value)}
+                  placeholder="Enter postcode or town (e.g. SW1A 1AA, Bristol)"
+                  className="pl-9 h-9 bg-input border-border"
+                  aria-label="Postcode or town"
+                />
+              </div>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={placeStatus === 'loading' || !placeQuery.trim()}
+                className="gap-2"
+              >
+                {placeStatus === 'loading' ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : null}
+                Set
+              </Button>
+            </form>
+          </div>
         ) : (
-          <>
+          <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-3 py-1 text-xs font-medium text-accent">
               <MapPin className="h-3.5 w-3.5" />
-              Within {radiusMiles} mi of you
+              Within {radiusMiles} mi of {locSource === 'manual' && locLabel ? locLabel : 'you'}
             </span>
             <Select
               value={String(radiusMiles)}
@@ -254,10 +275,10 @@ export function EventList({ events, onEdit }: EventListProps) {
               <X className="h-3.5 w-3.5" />
               Clear
             </Button>
-          </>
+          </div>
         )}
-        {locError && (
-          <span className="w-full text-xs text-destructive sm:w-auto">{locError}</span>
+        {(locError || placeError) && (
+          <span className="text-xs text-destructive">{placeError || locError}</span>
         )}
       </div>
 
