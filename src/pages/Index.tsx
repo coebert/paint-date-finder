@@ -59,6 +59,25 @@ export default function Index() {
 
   const { data: venues = [] } = useVenues();
 
+  const userLocation = useUserLocation(25);
+  const { coords: userCoords, radiusMiles } = userLocation;
+
+  // Apply radius filter at the page level so calendar/list/map all share it.
+  const { displayedEvents, hiddenNoCoords } = useMemo(() => {
+    const list = events ?? [];
+    if (!userCoords) return { displayedEvents: list, hiddenNoCoords: 0 };
+    let hidden = 0;
+    const kept = list.filter((e) => {
+      const vc = getVenueCoords(e.venue_name);
+      if (!vc) {
+        hidden += 1;
+        return false;
+      }
+      return haversineMiles(userCoords, vc) <= radiusMiles;
+    });
+    return { displayedEvents: kept, hiddenNoCoords: hidden };
+  }, [events, userCoords, radiusMiles]);
+
   const handleEdit = (event: PaintballEvent) => {
     setEditingEvent(event);
     setEditDialogOpen(true);
