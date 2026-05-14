@@ -16,6 +16,9 @@ import { SplashScreen } from '@/components/SplashScreen';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle } from 'lucide-react';
 import { useVisitTracking } from '@/hooks/useVisitTracking';
+import { useUserLocation } from '@/hooks/useUserLocation';
+import { NearMeFilter } from '@/components/NearMeFilter';
+import { getVenueCoords, haversineMiles } from '@/lib/geo';
 import woodsballBgJpg from '@/assets/woodsball-bg.jpg';
 import woodsballBgWebp from '@/assets/woodsball-bg.webp';
 import woodsballBgAvif from '@/assets/woodsball-bg.avif';
@@ -55,6 +58,25 @@ export default function Index() {
   });
 
   const { data: venues = [] } = useVenues();
+
+  const userLocation = useUserLocation(25);
+  const { coords: userCoords, radiusMiles } = userLocation;
+
+  // Apply radius filter at the page level so calendar/list/map all share it.
+  const { displayedEvents, hiddenNoCoords } = useMemo(() => {
+    const list = events ?? [];
+    if (!userCoords) return { displayedEvents: list, hiddenNoCoords: 0 };
+    let hidden = 0;
+    const kept = list.filter((e) => {
+      const vc = getVenueCoords(e.venue_name);
+      if (!vc) {
+        hidden += 1;
+        return false;
+      }
+      return haversineMiles(userCoords, vc) <= radiusMiles;
+    });
+    return { displayedEvents: kept, hiddenNoCoords: hidden };
+  }, [events, userCoords, radiusMiles]);
 
   const handleEdit = (event: PaintballEvent) => {
     setEditingEvent(event);
@@ -176,6 +198,8 @@ export default function Index() {
           onClearFilters={handleClearFilters}
         />
 
+        <NearMeFilter location={userLocation} hiddenNoCoords={hiddenNoCoords} />
+
         {/* Reserve a stable min-height for the dynamic view to avoid CLS
             when skeleton → real content swap, and when switching views. */}
         <div className="min-h-[720px]">
@@ -193,20 +217,25 @@ export default function Index() {
             <>
               {view === 'calendar' && (
                 <EventCalendar
-                  events={events || []}
+                  events={displayedEvents}
                   onEventClick={handleEventClick}
                   eventType={eventType}
                   venue={venue}
                   venues={venues}
                   onEventTypeChange={setEventType}
                   onVenueChange={setVenue}
+                  userCoords={userCoords}
                 />
               )}
               {view === 'list' && (
-                <EventList events={events || []} onEdit={handleEdit} />
+                <EventList
+                  events={displayedEvents}
+                  onEdit={handleEdit}
+                  userCoords={userCoords}
+                />
               )}
               {view === 'map' && (
-                <EventMap events={events || []} onEventClick={handleEventClick} />
+                <EventMap events={displayedEvents} onEventClick={handleEventClick} />
               )}
             </>
           )}

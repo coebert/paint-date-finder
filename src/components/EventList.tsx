@@ -1,9 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { PaintballEvent } from '@/types/events';
 import { EventCard } from './EventCard';
 import { format, parseISO, isBefore, startOfDay } from 'date-fns';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -11,66 +10,53 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, ArrowDownUp, MapPin, Loader2, X, Navigation } from 'lucide-react';
+import { Search, ArrowDownUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useUserLocation } from '@/hooks/useUserLocation';
-import { getVenueCoords, haversineMiles } from '@/lib/geo';
-import { geocodeUK } from '@/lib/geocode';
+import { getVenueCoords, haversineMiles, type LatLng } from '@/lib/geo';
 
 interface EventListProps {
   events: PaintballEvent[];
   onEdit?: (event: PaintballEvent) => void;
+  userCoords?: LatLng | null;
 }
 
 type SortOption = 'distance-asc' | 'date-asc' | 'date-desc' | 'name-asc' | 'venue-asc';
 
-const RADIUS_OPTIONS = [5, 10, 25, 50, 100, 200] as const;
-
-export function EventList({ events, onEdit }: EventListProps) {
+export function EventList({ events, onEdit, userCoords }: EventListProps) {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('date-asc');
   const [showPast, setShowPast] = useState(false);
-  const {
-    coords,
-    status: locStatus,
-    error: locError,
-    radiusMiles,
-    source: locSource,
-    label: locLabel,
-    setRadiusMiles,
-    request: requestLocation,
-    setManualLocation,
-    clear: clearLocation,
-  } = useUserLocation(25);
-  const [placeQuery, setPlaceQuery] = useState('');
-  const [placeStatus, setPlaceStatus] = useState<'idle' | 'loading' | 'error'>('idle');
-  const [placeError, setPlaceError] = useState<string | null>(null);
 
   const today = startOfDay(new Date());
-  const radiusActive = !!coords;
+  const hasUserCoords = !!userCoords;
+
+  // Default to nearest sort when a user location is set; revert when cleared.
+  useEffect(() => {
+    if (hasUserCoords) {
+      setSortBy((prev) => (prev === 'date-asc' ? 'distance-asc' : prev));
+    } else {
+      setSortBy((prev) => (prev === 'distance-asc' ? 'date-asc' : prev));
+    }
+  }, [hasUserCoords]);
+
 
   // Decorate events with distance (when location is set).
   const decorated = useMemo(() => {
     return events.map((event) => {
-      if (!coords) return { event, distance: undefined as number | undefined, hasCoords: false };
+      if (!userCoords) return { event, distance: undefined as number | undefined };
       const venueCoords = getVenueCoords(event.venue_name);
-      if (!venueCoords) return { event, distance: undefined, hasCoords: false };
-      return { event, distance: haversineMiles(coords, venueCoords), hasCoords: true };
+      if (!venueCoords) return { event, distance: undefined };
+      return { event, distance: haversineMiles(userCoords, venueCoords) };
     });
-  }, [events, coords]);
+  }, [events, userCoords]);
 
   const term = search.trim().toLowerCase();
 
   const filtered = useMemo(() => {
-    return decorated.filter(({ event, distance, hasCoords }) => {
+    return decorated.filter(({ event }) => {
       const eventDate = parseISO(event.event_date);
       const isPast = isBefore(eventDate, today);
       if (!showPast && isPast) return false;
-
-      if (radiusActive) {
-        if (!hasCoords) return false;
-        if ((distance ?? Infinity) > radiusMiles) return false;
-      }
 
       if (!term) return true;
       const haystack = [event.title, event.venue_name, event.venue_location, event.description]
@@ -79,17 +65,7 @@ export function EventList({ events, onEdit }: EventListProps) {
         .toLowerCase();
       return haystack.includes(term);
     });
-  }, [decorated, term, showPast, today, radiusActive, radiusMiles]);
-
-  const hiddenNoCoords = useMemo(() => {
-    if (!radiusActive) return 0;
-    return decorated.filter(({ event, hasCoords }) => {
-      if (hasCoords) return false;
-      const eventDate = parseISO(event.event_date);
-      if (!showPast && isBefore(eventDate, today)) return false;
-      return true;
-    }).length;
-  }, [decorated, radiusActive, showPast, today]);
+  }, [decorated, term, showPast, today]);
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
@@ -133,43 +109,16 @@ export function EventList({ events, onEdit }: EventListProps) {
     );
   }, [sorted, sortBy]);
 
-  const onRequestLocation = () => {
-    requestLocation();
-    // When the user opts in, default to nearest sort.
-    setSortBy('distance-asc');
-  };
-
-  const onClearLocation = () => {
-    clearLocation();
-    setPlaceQuery('');
-    setPlaceError(null);
-    setPlaceStatus('idle');
-    if (sortBy === 'distance-asc') setSortBy('date-asc');
-  };
-
-  const onSubmitPlace = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const q = placeQuery.trim();
-    if (!q) return;
-    setPlaceStatus('loading');
-    setPlaceError(null);
-    try {
-      const result = await geocodeUK(q);
-      setManualLocation(result.coords, result.label);
-      setSortBy('distance-asc');
-      setPlaceStatus('idle');
-    } catch (err) {
-      setPlaceStatus('error');
-      setPlaceError(err instanceof Error ? err.message : 'Could not find that location.');
-    }
-  };
-
   if (events.length === 0) {
     return (
       <div className="text-center py-12">
         <div className="text-6xl mb-4">🎯</div>
         <h3 className="font-display text-2xl text-foreground mb-2">NO EVENTS FOUND</h3>
-        <p className="text-muted-foreground">Try adjusting your filters or check back later for new events.</p>
+        <p className="text-muted-foreground">
+          {hasUserCoords
+            ? 'No events within the selected radius. Try a wider radius or clear the location filter.'
+            : 'Try adjusting your filters or check back later for new events.'}
+        </p>
       </div>
     );
   }
@@ -197,7 +146,7 @@ export function EventList({ events, onEdit }: EventListProps) {
               </div>
             </SelectTrigger>
             <SelectContent>
-              {radiusActive && <SelectItem value="distance-asc">Distance — nearest</SelectItem>}
+              {hasUserCoords && <SelectItem value="distance-asc">Distance — nearest</SelectItem>}
               <SelectItem value="date-asc">Date — soonest</SelectItem>
               <SelectItem value="date-desc">Date — latest</SelectItem>
               <SelectItem value="name-asc">Name A–Z</SelectItem>
@@ -205,81 +154,6 @@ export function EventList({ events, onEdit }: EventListProps) {
             </SelectContent>
           </Select>
         </div>
-      </div>
-
-      {/* Near-me filter */}
-      <div className="flex flex-col gap-3 rounded-lg border border-border/50 bg-card p-3">
-        {!radiusActive ? (
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onRequestLocation}
-              disabled={locStatus === 'loading'}
-              className="gap-2"
-            >
-              {locStatus === 'loading' ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Navigation className="h-4 w-4" />
-              )}
-              Use my GPS
-            </Button>
-            <span className="text-xs text-muted-foreground">or</span>
-            <form onSubmit={onSubmitPlace} className="flex flex-1 items-center gap-2 min-w-[220px]">
-              <div className="relative flex-1">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                <Input
-                  value={placeQuery}
-                  onChange={(e) => setPlaceQuery(e.target.value)}
-                  placeholder="Enter postcode or town (e.g. SW1A 1AA, Bristol)"
-                  className="pl-9 h-9 bg-input border-border"
-                  aria-label="Postcode or town"
-                />
-              </div>
-              <Button
-                type="submit"
-                size="sm"
-                disabled={placeStatus === 'loading' || !placeQuery.trim()}
-                className="gap-2"
-              >
-                {placeStatus === 'loading' ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : null}
-                Set
-              </Button>
-            </form>
-          </div>
-        ) : (
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-3 py-1 text-xs font-medium text-accent">
-              <MapPin className="h-3.5 w-3.5" />
-              Within {radiusMiles} mi of {locSource === 'manual' && locLabel ? locLabel : 'you'}
-            </span>
-            <Select
-              value={String(radiusMiles)}
-              onValueChange={(v) => setRadiusMiles(Number(v))}
-            >
-              <SelectTrigger className="h-8 w-[120px] bg-input border-border" aria-label="Radius">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {RADIUS_OPTIONS.map((r) => (
-                  <SelectItem key={r} value={String(r)}>
-                    {r} miles
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button size="sm" variant="ghost" onClick={onClearLocation} className="h-8 gap-1 text-xs">
-              <X className="h-3.5 w-3.5" />
-              Clear
-            </Button>
-          </div>
-        )}
-        {(locError || placeError) && (
-          <span className="text-xs text-destructive">{placeError || locError}</span>
-        )}
       </div>
 
       {/* Past events toggle */}
@@ -296,10 +170,9 @@ export function EventList({ events, onEdit }: EventListProps) {
       </div>
 
       {/* Results count */}
-      {(sorted.length !== events.length || hiddenNoCoords > 0) && (
+      {sorted.length !== events.length && (
         <p className="text-xs text-muted-foreground">
           Showing {sorted.length} of {events.length} events
-          {hiddenNoCoords > 0 && ` · ${hiddenNoCoords} hidden — venue location unknown`}
         </p>
       )}
 
@@ -308,11 +181,7 @@ export function EventList({ events, onEdit }: EventListProps) {
         <div className="text-center py-12">
           <div className="text-6xl mb-4">🎯</div>
           <h3 className="font-display text-2xl text-foreground mb-2">NO MATCHING EVENTS</h3>
-          <p className="text-muted-foreground">
-            {radiusActive
-              ? `No events within ${radiusMiles} miles. Try a wider radius.`
-              : 'Try a different search term or adjust your filters.'}
-          </p>
+          <p className="text-muted-foreground">Try a different search term or adjust your filters.</p>
         </div>
       ) : (
         <div className="space-y-8">
@@ -338,3 +207,4 @@ export function EventList({ events, onEdit }: EventListProps) {
     </div>
   );
 }
+
