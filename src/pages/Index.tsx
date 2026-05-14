@@ -198,6 +198,8 @@ export default function Index() {
           onClearFilters={handleClearFilters}
         />
 
+        <NearMeFilter location={userLocation} hiddenNoCoords={hiddenNoCoords} />
+
         {/* Reserve a stable min-height for the dynamic view to avoid CLS
             when skeleton → real content swap, and when switching views. */}
         <div className="min-h-[720px]">
@@ -215,22 +217,29 @@ export default function Index() {
             <>
               {view === 'calendar' && (
                 <EventCalendar
-                  events={events || []}
+                  events={displayedEvents}
                   onEventClick={handleEventClick}
                   eventType={eventType}
                   venue={venue}
                   venues={venues}
                   onEventTypeChange={setEventType}
                   onVenueChange={setVenue}
+                  userCoords={userCoords}
                 />
               )}
               {view === 'list' && (
-                <EventList events={events || []} onEdit={handleEdit} />
+                <EventList
+                  events={displayedEvents}
+                  onEdit={handleEdit}
+                  userCoords={userCoords}
+                />
               )}
               {view === 'map' && (
-                <EventMap events={events || []} onEventClick={handleEventClick} />
+                <EventMap events={displayedEvents} onEventClick={handleEventClick} />
               )}
             </>
+          )}
+        </div>
           )}
         </div>
 
