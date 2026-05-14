@@ -36,6 +36,7 @@ import {
   isToday,
 } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { getVenueCoords, haversineMiles, type LatLng } from '@/lib/geo';
 
 interface EventCalendarProps {
   events: PaintballEvent[];
@@ -45,6 +46,7 @@ interface EventCalendarProps {
   venues?: string[];
   onEventTypeChange?: (type: EventType | undefined) => void;
   onVenueChange?: (venue: string) => void;
+  userCoords?: LatLng | null;
 }
 
 export function EventCalendar({
@@ -55,6 +57,7 @@ export function EventCalendar({
   venues,
   onEventTypeChange,
   onVenueChange,
+  userCoords,
 }: EventCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
