@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2, MapPin, Navigation, X } from 'lucide-react';
-import { geocodeUK } from '@/lib/geocode';
+import { geocodeUK, GeocodeError } from '@/lib/geocode';
 import type { useUserLocation } from '@/hooks/useUserLocation';
 
 type Loc = ReturnType<typeof useUserLocation>;
