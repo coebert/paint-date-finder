@@ -35,10 +35,16 @@ export function EventList({ events, onEdit }: EventListProps) {
     status: locStatus,
     error: locError,
     radiusMiles,
+    source: locSource,
+    label: locLabel,
     setRadiusMiles,
     request: requestLocation,
+    setManualLocation,
     clear: clearLocation,
   } = useUserLocation(25);
+  const [placeQuery, setPlaceQuery] = useState('');
+  const [placeStatus, setPlaceStatus] = useState<'idle' | 'loading' | 'error'>('idle');
+  const [placeError, setPlaceError] = useState<string | null>(null);
 
   const today = startOfDay(new Date());
   const radiusActive = !!coords;
