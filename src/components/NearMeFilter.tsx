@@ -38,29 +38,47 @@ export function NearMeFilter({ location, hiddenNoCoords = 0 }: NearMeFilterProps
   const [placeQuery, setPlaceQuery] = useState('');
   const [placeStatus, setPlaceStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [placeError, setPlaceError] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
 
   const radiusActive = !!coords;
 
-  const onSubmitPlace = async (e: FormEvent) => {
-    e.preventDefault();
-    const q = placeQuery.trim();
-    if (!q) return;
+  const runGeocode = async (q: string) => {
     setPlaceStatus('loading');
     setPlaceError(null);
+    setSuggestions([]);
     try {
       const result = await geocodeUK(q);
       setManualLocation(result.coords, result.label);
       setPlaceStatus('idle');
+      setPlaceQuery('');
     } catch (err) {
       setPlaceStatus('error');
-      setPlaceError(err instanceof Error ? err.message : 'Could not find that location.');
+      if (err instanceof GeocodeError) {
+        setPlaceError(err.message);
+        setSuggestions(err.suggestions);
+      } else {
+        setPlaceError(err instanceof Error ? err.message : 'Could not find that location.');
+      }
     }
+  };
+
+  const onSubmitPlace = (e: FormEvent) => {
+    e.preventDefault();
+    const q = placeQuery.trim();
+    if (!q) return;
+    runGeocode(q);
+  };
+
+  const onPickSuggestion = (s: string) => {
+    setPlaceQuery(s);
+    runGeocode(s);
   };
 
   const onClear = () => {
     clear();
     setPlaceQuery('');
     setPlaceError(null);
+    setSuggestions([]);
     setPlaceStatus('idle');
   };
 
