@@ -472,37 +472,20 @@ Deno.serve(async (req) => {
     );
   }
 
-  // Admin-only: this endpoint consumes paid AI/Firecrawl credits.
+  // Open to both public submitters (SubmitEventDialog) and admins (AdminFlyerImportCard).
+  // Best-effort identify the caller for logging; do not block anonymous callers.
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
   let userId: string | null = null;
-  try {
-    const supabase = createClient(SUPABASE_URL, SERVICE_KEY, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: userData } = await supabase.auth.getUser();
-    userId = userData.user?.id ?? null;
-    if (!userId) throw new Error("no user");
-    const { data: isAdmin, error: roleErr } = await supabase.rpc("has_role", {
-      _user_id: userId,
-      _role: "admin",
-    });
-    if (roleErr || !isAdmin) {
-      return new Response(JSON.stringify({ error: "Forbidden" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+  if (authHeader?.startsWith("Bearer ")) {
+    try {
+      const supabase = createClient(SUPABASE_URL, SERVICE_KEY, {
+        global: { headers: { Authorization: authHeader } },
       });
+      const { data: userData } = await supabase.auth.getUser();
+      userId = userData.user?.id ?? null;
+    } catch {
+      userId = null;
     }
-  } catch {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
   }
 
   let body: RequestBody;
