@@ -31,16 +31,9 @@ export function EventDetailDialog({ event, open, onOpenChange, onEdit }: EventDe
   const { data: flaggedIds } = useFlaggedEventIds();
   const withdrawFlag = useWithdrawFlag();
   const [flagOpen, setFlagOpen] = useState(false);
-  
-  if (!event) return null;
-
-  const isFlagged = flaggedIds?.has(event.id) ?? false;
-  const storedFlag = getStoredFlagForEvent(event.id);
-
-  const eventDate = parseISO(event.event_date);
-  const venueWebsite = venueDetails?.get(event.venue_name)?.website ?? null;
 
   const eventSchema = useMemo(() => {
+    if (!event) return null;
     const startDate = event.start_time
       ? `${event.event_date}T${event.start_time}`
       : event.event_date;
@@ -77,6 +70,14 @@ export function EventDetailDialog({ event, open, onOpenChange, onEdit }: EventDe
         : {}),
     };
   }, [event]);
+
+  if (!event) return null;
+
+  const isFlagged = flaggedIds?.has(event.id) ?? false;
+  const storedFlag = getStoredFlagForEvent(event.id);
+
+  const eventDate = parseISO(event.event_date);
+  const venueWebsite = venueDetails?.get(event.venue_name)?.website ?? null;
 
   const handleWithdraw = () => {
     if (!storedFlag) return;
