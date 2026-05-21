@@ -143,6 +143,8 @@ function clearDraft() {
 }
 
 export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: FlyerImporterProps) {
+  const { data: venueMap } = useVenueDetails();
+  const venueList = venueMap ? Array.from(venueMap.values()).sort((a, b) => a.name.localeCompare(b.name)) : [];
   // Hydrate from a persisted draft on mount so the user can leave and come back.
   // Files (binary) cannot be persisted — but the source URL, pasted text, and
   // already-extracted candidates can, which is what avoids re-running extraction.
