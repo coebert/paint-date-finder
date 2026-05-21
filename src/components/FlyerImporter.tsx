@@ -166,6 +166,131 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
     initialDraft?.candidates?.length ? initialDraft.savedAt : null,
   );
 
+  // ---- Duplicate detection -------------------------------------------------
+  // Look up existing events (and pending submissions where visible) on the same
+  // date as each candidate and flag fuzzy title matches so the user can spot
+  // accidental re-submits before pressing Save.
+  type DuplicateMatch = {
+    title: string;
+    event_date: string;
+    venue_name: string | null;
+    source: 'events' | 'event_submissions';
+    score: number;
+  };
+  const [duplicateMatches, setDuplicateMatches] = useState<Record<string, DuplicateMatch>>({});
+  const autoDeselectedRef = useRef<Set<string>>(new Set());
+
+  const candidateDatesKey = candidates
+    .map((c) => c.event_date)
+    .filter(Boolean)
+    .sort()
+    .join('|');
+
+  useEffect(() => {
+    let cancelled = false;
+    if (candidates.length === 0) {
+      setDuplicateMatches({});
+      return;
+    }
+    const dates = Array.from(
+      new Set(candidates.map((c) => c.event_date).filter(Boolean)),
+    );
+    if (dates.length === 0) {
+      setDuplicateMatches({});
+      return;
+    }
+
+    const normalise = (s: string | null | undefined) =>
+      (s ?? '')
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    const jaccard = (a: string, b: string) => {
+      const at = new Set(normalise(a).split(' ').filter(Boolean));
+      const bt = new Set(normalise(b).split(' ').filter(Boolean));
+      if (at.size === 0 || bt.size === 0) return 0;
+      let inter = 0;
+      for (const t of at) if (bt.has(t)) inter += 1;
+      return inter / (at.size + bt.size - inter);
+    };
+
+    (async () => {
+      try {
+        const [{ data: ev }, { data: subs }] = await Promise.all([
+          supabase
+            .from('events')
+            .select('title, venue_name, event_date')
+            .in('event_date', dates),
+          supabase
+            .from('event_submissions')
+            .select('title, venue_name, event_date')
+            .in('event_date', dates)
+            .eq('status', 'pending'),
+        ]);
+        if (cancelled) return;
+
+        const next: Record<string, DuplicateMatch> = {};
+        for (const c of candidates) {
+          if (!c.event_date) continue;
+          const candNorm = normalise(c.title);
+          if (!candNorm) continue;
+
+          let best: DuplicateMatch | null = null;
+          const consider = (
+            row: { title: string; venue_name: string | null; event_date: string },
+            source: DuplicateMatch['source'],
+          ) => {
+            if (row.event_date !== c.event_date) return;
+            const exact = normalise(row.title) === candNorm;
+            const score = exact ? 1 : jaccard(c.title, row.title);
+            if (score < 0.7) return;
+            if (!best || score > best.score) {
+              best = {
+                title: row.title,
+                venue_name: row.venue_name,
+                event_date: row.event_date,
+                source,
+                score,
+              };
+            }
+          };
+          (ev ?? []).forEach((r) => consider(r, 'events'));
+          (subs ?? []).forEach((r) => consider(r, 'event_submissions'));
+          if (best) next[c._id] = best;
+        }
+
+        if (cancelled) return;
+        setDuplicateMatches(next);
+
+        // Auto-deselect each newly-detected duplicate exactly once so the user
+        // has to consciously re-tick it to submit anyway.
+        const toDeselect = Object.keys(next).filter(
+          (id) => !autoDeselectedRef.current.has(id),
+        );
+        if (toDeselect.length > 0) {
+          toDeselect.forEach((id) => autoDeselectedRef.current.add(id));
+          setCandidates((prev) =>
+            prev.map((c) =>
+              toDeselect.includes(c._id) ? { ...c, _selected: false } : c,
+            ),
+          );
+          toast.warning(
+            `Skipped ${toDeselect.length} possible duplicate${toDeselect.length === 1 ? '' : 's'} — review the highlighted event${toDeselect.length === 1 ? '' : 's'} below`,
+          );
+        }
+      } catch {
+        // Non-fatal — server-side dedupe still runs on save.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [candidateDatesKey, candidates.length]);
+
+
   type StageKey = 'prepare' | 'upload' | 'analyse' | 'save';
   type StageStatus = 'pending' | 'active' | 'done' | 'failed';
   type StageState = {
