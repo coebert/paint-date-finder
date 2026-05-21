@@ -1379,12 +1379,45 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
                       </div>
                       <div>
                         <Label className="text-xs">Venue</Label>
-                        <Input
-                          value={c.venue_name ?? ''}
-                          onChange={(e) =>
-                            updateCandidate(c._id, { venue_name: e.target.value })
-                          }
-                        />
+                        {(() => {
+                          const current = c.venue_name ?? '';
+                          const known = venueList.some((v) => v.name === current);
+                          const value = current === '' ? '__none' : known ? current : '__other';
+                          return (
+                            <Select
+                              value={value}
+                              onValueChange={(v) => {
+                                if (v === '__none' || v === '__other') return;
+                                const venue = venueMap?.get(v);
+                                updateCandidate(c._id, {
+                                  venue_name: v,
+                                  // Auto-fill location when we have one and the
+                                  // candidate's current location is empty.
+                                  venue_location:
+                                    !c.venue_location && venue?.location
+                                      ? venue.location
+                                      : c.venue_location,
+                                });
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a venue…" />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-72">
+                                {!known && current !== '' && (
+                                  <SelectItem value="__other" disabled>
+                                    Extracted: {current} (not in list)
+                                  </SelectItem>
+                                )}
+                                {venueList.map((v) => (
+                                  <SelectItem key={v.id} value={v.name}>
+                                    {v.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          );
+                        })()}
                       </div>
                       <div>
                         <Label className="text-xs">Location</Label>
