@@ -31,6 +31,7 @@ import {
 } from '@/lib/flyerExtraction';
 import { EVENT_TYPE_LABELS, type EventType } from '@/types/events';
 import { compressImageFile } from '@/lib/imageCompression';
+import { useVenueDetails } from '@/hooks/useVenueDetails';
 
 export interface FlyerImporterProps {
   /** Called once the user has reviewed candidates and clicks Save. */
