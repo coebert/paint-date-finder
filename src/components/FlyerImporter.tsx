@@ -31,6 +31,7 @@ import {
 } from '@/lib/flyerExtraction';
 import { EVENT_TYPE_LABELS, type EventType } from '@/types/events';
 import { compressImageFile } from '@/lib/imageCompression';
+import { useVenueDetails } from '@/hooks/useVenueDetails';
 
 export interface FlyerImporterProps {
   /** Called once the user has reviewed candidates and clicks Save. */
@@ -142,6 +143,8 @@ function clearDraft() {
 }
 
 export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: FlyerImporterProps) {
+  const { data: venueMap } = useVenueDetails();
+  const venueList = venueMap ? Array.from(venueMap.values()).sort((a, b) => a.name.localeCompare(b.name)) : [];
   // Hydrate from a persisted draft on mount so the user can leave and come back.
   // Files (binary) cannot be persisted — but the source URL, pasted text, and
   // already-extracted candidates can, which is what avoids re-running extraction.
@@ -1376,12 +1379,45 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
                       </div>
                       <div>
                         <Label className="text-xs">Venue</Label>
-                        <Input
-                          value={c.venue_name ?? ''}
-                          onChange={(e) =>
-                            updateCandidate(c._id, { venue_name: e.target.value })
-                          }
-                        />
+                        {(() => {
+                          const current = c.venue_name ?? '';
+                          const known = venueList.some((v) => v.name === current);
+                          const value = current === '' ? '__none' : known ? current : '__other';
+                          return (
+                            <Select
+                              value={value}
+                              onValueChange={(v) => {
+                                if (v === '__none' || v === '__other') return;
+                                const venue = venueMap?.get(v);
+                                updateCandidate(c._id, {
+                                  venue_name: v,
+                                  // Auto-fill location when we have one and the
+                                  // candidate's current location is empty.
+                                  venue_location:
+                                    !c.venue_location && venue?.location
+                                      ? venue.location
+                                      : c.venue_location,
+                                });
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a venue…" />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-72">
+                                {!known && current !== '' && (
+                                  <SelectItem value="__other" disabled>
+                                    Extracted: {current} (not in list)
+                                  </SelectItem>
+                                )}
+                                {venueList.map((v) => (
+                                  <SelectItem key={v.id} value={v.name}>
+                                    {v.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          );
+                        })()}
                       </div>
                       <div>
                         <Label className="text-xs">Location</Label>

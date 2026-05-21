@@ -1,0 +1,2 @@
+UPDATE public.events SET venue_name = 'NPF Bassetts Pole' WHERE venue_name IN ('NPF', 'NPF Bassetts Pole Adventure Park');
+UPDATE public.event_submissions SET venue_name = 'NPF Bassetts Pole' WHERE venue_name IN ('NPF', 'NPF Bassetts Pole Adventure Park');
