@@ -1310,7 +1310,12 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
                       <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
                       <div className="flex-1 text-foreground/90">
                         <span className="font-medium">
-                          {dup.score >= 1 ? 'Exact duplicate' : 'Possible duplicate'} of{' '}
+                          {dup.score >= 0.98 && dup.dayDiff === 0
+                            ? 'Exact duplicate'
+                            : dup.dayDiff === 0
+                              ? 'Possible duplicate'
+                              : `Possible duplicate (±${dup.dayDiff} day)`}{' '}
+                          of{' '}
                           {dup.source === 'events' ? 'an existing event' : 'a pending submission'}:
                         </span>{' '}
                         <span className="text-muted-foreground">
