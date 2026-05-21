@@ -167,15 +167,16 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
   );
 
   // ---- Duplicate detection -------------------------------------------------
-  // Look up existing events (and pending submissions where visible) on the same
-  // date as each candidate and flag fuzzy title matches so the user can spot
-  // accidental re-submits before pressing Save.
+  // Look up existing events (and pending submissions where visible) within
+  // ±1 day of each candidate, and flag combined title + venue similarity so
+  // the user can spot accidental re-submits before pressing Save.
   type DuplicateMatch = {
     title: string;
     event_date: string;
     venue_name: string | null;
     source: 'events' | 'event_submissions';
     score: number;
+    dayDiff: number;
   };
   const [duplicateMatches, setDuplicateMatches] = useState<Record<string, DuplicateMatch>>({});
   const autoDeselectedRef = useRef<Set<string>>(new Set());
@@ -200,6 +201,21 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
       return;
     }
 
+    // Expand the lookup window to ±1 day for date-tolerance matching.
+    const shiftDate = (iso: string, days: number) => {
+      const d = new Date(iso + 'T00:00:00Z');
+      d.setUTCDate(d.getUTCDate() + days);
+      return d.toISOString().slice(0, 10);
+    };
+    const dateWindow = Array.from(
+      new Set(dates.flatMap((d) => [shiftDate(d, -1), d, shiftDate(d, 1)])),
+    );
+    const dayDiff = (a: string, b: string) => {
+      const da = new Date(a + 'T00:00:00Z').getTime();
+      const db = new Date(b + 'T00:00:00Z').getTime();
+      return Math.round(Math.abs(da - db) / 86_400_000);
+    };
+
     const normalise = (s: string | null | undefined) =>
       (s ?? '')
         .toLowerCase()
@@ -214,6 +230,24 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
       for (const t of at) if (bt.has(t)) inter += 1;
       return inter / (at.size + bt.size - inter);
     };
+    // Combined score: title is primary signal, venue boosts confidence.
+    // When venue is missing on either side, fall back to title-only.
+    const combinedScore = (
+      candTitle: string,
+      candVenue: string | null | undefined,
+      rowTitle: string,
+      rowVenue: string | null | undefined,
+    ) => {
+      const titleScore = normalise(rowTitle) === normalise(candTitle)
+        ? 1
+        : jaccard(candTitle, rowTitle);
+      const cv = normalise(candVenue);
+      const rv = normalise(rowVenue);
+      const venueKnown = cv && rv && cv !== 'unknown venue' && rv !== 'unknown venue';
+      if (!venueKnown) return { score: titleScore, venueScore: 0 };
+      const venueScore = cv === rv ? 1 : jaccard(cv, rv);
+      return { score: titleScore * 0.65 + venueScore * 0.35, venueScore };
+    };
 
     (async () => {
       try {
@@ -221,11 +255,11 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
           supabase
             .from('events')
             .select('title, venue_name, event_date')
-            .in('event_date', dates),
+            .in('event_date', dateWindow),
           supabase
             .from('event_submissions')
             .select('title, venue_name, event_date')
-            .in('event_date', dates)
+            .in('event_date', dateWindow)
             .eq('status', 'pending'),
         ]);
         if (cancelled) return;
@@ -233,18 +267,26 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
         const next: Record<string, DuplicateMatch> = {};
         for (const c of candidates) {
           if (!c.event_date) continue;
-          const candNorm = normalise(c.title);
-          if (!candNorm) continue;
+          if (!normalise(c.title)) continue;
 
           let best: DuplicateMatch | null = null;
           const consider = (
             row: { title: string; venue_name: string | null; event_date: string },
             source: DuplicateMatch['source'],
           ) => {
-            if (row.event_date !== c.event_date) return;
-            const exact = normalise(row.title) === candNorm;
-            const score = exact ? 1 : jaccard(c.title, row.title);
-            if (score < 0.7) return;
+            const diff = dayDiff(row.event_date, c.event_date);
+            if (diff > 1) return;
+            const { score, venueScore } = combinedScore(
+              c.title,
+              c.venue_name,
+              row.title,
+              row.venue_name,
+            );
+            // For ±1 day matches, require a stronger signal (venue agreement
+            // or near-identical title) to avoid false positives across
+            // back-to-back weekend events.
+            const threshold = diff === 0 ? 0.7 : Math.max(0.85, venueScore >= 0.8 ? 0.75 : 0.9);
+            if (score < threshold) return;
             if (!best || score > best.score) {
               best = {
                 title: row.title,
@@ -252,6 +294,7 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
                 event_date: row.event_date,
                 source,
                 score,
+                dayDiff: diff,
               };
             }
           };
