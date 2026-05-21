@@ -1397,7 +1397,8 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </div>
 
           <Button
