@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { safeOptionalUrlSchema } from '@/lib/validation';
+import { safeOptionalUrlSchema, normalizeHttpUrl } from '@/lib/validation';
 import {
   Dialog,
   DialogContent,
@@ -208,10 +208,10 @@ export function SubmitEventDialog({ open, onOpenChange, initialTab = 'flyer' }: 
           event_date: c.event_date,
           start_time: c.start_time || null,
           end_time: c.end_time || null,
-          booking_url: c.booking_url || null,
+          booking_url: normalizeHttpUrl(c.booking_url),
           price_info: c.price_info?.slice(0, 100) ?? null,
-          source_url: sourceUrl,
-          image_url: flyerImageUrl,
+          source_url: normalizeHttpUrl(sourceUrl),
+          image_url: normalizeHttpUrl(flyerImageUrl),
           submitter_email: email,
           submitter_name: name || null,
         });

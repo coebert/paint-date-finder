@@ -12,6 +12,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Sparkles } from 'lucide-react';
 import { dedupeCandidates } from '@/lib/flyerDedupe';
+import { normalizeHttpUrl } from '@/lib/validation';
 
 export function AdminFlyerImportCard() {
   const qc = useQueryClient();
@@ -62,10 +63,10 @@ export function AdminFlyerImportCard() {
         event_date: c.event_date,
         start_time: c.start_time || null,
         end_time: c.end_time || null,
-        booking_url: c.booking_url || null,
+        booking_url: normalizeHttpUrl(c.booking_url),
         price_info: c.price_info?.slice(0, 100) ?? null,
-        source_url: sourceUrl,
-        image_url: flyerImageUrl,
+        source_url: normalizeHttpUrl(sourceUrl),
+        image_url: normalizeHttpUrl(flyerImageUrl),
         is_verified: true,
       }));
       const { error } = await supabase.from('events').insert(rows);
