@@ -43,3 +43,33 @@ export function sanitizeUrl(url: string | null | undefined): string | null {
   if (!url) return null;
   return isUrlSafe(url) ? url : null;
 }
+
+/**
+ * Normalise a possibly-schemeless URL into a safe http(s) URL, or null.
+ * Used before inserts into columns with a CHECK `url ~ '^https?://'`
+ * constraint (e.g. events.booking_url, event_submissions.source_url) so
+ * an AI-extracted value like "www.foo.com" doesn't break the insert.
+ */
+export function normalizeHttpUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  let candidate = String(url).trim();
+  if (!candidate) return null;
+
+  if (/^\/\//.test(candidate)) {
+    candidate = `https:${candidate}`;
+  } else if (!/^[a-z][a-z0-9+.-]*:/i.test(candidate)) {
+    // No scheme — only prepend https:// if it looks like a domain.
+    if (/^[a-z0-9-]+(\.[a-z0-9-]+)+(\/.*)?$/i.test(candidate)) {
+      candidate = `https://${candidate}`;
+    } else {
+      return null;
+    }
+  }
+
+  try {
+    const parsed = new URL(candidate);
+    return SAFE_URL_SCHEMES.includes(parsed.protocol) ? parsed.toString() : null;
+  } catch {
+    return null;
+  }
+}
