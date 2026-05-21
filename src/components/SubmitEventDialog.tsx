@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { safeOptionalUrlSchema } from '@/lib/validation';
+import { safeOptionalUrlSchema, normalizeHttpUrl } from '@/lib/validation';
 import {
   Dialog,
   DialogContent,
