@@ -1251,9 +1251,33 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
 
 
           <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
-            {candidates.map((c) => (
-              <Card key={c._id} className="bg-card/50">
+            {candidates.map((c) => {
+              const dup = duplicateMatches[c._id];
+              return (
+              <Card
+                key={c._id}
+                className={cn(
+                  'bg-card/50',
+                  dup && 'border-amber-500/60 bg-amber-500/5',
+                )}
+              >
                 <CardContent className="p-3 space-y-2">
+                  {dup && (
+                    <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-[11px]">
+                      <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
+                      <div className="flex-1 text-foreground/90">
+                        <span className="font-medium">
+                          {dup.score >= 1 ? 'Exact duplicate' : 'Possible duplicate'} of{' '}
+                          {dup.source === 'events' ? 'an existing event' : 'a pending submission'}:
+                        </span>{' '}
+                        <span className="text-muted-foreground">
+                          "{dup.title}"{dup.venue_name ? ` — ${dup.venue_name}` : ''} on{' '}
+                          {new Date(dup.event_date + 'T00:00:00').toLocaleDateString('en-GB')}.
+                          Unticked by default — re-tick only if this is genuinely a different event.
+                        </span>
+                      </div>
+                    </div>
+                  )}
                   <div className="flex items-start gap-2">
                     <Checkbox
                       checked={c._selected}
