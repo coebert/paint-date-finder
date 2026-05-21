@@ -12,6 +12,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Sparkles } from 'lucide-react';
 import { dedupeCandidates } from '@/lib/flyerDedupe';
+import { normalizeHttpUrl } from '@/lib/validation';
 
 export function AdminFlyerImportCard() {
   const qc = useQueryClient();
