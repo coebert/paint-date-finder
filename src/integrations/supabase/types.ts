@@ -71,6 +71,8 @@ export type Database = {
           image_url: string | null
           price_info: string | null
           reviewed_at: string | null
+          sanity_warnings: string[]
+          source_quote: string | null
           source_url: string | null
           start_time: string | null
           status: Database["public"]["Enums"]["submission_status"]
@@ -78,6 +80,7 @@ export type Database = {
           submitter_name: string | null
           title: string
           venue_location: string | null
+          venue_match_status: string
           venue_name: string
         }
         Insert: {
@@ -92,6 +95,8 @@ export type Database = {
           image_url?: string | null
           price_info?: string | null
           reviewed_at?: string | null
+          sanity_warnings?: string[]
+          source_quote?: string | null
           source_url?: string | null
           start_time?: string | null
           status?: Database["public"]["Enums"]["submission_status"]
@@ -99,6 +104,7 @@ export type Database = {
           submitter_name?: string | null
           title: string
           venue_location?: string | null
+          venue_match_status?: string
           venue_name: string
         }
         Update: {
@@ -113,6 +119,8 @@ export type Database = {
           image_url?: string | null
           price_info?: string | null
           reviewed_at?: string | null
+          sanity_warnings?: string[]
+          source_quote?: string | null
           source_url?: string | null
           start_time?: string | null
           status?: Database["public"]["Enums"]["submission_status"]
@@ -120,6 +128,7 @@ export type Database = {
           submitter_name?: string | null
           title?: string
           venue_location?: string | null
+          venue_match_status?: string
           venue_name?: string
         }
         Relationships: []
@@ -135,13 +144,17 @@ export type Database = {
           id: string
           image_url: string | null
           is_verified: boolean | null
+          last_verified_at: string | null
           price_info: string | null
+          source_quote: string | null
           source_url: string | null
           start_time: string | null
           title: string
           updated_at: string
           venue_location: string | null
           venue_name: string
+          verification_notes: string | null
+          verification_status: string
         }
         Insert: {
           booking_url?: string | null
@@ -153,13 +166,17 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_verified?: boolean | null
+          last_verified_at?: string | null
           price_info?: string | null
+          source_quote?: string | null
           source_url?: string | null
           start_time?: string | null
           title: string
           updated_at?: string
           venue_location?: string | null
           venue_name: string
+          verification_notes?: string | null
+          verification_status?: string
         }
         Update: {
           booking_url?: string | null
@@ -171,13 +188,17 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_verified?: boolean | null
+          last_verified_at?: string | null
           price_info?: string | null
+          source_quote?: string | null
           source_url?: string | null
           start_time?: string | null
           title?: string
           updated_at?: string
           venue_location?: string | null
           venue_name?: string
+          verification_notes?: string | null
+          verification_status?: string
         }
         Relationships: []
       }
@@ -253,6 +274,42 @@ export type Database = {
           scrape_stale?: boolean
           stale_event_count?: number
           updates_stale?: boolean
+        }
+        Relationships: []
+      }
+      reverification_runs: {
+        Row: {
+          errors: Json
+          events_checked: number
+          events_flagged: number
+          events_verified: number
+          finished_at: string | null
+          id: string
+          started_at: string
+          status: string
+          triggered_by: string
+        }
+        Insert: {
+          errors?: Json
+          events_checked?: number
+          events_flagged?: number
+          events_verified?: number
+          finished_at?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          triggered_by?: string
+        }
+        Update: {
+          errors?: Json
+          events_checked?: number
+          events_flagged?: number
+          events_verified?: number
+          finished_at?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          triggered_by?: string
         }
         Relationships: []
       }

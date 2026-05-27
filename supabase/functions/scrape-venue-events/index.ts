@@ -28,6 +28,8 @@ type Candidate = {
   /** Only populated for facebook_group sources where the post mentions a specific venue. */
   venue_name?: string | null;
   venue_location?: string | null;
+  /** Verbatim quote from page text containing the date (grounded extraction). */
+  source_quote?: string | null;
 };
 
 type SourceType = "venue" | "facebook_group";
@@ -116,10 +118,12 @@ async function extractCandidates(
     ? "You extract upcoming UK paintball events from a Facebook group feed where many different venues post adverts and flyers. " +
       "Each event may be hosted at a different venue. Extract the venue name as stated in the post. " +
       "Only return events with an unambiguous, explicitly stated date AND a clearly identified venue. " +
-      "Never guess dates or venues. If either is missing, skip that event."
+      "Never guess dates or venues. If either is missing, skip that event. " +
+      "GROUNDING: for every event, set source_quote to a verbatim excerpt (max 240 chars) from the page text that mentions the date — never paraphrase. If you cannot find a verbatim date mention, skip the event."
     : "You extract upcoming UK paintball events from venue website text. " +
       "Only return events with an unambiguous, explicitly stated date. " +
-      "Never guess or infer dates. If no concrete dates are present, return an empty array.";
+      "Never guess or infer dates. If no concrete dates are present, return an empty array. " +
+      "GROUNDING: for every event, set source_quote to a verbatim excerpt (max 240 chars) from the page text that mentions the date — never paraphrase. If you cannot find a verbatim date mention, skip the event.";
 
   const contextLine = isGroup
     ? `Source: Facebook group "${venueName}"\nSource URL: ${sourceUrl}\nToday: ${today}\n\n` +
@@ -155,8 +159,13 @@ async function extractCandidates(
     end_time: { type: "string", description: "HH:MM 24h" },
     price_info: { type: "string" },
     booking_url: { type: "string" },
+    source_quote: {
+      type: "string",
+      description:
+        "Verbatim text snippet (max 240 chars) from the page text that contains the explicit date. Copy a real substring; do not paraphrase.",
+    },
   };
-  const required = ["title", "event_type", "event_date"];
+  const required = ["title", "event_type", "event_date", "source_quote"];
 
   if (isGroup) {
     candidateProperties.venue_name = {
@@ -378,6 +387,38 @@ async function runScrape(
   let processed = 0;
   let candidatesCreated = 0;
 
+  // Load known venues once for fuzzy matching across all sources.
+  const { data: venueRows } = await supabase.from("venues").select("name");
+  const knownVenues: string[] = (venueRows ?? []).map(
+    (r: { name: string }) => r.name,
+  );
+  const normVenue = (s: string) =>
+    s.toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+  const matchVenue = (name: string): "matched" | "fuzzy" | "unmatched" => {
+    if (!name || knownVenues.length === 0) return "unmatched";
+    const cn = normVenue(name);
+    let best = 0;
+    for (const v of knownVenues) {
+      const vn = normVenue(v);
+      if (vn === cn) return "matched";
+      const a = new Set(cn.split(" ").filter(Boolean));
+      const b = new Set(vn.split(" ").filter(Boolean));
+      let inter = 0;
+      for (const t of a) if (b.has(t)) inter++;
+      const union = a.size + b.size - inter;
+      const score = union === 0 ? 0 : inter / union;
+      if (score > best) best = score;
+    }
+    if (best >= 0.95) return "matched";
+    if (best >= 0.5) return "fuzzy";
+    return "unmatched";
+  };
+  const maxFutureDateIso = (() => {
+    const d = new Date();
+    d.setUTCMonth(d.getUTCMonth() + 18);
+    return d.toISOString().slice(0, 10);
+  })();
+
   for (const source of sources ?? []) {
     processed++;
     let sourceStatus = "ok";
@@ -429,13 +470,28 @@ async function runScrape(
         `[scrape] source="${source.venue_name}" type=${sourceType} ai_returned=${returned}`,
       );
 
+      const pageHaystack = text
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .trim();
+
+
+
       for (const c of candidates) {
-        // Validate date is today or future
+        // Hard date guards
         if (!/^\d{4}-\d{2}-\d{2}$/.test(c.event_date)) {
           invalidDate++;
           continue;
         }
         if (c.event_date < new Date().toISOString().slice(0, 10)) {
+          invalidDate++;
+          continue;
+        }
+        if (c.event_date > maxFutureDateIso) {
+          invalidDate++;
+          continue;
+        }
+        if (!c.title || c.title.trim().length < 3) {
           invalidDate++;
           continue;
         }
@@ -447,15 +503,41 @@ async function runScrape(
           : source.venue_name;
 
         if (sourceType === "facebook_group" && !effectiveVenue) {
-          // Skip group posts where the AI couldn't pin down a venue.
           invalidDate++;
           continue;
         }
 
+        // Grounded verification: source_quote must appear in page text.
+        const warnings: string[] = [];
+        let quoteVerified = false;
+        if (c.source_quote) {
+          const needle = c.source_quote
+            .toLowerCase()
+            .replace(/\s+/g, " ")
+            .trim()
+            .slice(0, 200);
+          if (needle.length >= 6 && pageHaystack.includes(needle)) {
+            quoteVerified = true;
+          } else {
+            const words = needle.split(" ").filter((w) => w.length > 2);
+            if (words.length >= 4 && pageHaystack.includes(words.slice(0, 4).join(" "))) {
+              quoteVerified = true;
+            }
+          }
+        }
+        if (!quoteVerified) {
+          // For scraped sources we have the page text, so an unverifiable
+          // quote is a strong hallucination signal — skip.
+          invalidDate++;
+          continue;
+        }
+
+        // Venue match
+        const venueStatus = matchVenue(effectiveVenue);
+        if (venueStatus === "unmatched") warnings.push("unknown_venue");
+
         // Dedupe: skip if same venue+date+type already in events or pending/approved
-        // submissions. We intentionally ignore title because the AI returns slight
-        // title variations between runs ("Walk-on" vs "Walk on April"), which would
-        // otherwise create duplicate candidates for the same real event.
+        // submissions.
         const [{ data: existingEvent }, { data: existingSub }] =
           await Promise.all([
             supabase
@@ -499,6 +581,9 @@ async function runScrape(
             booking_url: c.booking_url || null,
             price_info: c.price_info?.slice(0, 100) ?? null,
             source_url: source.url,
+            source_quote: c.source_quote?.slice(0, 500) ?? null,
+            venue_match_status: venueStatus,
+            sanity_warnings: warnings,
             submitter_email: SCRAPER_EMAIL,
             submitter_name: submitterLabel,
             status: "pending",
