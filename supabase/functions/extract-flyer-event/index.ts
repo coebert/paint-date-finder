@@ -419,7 +419,9 @@ function systemPrompt(): string {
     "competition/tournament (ranked play), speedball (airball/sup'air), scenario (milsim/woodland themed), " +
     "mag_fed (magazine-fed only), other (anything else).\n" +
     "- Prefer dates today or in the future; ignore clearly past dates.\n" +
-    "- Keep titles short and human (max ~80 chars). Put extras (brief flavour text, what's included) in description."
+    "- Keep titles short and human (max ~80 chars). Put extras (brief flavour text, what's included) in description.\n" +
+    "- GROUNDING (critical): for every event, set source_quote to a verbatim excerpt from the source that explicitly contains the date — do NOT paraphrase. " +
+    "If you cannot find a verbatim mention of the date, do not return that event. This prevents hallucinated dates."
   );
 }
 
