@@ -28,6 +28,8 @@ type Candidate = {
   /** Only populated for facebook_group sources where the post mentions a specific venue. */
   venue_name?: string | null;
   venue_location?: string | null;
+  /** Verbatim quote from page text containing the date (grounded extraction). */
+  source_quote?: string | null;
 };
 
 type SourceType = "venue" | "facebook_group";
