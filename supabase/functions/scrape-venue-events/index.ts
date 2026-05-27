@@ -493,10 +493,72 @@ async function runScrape(
           continue;
         }
 
+      const pageHaystack = text
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .trim();
+
+      for (const c of candidates) {
+        // Hard date guards
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(c.event_date)) {
+          invalidDate++;
+          continue;
+        }
+        if (c.event_date < new Date().toISOString().slice(0, 10)) {
+          invalidDate++;
+          continue;
+        }
+        if (c.event_date > maxFutureDateIso) {
+          invalidDate++;
+          continue;
+        }
+        if (!c.title || c.title.trim().length < 3) {
+          invalidDate++;
+          continue;
+        }
+
+        // For facebook_group sources, the venue is per-event (extracted by AI).
+        // For venue sources, fall back to the source's venue_name.
+        const effectiveVenue = sourceType === "facebook_group"
+          ? (c.venue_name?.trim() || "")
+          : source.venue_name;
+
+        if (sourceType === "facebook_group" && !effectiveVenue) {
+          invalidDate++;
+          continue;
+        }
+
+        // Grounded verification: source_quote must appear in page text.
+        const warnings: string[] = [];
+        let quoteVerified = false;
+        if (c.source_quote) {
+          const needle = c.source_quote
+            .toLowerCase()
+            .replace(/\s+/g, " ")
+            .trim()
+            .slice(0, 200);
+          if (needle.length >= 6 && pageHaystack.includes(needle)) {
+            quoteVerified = true;
+          } else {
+            const words = needle.split(" ").filter((w) => w.length > 2);
+            if (words.length >= 4 && pageHaystack.includes(words.slice(0, 4).join(" "))) {
+              quoteVerified = true;
+            }
+          }
+        }
+        if (!quoteVerified) {
+          // For scraped sources we have the page text, so an unverifiable
+          // quote is a strong hallucination signal — skip.
+          invalidDate++;
+          continue;
+        }
+
+        // Venue match
+        const venueStatus = matchVenue(effectiveVenue);
+        if (venueStatus === "unmatched") warnings.push("unknown_venue");
+
         // Dedupe: skip if same venue+date+type already in events or pending/approved
-        // submissions. We intentionally ignore title because the AI returns slight
-        // title variations between runs ("Walk-on" vs "Walk on April"), which would
-        // otherwise create duplicate candidates for the same real event.
+        // submissions.
         const [{ data: existingEvent }, { data: existingSub }] =
           await Promise.all([
             supabase
@@ -540,6 +602,9 @@ async function runScrape(
             booking_url: c.booking_url || null,
             price_info: c.price_info?.slice(0, 100) ?? null,
             source_url: source.url,
+            source_quote: c.source_quote?.slice(0, 500) ?? null,
+            venue_match_status: venueStatus,
+            sanity_warnings: warnings,
             submitter_email: SCRAPER_EMAIL,
             submitter_name: submitterLabel,
             status: "pending",
