@@ -30,6 +30,14 @@ type Candidate = {
   booking_url?: string | null;
   venue_name?: string | null;
   venue_location?: string | null;
+  /** Verbatim quote from the source that mentions the date (grounded extraction). */
+  source_quote?: string | null;
+};
+
+type EnrichedCandidate = Candidate & {
+  venue_match_status: "matched" | "fuzzy" | "unmatched" | "unknown";
+  sanity_warnings: string[];
+  source_quote_verified: boolean;
 };
 
 type RequestBody = {
