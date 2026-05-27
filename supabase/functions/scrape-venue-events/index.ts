@@ -118,10 +118,12 @@ async function extractCandidates(
     ? "You extract upcoming UK paintball events from a Facebook group feed where many different venues post adverts and flyers. " +
       "Each event may be hosted at a different venue. Extract the venue name as stated in the post. " +
       "Only return events with an unambiguous, explicitly stated date AND a clearly identified venue. " +
-      "Never guess dates or venues. If either is missing, skip that event."
+      "Never guess dates or venues. If either is missing, skip that event. " +
+      "GROUNDING: for every event, set source_quote to a verbatim excerpt (max 240 chars) from the page text that mentions the date — never paraphrase. If you cannot find a verbatim date mention, skip the event."
     : "You extract upcoming UK paintball events from venue website text. " +
       "Only return events with an unambiguous, explicitly stated date. " +
-      "Never guess or infer dates. If no concrete dates are present, return an empty array.";
+      "Never guess or infer dates. If no concrete dates are present, return an empty array. " +
+      "GROUNDING: for every event, set source_quote to a verbatim excerpt (max 240 chars) from the page text that mentions the date — never paraphrase. If you cannot find a verbatim date mention, skip the event.";
 
   const contextLine = isGroup
     ? `Source: Facebook group "${venueName}"\nSource URL: ${sourceUrl}\nToday: ${today}\n\n` +
