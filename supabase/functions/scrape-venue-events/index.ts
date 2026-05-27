@@ -159,8 +159,13 @@ async function extractCandidates(
     end_time: { type: "string", description: "HH:MM 24h" },
     price_info: { type: "string" },
     booking_url: { type: "string" },
+    source_quote: {
+      type: "string",
+      description:
+        "Verbatim text snippet (max 240 chars) from the page text that contains the explicit date. Copy a real substring; do not paraphrase.",
+    },
   };
-  const required = ["title", "event_type", "event_date"];
+  const required = ["title", "event_type", "event_date", "source_quote"];
 
   if (isGroup) {
     candidateProperties.venue_name = {
