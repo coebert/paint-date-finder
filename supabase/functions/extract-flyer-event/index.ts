@@ -540,6 +540,8 @@ Deno.serve(async (req) => {
   try {
     let candidates: Candidate[] = [];
     let resolvedVia: string | undefined;
+    /** The verbatim source text we can verify quotes against (text/url only). */
+    let sourceText: string | null = null;
 
     if (body.kind === "image") {
       if (!body.data) throw new Error("image data is required");
@@ -570,6 +572,7 @@ Deno.serve(async (req) => {
       if (!body.text || body.text.trim().length < 10) {
         throw new Error("text must be at least 10 characters");
       }
+      sourceText = body.text;
       candidates = await time("gemini", () =>
         extractFromText(LOVABLE_API_KEY, body.text!, body.sourceUrl));
     } else if (body.kind === "url") {
@@ -580,6 +583,7 @@ Deno.serve(async (req) => {
       const { text, via } = await time("scrape", () =>
         resolveUrlText(url, FIRECRAWL_API_KEY));
       resolvedVia = via;
+      sourceText = text;
       console.log(`[flyer] url resolved via=${via} chars=${text.length}`);
       if (text.length < 30) {
         const social = isFacebook(url) || isInstagram(url);
@@ -595,17 +599,116 @@ Deno.serve(async (req) => {
       throw new Error(`unsupported kind: ${body.kind}`);
     }
 
-    // Filter: valid future date only.
+    // ---- Load known venues for fuzzy matching ----
+    const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_KEY);
+    const { data: venueRows } = await supabaseAdmin
+      .from("venues")
+      .select("name");
+    const knownVenues: string[] = (venueRows ?? []).map((r: { name: string }) =>
+      r.name,
+    );
+
+    // ---- Sanity guards + grounded verification + venue matching ----
     const today = new Date().toISOString().slice(0, 10);
-    const cleaned = candidates.filter((c) => {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(c.event_date)) return false;
-      if (c.event_date < today) return false;
-      return true;
-    });
+    const maxDate = new Date();
+    maxDate.setUTCMonth(maxDate.getUTCMonth() + 18);
+    const maxDateIso = maxDate.toISOString().slice(0, 10);
+
+    const cleaned: EnrichedCandidate[] = [];
+    let droppedReason: Record<string, number> = {};
+
+    for (const c of candidates) {
+      const warnings: string[] = [];
+
+      // Hard guards — drop the candidate
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(c.event_date)) {
+        droppedReason["bad_date_format"] = (droppedReason["bad_date_format"] ?? 0) + 1;
+        continue;
+      }
+      if (c.event_date < today) {
+        droppedReason["past_date"] = (droppedReason["past_date"] ?? 0) + 1;
+        continue;
+      }
+      if (c.event_date > maxDateIso) {
+        droppedReason["too_far_future"] = (droppedReason["too_far_future"] ?? 0) + 1;
+        continue;
+      }
+      const title = (c.title ?? "").trim();
+      if (title.length < 3) {
+        droppedReason["title_too_short"] = (droppedReason["title_too_short"] ?? 0) + 1;
+        continue;
+      }
+      if (title.length > 200) c.title = title.slice(0, 200);
+
+      // Soft warnings
+      if (!c.source_quote || c.source_quote.trim().length < 4) {
+        warnings.push("missing_source_quote");
+      }
+      if (!c.venue_name || c.venue_name.trim().length < 2) {
+        warnings.push("missing_venue");
+      }
+
+      // Grounded verification: only meaningful when we have source text
+      let quoteVerified = false;
+      if (sourceText && c.source_quote) {
+        const normalize = (s: string) =>
+          s.toLowerCase().replace(/\s+/g, " ").trim();
+        const haystack = normalize(sourceText);
+        const needle = normalize(c.source_quote).slice(0, 200);
+        if (needle.length >= 6 && haystack.includes(needle)) {
+          quoteVerified = true;
+        } else {
+          // Try a looser check: at least 4 consecutive significant words.
+          const words = needle.split(" ").filter((w) => w.length > 2);
+          if (words.length >= 4) {
+            const chunk = words.slice(0, 4).join(" ");
+            if (haystack.includes(chunk)) quoteVerified = true;
+          }
+          if (!quoteVerified) warnings.push("quote_not_in_source");
+        }
+      }
+
+      // Venue matching
+      let venueStatus: EnrichedCandidate["venue_match_status"] = "unknown";
+      if (c.venue_name && knownVenues.length > 0) {
+        const norm = (s: string) =>
+          s.toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+        const cn = norm(c.venue_name);
+        let bestScore = 0;
+        for (const v of knownVenues) {
+          const vn = norm(v);
+          if (vn === cn) {
+            bestScore = 1;
+            break;
+          }
+          // token jaccard
+          const a = new Set(cn.split(" ").filter(Boolean));
+          const b = new Set(vn.split(" ").filter(Boolean));
+          let inter = 0;
+          for (const t of a) if (b.has(t)) inter++;
+          const union = a.size + b.size - inter;
+          const s = union === 0 ? 0 : inter / union;
+          if (s > bestScore) bestScore = s;
+        }
+        if (bestScore >= 0.95) venueStatus = "matched";
+        else if (bestScore >= 0.5) venueStatus = "fuzzy";
+        else {
+          venueStatus = "unmatched";
+          warnings.push("unknown_venue");
+        }
+      }
+
+      cleaned.push({
+        ...c,
+        venue_match_status: venueStatus,
+        sanity_warnings: warnings,
+        source_quote_verified: quoteVerified,
+      });
+    }
 
     timings.total = Date.now() - t0;
     console.log(
-      `[flyer] extracted=${candidates.length} kept=${cleaned.length} timings=${JSON.stringify(timings)}`,
+      `[flyer] extracted=${candidates.length} kept=${cleaned.length} dropped=${JSON.stringify(droppedReason)} timings=${JSON.stringify(timings)}`,
     );
 
     return new Response(
