@@ -387,6 +387,38 @@ async function runScrape(
   let processed = 0;
   let candidatesCreated = 0;
 
+  // Load known venues once for fuzzy matching across all sources.
+  const { data: venueRows } = await supabase.from("venues").select("name");
+  const knownVenues: string[] = (venueRows ?? []).map(
+    (r: { name: string }) => r.name,
+  );
+  const normVenue = (s: string) =>
+    s.toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+  const matchVenue = (name: string): "matched" | "fuzzy" | "unmatched" => {
+    if (!name || knownVenues.length === 0) return "unmatched";
+    const cn = normVenue(name);
+    let best = 0;
+    for (const v of knownVenues) {
+      const vn = normVenue(v);
+      if (vn === cn) return "matched";
+      const a = new Set(cn.split(" ").filter(Boolean));
+      const b = new Set(vn.split(" ").filter(Boolean));
+      let inter = 0;
+      for (const t of a) if (b.has(t)) inter++;
+      const union = a.size + b.size - inter;
+      const score = union === 0 ? 0 : inter / union;
+      if (score > best) best = score;
+    }
+    if (best >= 0.95) return "matched";
+    if (best >= 0.5) return "fuzzy";
+    return "unmatched";
+  };
+  const maxFutureDateIso = (() => {
+    const d = new Date();
+    d.setUTCMonth(d.getUTCMonth() + 18);
+    return d.toISOString().slice(0, 10);
+  })();
+
   for (const source of sources ?? []) {
     processed++;
     let sourceStatus = "ok";
