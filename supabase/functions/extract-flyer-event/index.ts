@@ -344,8 +344,14 @@ function buildExtractionTool() {
                 booking_url: { type: "string" },
                 venue_name: { type: "string" },
                 venue_location: { type: "string" },
+                source_quote: {
+                  type: "string",
+                  description:
+                    "Verbatim text snippet (max 240 chars) from the source that mentions this event's date. " +
+                    "For images, transcribe the exact words from the flyer. For text/URL sources, copy a real substring.",
+                },
               },
-              required: ["title", "event_type", "event_date"],
+              required: ["title", "event_type", "event_date", "source_quote"],
               additionalProperties: false,
             },
           },
