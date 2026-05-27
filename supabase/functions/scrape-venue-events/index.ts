@@ -470,33 +470,12 @@ async function runScrape(
         `[scrape] source="${source.venue_name}" type=${sourceType} ai_returned=${returned}`,
       );
 
-      for (const c of candidates) {
-        // Validate date is today or future
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(c.event_date)) {
-          invalidDate++;
-          continue;
-        }
-        if (c.event_date < new Date().toISOString().slice(0, 10)) {
-          invalidDate++;
-          continue;
-        }
-
-        // For facebook_group sources, the venue is per-event (extracted by AI).
-        // For venue sources, fall back to the source's venue_name.
-        const effectiveVenue = sourceType === "facebook_group"
-          ? (c.venue_name?.trim() || "")
-          : source.venue_name;
-
-        if (sourceType === "facebook_group" && !effectiveVenue) {
-          // Skip group posts where the AI couldn't pin down a venue.
-          invalidDate++;
-          continue;
-        }
-
       const pageHaystack = text
         .toLowerCase()
         .replace(/\s+/g, " ")
         .trim();
+
+
 
       for (const c of candidates) {
         // Hard date guards
