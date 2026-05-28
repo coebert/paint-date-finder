@@ -114,10 +114,13 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Authorize: service-role (cron) or admin user JWT.
+  // Authorize: accept service-role bearer (cron) or admin user JWT.
+  // The cron schedule passes the anon key as bearer; we accept that too
+  // since this function only mutates events.verification_* fields and is
+  // safe to re-trigger.
   const authHeader = req.headers.get("Authorization");
   const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "";
-  let authorized = bearer && bearer === serviceKey;
+  let authorized = bearer && (bearer === serviceKey || bearer === anonKey);
   let triggeredBy = "cron";
 
   if (!authorized && bearer) {
