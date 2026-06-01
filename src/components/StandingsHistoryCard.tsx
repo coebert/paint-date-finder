@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { TrendingUp, TrendingDown, Minus, History } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, History, ArrowUp, ArrowDown } from 'lucide-react';
 import {
   useTeamStandingsHistory,
   type StandingsHistoryPoint,
@@ -53,6 +53,60 @@ function summariseSeason(
     finalPoints: last.points,
     finalDivision: last.division,
   };
+}
+
+function getDivisionLevel(division: string): number | null {
+  const match = division.match(/(\d+)/);
+  return match ? parseInt(match[1], 10) : null;
+}
+
+function getDivisionChangeType(
+  prevDivision: string,
+  currDivision: string,
+): 'promotion' | 'relegation' | null {
+  const prevLevel = getDivisionLevel(prevDivision);
+  const currLevel = getDivisionLevel(currDivision);
+  if (prevLevel == null || currLevel == null) return null;
+  if (currLevel < prevLevel) return 'promotion';
+  if (currLevel > prevLevel) return 'relegation';
+  return null;
+}
+
+function DivisionChangeBadge({
+  from,
+  to,
+}: {
+  from: string;
+  to: string;
+}) {
+  const changeType = getDivisionChangeType(from, to);
+  if (changeType === 'promotion') {
+    return (
+      <Badge
+        variant="secondary"
+        className="gap-1 border-emerald-500/30 text-emerald-400"
+      >
+        <ArrowUp className="w-3 h-3" />
+        Promoted
+      </Badge>
+    );
+  }
+  if (changeType === 'relegation') {
+    return (
+      <Badge
+        variant="secondary"
+        className="gap-1 border-rose-500/30 text-rose-400"
+      >
+        <ArrowDown className="w-3 h-3" />
+        Relegated
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="secondary" className="gap-1">
+      {from} → {to}
+    </Badge>
+  );
 }
 
 function DeltaBadge({
@@ -200,9 +254,10 @@ export function StandingsHistoryCard({ teamId }: Props) {
                   />
                   <DeltaBadge label="Points" value={seasonPointsDelta} />
                   {divisionChanged && (
-                    <Badge variant="secondary" className="gap-1">
-                      {previous.finalDivision} → {current.finalDivision}
-                    </Badge>
+                    <DivisionChangeBadge
+                      from={previous.finalDivision}
+                      to={current.finalDivision}
+                    />
                   )}
                   {seasonPosDelta == null &&
                     seasonPointsDelta == null &&
@@ -348,24 +403,55 @@ export function StandingsHistoryCard({ teamId }: Props) {
                   {seasons
                     .slice()
                     .reverse()
-                    .map((s) => (
-                      <div
-                        key={s.season}
-                        className="flex items-center justify-between text-sm"
-                      >
-                        <span className="text-foreground font-medium">
-                          {s.season}
-                        </span>
-                        <span className="text-muted-foreground">
-                          {s.finalDivision}
-                          {s.finalPosition != null
-                            ? ` · #${s.finalPosition}`
-                            : ''}
-                          {' · '}
-                          {s.finalPoints} pts
-                        </span>
-                      </div>
-                    ))}
+                    .map((s, idx) => {
+                      const prevIndex = seasons.length - 1 - idx - 1;
+                      const prevSeason =
+                        prevIndex >= 0 ? seasons[prevIndex] : undefined;
+                      const changeType = prevSeason
+                        ? getDivisionChangeType(
+                            prevSeason.finalDivision,
+                            s.finalDivision,
+                          )
+                        : null;
+                      return (
+                        <div
+                          key={s.season}
+                          className="flex items-center justify-between text-sm"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-foreground font-medium">
+                              {s.season}
+                            </span>
+                            {changeType === 'promotion' && (
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] px-1.5 py-0 h-5 border-emerald-500/30 text-emerald-400"
+                              >
+                                <ArrowUp className="w-2.5 h-2.5 mr-0.5" />
+                                Promoted
+                              </Badge>
+                            )}
+                            {changeType === 'relegation' && (
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] px-1.5 py-0 h-5 border-rose-500/30 text-rose-400"
+                              >
+                                <ArrowDown className="w-2.5 h-2.5 mr-0.5" />
+                                Relegated
+                              </Badge>
+                            )}
+                          </div>
+                          <span className="text-muted-foreground">
+                            {s.finalDivision}
+                            {s.finalPosition != null
+                              ? ` · #${s.finalPosition}`
+                              : ''}
+                            {' · '}
+                            {s.finalPoints} pts
+                          </span>
+                        </div>
+                      );
+                    })}
                 </div>
               </div>
             )}
