@@ -1,3 +1,4 @@
+/// <reference types="google.maps" />
 import { PaintballEvent } from '@/types/events';
 import { EventTypeBadge } from './EventTypeBadge';
 import { Button } from '@/components/ui/button';
