@@ -37,10 +37,11 @@ export function HeroBackground() {
     <>
       {/*
         Solid placeholder layer sized to the viewport. Because both this and
-        the <img> are `fixed inset-0` (out of normal flow), neither can shift
-        page content — CLS contribution is structurally 0. The placeholder
-        uses a dark woods-tone gradient that matches the hero's average colour
-        so the swap to the real image is imperceptible rather than a flash.
+        the picture element are `fixed inset-0` (out of normal flow), neither
+        can shift page content — CLS contribution is structurally 0. The
+        placeholder uses a dark woods-tone gradient that matches the hero's
+        average colour so the swap to the real image is imperceptible rather
+        than a flash.
       */}
       <div
         aria-hidden="true"
