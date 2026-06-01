@@ -36,6 +36,11 @@ export function ImageWithSkeleton({
         src={src}
         loading={rest.loading ?? 'lazy'}
         decoding={rest.decoding ?? 'async'}
+        // Promote eager images to the LCP fast path so Lighthouse can find
+        // and prioritise the hero image (e.g. team-detail logo).
+        fetchPriority={
+          rest.fetchPriority ?? (rest.loading === 'eager' ? 'high' : 'auto')
+        }
         className={cn(
           'transition-opacity duration-300',
           loaded ? 'opacity-100' : 'opacity-0',
