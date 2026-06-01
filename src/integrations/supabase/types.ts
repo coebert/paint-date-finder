@@ -451,6 +451,7 @@ export type Database = {
           id: string
           points: number
           position: number | null
+          season: string
           team_id: string
         }
         Insert: {
@@ -459,6 +460,7 @@ export type Database = {
           id?: string
           points?: number
           position?: number | null
+          season?: string
           team_id: string
         }
         Update: {
@@ -467,6 +469,7 @@ export type Database = {
           id?: string
           points?: number
           position?: number | null
+          season?: string
           team_id?: string
         }
         Relationships: [
