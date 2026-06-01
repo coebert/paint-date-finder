@@ -403,24 +403,55 @@ export function StandingsHistoryCard({ teamId }: Props) {
                   {seasons
                     .slice()
                     .reverse()
-                    .map((s) => (
-                      <div
-                        key={s.season}
-                        className="flex items-center justify-between text-sm"
-                      >
-                        <span className="text-foreground font-medium">
-                          {s.season}
-                        </span>
-                        <span className="text-muted-foreground">
-                          {s.finalDivision}
-                          {s.finalPosition != null
-                            ? ` · #${s.finalPosition}`
-                            : ''}
-                          {' · '}
-                          {s.finalPoints} pts
-                        </span>
-                      </div>
-                    ))}
+                    .map((s, idx) => {
+                      const prevIndex = seasons.length - 1 - idx - 1;
+                      const prevSeason =
+                        prevIndex >= 0 ? seasons[prevIndex] : undefined;
+                      const changeType = prevSeason
+                        ? getDivisionChangeType(
+                            prevSeason.finalDivision,
+                            s.finalDivision,
+                          )
+                        : null;
+                      return (
+                        <div
+                          key={s.season}
+                          className="flex items-center justify-between text-sm"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-foreground font-medium">
+                              {s.season}
+                            </span>
+                            {changeType === 'promotion' && (
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] px-1.5 py-0 h-5 border-emerald-500/30 text-emerald-400"
+                              >
+                                <ArrowUp className="w-2.5 h-2.5 mr-0.5" />
+                                Promoted
+                              </Badge>
+                            )}
+                            {changeType === 'relegation' && (
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] px-1.5 py-0 h-5 border-rose-500/30 text-rose-400"
+                              >
+                                <ArrowDown className="w-2.5 h-2.5 mr-0.5" />
+                                Relegated
+                              </Badge>
+                            )}
+                          </div>
+                          <span className="text-muted-foreground">
+                            {s.finalDivision}
+                            {s.finalPosition != null
+                              ? ` · #${s.finalPosition}`
+                              : ''}
+                            {' · '}
+                            {s.finalPoints} pts
+                          </span>
+                        </div>
+                      );
+                    })}
                 </div>
               </div>
             )}
