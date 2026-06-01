@@ -154,11 +154,22 @@ Deno.serve(async (req) => {
     let inserted = 0;
     let updated = 0;
     let deactivated = 0;
+    let historyRows = 0;
 
-    // Upsert active teams
+    const historyBatch: Array<{
+      team_id: string;
+      division: string;
+      position: number | null;
+      points: number;
+    }> = [];
+
     for (const [key, d] of desired) {
       const found = byName.get(key);
       if (found) {
+        const changed =
+          found.division !== d.division ||
+          found.position !== d.position ||
+          (found.points ?? 0) !== d.points;
         const patch: Record<string, unknown> = {};
         if (found.division !== d.division) patch.division = d.division;
         if (found.position !== d.position) patch.position = d.position;
@@ -172,22 +183,40 @@ Deno.serve(async (req) => {
           if (error) throw error;
           updated++;
         }
+        if (changed) {
+          historyBatch.push({
+            team_id: found.id,
+            division: d.division,
+            position: d.position,
+            points: d.points,
+          });
+        }
       } else {
-        const { error } = await supabase.from("teams").insert({
-          name: d.name,
-          division: d.division,
-          league: "CPPS",
-          position: d.position,
-          points: d.points,
-          is_active: true,
-        });
+        const { data: newTeam, error } = await supabase
+          .from("teams")
+          .insert({
+            name: d.name,
+            division: d.division,
+            league: "CPPS",
+            position: d.position,
+            points: d.points,
+            is_active: true,
+          })
+          .select("id")
+          .single();
         if (error) throw error;
         inserted++;
+        if (newTeam) {
+          historyBatch.push({
+            team_id: newTeam.id,
+            division: d.division,
+            position: d.position,
+            points: d.points,
+          });
+        }
       }
     }
 
-    // Deactivate CPPS teams no longer in the roster (do not delete — keeps
-    // historic editorial content intact).
     for (const [key, t] of byName) {
       if (desiredKeys.has(key)) continue;
       if (t.is_active === false) continue;
@@ -199,6 +228,17 @@ Deno.serve(async (req) => {
       deactivated++;
     }
 
+    if (historyBatch.length) {
+      const { error: histErr } = await supabase
+        .from("team_standings_history")
+        .insert(historyBatch);
+      if (histErr) {
+        console.error("history insert failed", histErr);
+      } else {
+        historyRows = historyBatch.length;
+      }
+    }
+
     return new Response(
       JSON.stringify({
         ok: true,
@@ -208,6 +248,7 @@ Deno.serve(async (req) => {
         inserted,
         updated,
         deactivated,
+        history_rows: historyRows,
         scraped_at: new Date().toISOString(),
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },

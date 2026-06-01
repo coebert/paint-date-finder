@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { EventTypeBadge } from '@/components/EventTypeBadge';
+import { StandingsHistoryCard } from '@/components/StandingsHistoryCard';
 
 const divisionColors: Record<string, string> = {
   'Elite': 'bg-amber-500/20 text-amber-400 border-amber-500/30',
@@ -205,7 +206,12 @@ export default function TeamDetail() {
               </CardContent>
             </Card>
 
+            {team.league === 'CPPS' && (
+              <StandingsHistoryCard teamId={team.id} />
+            )}
+
             {/* Upcoming CPPS Events */}
+
             <Card className="bg-card border-border/50">
               <CardHeader>
                 <CardTitle className="font-display tracking-wider text-lg">
