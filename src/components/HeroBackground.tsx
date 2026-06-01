@@ -29,33 +29,52 @@ function normaliseSource(entry: PictureSource[] | string | undefined): string | 
 }
 
 export function HeroBackground() {
+  const [loaded, setLoaded] = useState(false);
+
   return (
-    <picture>
-      {ORDERED.map((fmt) => {
-        const srcset = normaliseSource(pic.sources[fmt]);
-        if (!srcset) return null;
-        return (
-          <source
-            key={fmt}
-            type={`image/${fmt}`}
-            srcSet={srcset}
-            sizes="100vw"
-          />
-        );
-      })}
-      <img
-        src={pic.img.src}
-        alt=""
+    <>
+      {/*
+        Solid placeholder layer sized to the viewport. Because both this and
+        the <img> are `fixed inset-0` (out of normal flow), neither can shift
+        page content — CLS contribution is structurally 0. The placeholder
+        uses a dark woods-tone gradient that matches the hero's average colour
+        so the swap to the real image is imperceptible rather than a flash.
+      */}
+      <div
         aria-hidden="true"
-        width={pic.img.w}
-        height={pic.img.h}
-        sizes="100vw"
-        fetchPriority="high"
-        decoding="async"
-        loading="eager"
-        className="fixed inset-0 z-0 h-full w-full object-cover"
+        className="fixed inset-0 z-0 bg-[radial-gradient(circle_at_30%_30%,hsl(85_25%_18%),hsl(220_15%_8%))]"
       />
-    </picture>
+      <picture>
+        {ORDERED.map((fmt) => {
+          const srcset = normaliseSource(pic.sources[fmt]);
+          if (!srcset) return null;
+          return (
+            <source
+              key={fmt}
+              type={`image/${fmt}`}
+              srcSet={srcset}
+              sizes="100vw"
+            />
+          );
+        })}
+        <img
+          src={pic.img.src}
+          alt=""
+          aria-hidden="true"
+          width={pic.img.w}
+          height={pic.img.h}
+          sizes="100vw"
+          fetchPriority="high"
+          decoding="async"
+          loading="eager"
+          onLoad={() => setLoaded(true)}
+          className={cn(
+            'fixed inset-0 z-0 h-full w-full object-cover transition-opacity duration-500 ease-out motion-reduce:transition-none',
+            loaded ? 'opacity-100' : 'opacity-0',
+          )}
+        />
+      </picture>
+    </>
   );
 }
 
