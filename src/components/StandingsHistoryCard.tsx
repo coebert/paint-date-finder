@@ -254,9 +254,10 @@ export function StandingsHistoryCard({ teamId }: Props) {
                   />
                   <DeltaBadge label="Points" value={seasonPointsDelta} />
                   {divisionChanged && (
-                    <Badge variant="secondary" className="gap-1">
-                      {previous.finalDivision} → {current.finalDivision}
-                    </Badge>
+                    <DivisionChangeBadge
+                      from={previous.finalDivision}
+                      to={current.finalDivision}
+                    />
                   )}
                   {seasonPosDelta == null &&
                     seasonPointsDelta == null &&
