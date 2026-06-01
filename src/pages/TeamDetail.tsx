@@ -205,7 +205,12 @@ export default function TeamDetail() {
               </CardContent>
             </Card>
 
+            {team.league === 'CPPS' && (
+              <StandingsHistoryCard teamId={team.id} />
+            )}
+
             {/* Upcoming CPPS Events */}
+
             <Card className="bg-card border-border/50">
               <CardHeader>
                 <CardTitle className="font-display tracking-wider text-lg">
