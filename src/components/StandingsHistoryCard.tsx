@@ -55,6 +55,60 @@ function summariseSeason(
   };
 }
 
+function getDivisionLevel(division: string): number | null {
+  const match = division.match(/(\d+)/);
+  return match ? parseInt(match[1], 10) : null;
+}
+
+function getDivisionChangeType(
+  prevDivision: string,
+  currDivision: string,
+): 'promotion' | 'relegation' | null {
+  const prevLevel = getDivisionLevel(prevDivision);
+  const currLevel = getDivisionLevel(currDivision);
+  if (prevLevel == null || currLevel == null) return null;
+  if (currLevel < prevLevel) return 'promotion';
+  if (currLevel > prevLevel) return 'relegation';
+  return null;
+}
+
+function DivisionChangeBadge({
+  from,
+  to,
+}: {
+  from: string;
+  to: string;
+}) {
+  const changeType = getDivisionChangeType(from, to);
+  if (changeType === 'promotion') {
+    return (
+      <Badge
+        variant="secondary"
+        className="gap-1 border-emerald-500/30 text-emerald-400"
+      >
+        <ArrowUp className="w-3 h-3" />
+        Promoted
+      </Badge>
+    );
+  }
+  if (changeType === 'relegation') {
+    return (
+      <Badge
+        variant="secondary"
+        className="gap-1 border-rose-500/30 text-rose-400"
+      >
+        <ArrowDown className="w-3 h-3" />
+        Relegated
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="secondary" className="gap-1">
+      {from} → {to}
+    </Badge>
+  );
+}
+
 function DeltaBadge({
   label,
   value,
