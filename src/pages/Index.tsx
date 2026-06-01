@@ -19,9 +19,7 @@ import { useVisitTracking } from '@/hooks/useVisitTracking';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { NearMeFilter } from '@/components/NearMeFilter';
 import { getVenueCoords, haversineMiles } from '@/lib/geo';
-import woodsballBgJpg from '@/assets/woodsball-bg.jpg';
-import woodsballBgWebp from '@/assets/woodsball-bg.webp';
-import woodsballBgAvif from '@/assets/woodsball-bg.avif';
+import { HeroBackground, heroPreload } from '@/components/HeroBackground';
 
 
 export default function Index() {
