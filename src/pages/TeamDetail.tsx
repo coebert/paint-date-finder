@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { EventTypeBadge } from '@/components/EventTypeBadge';
+import { StandingsHistoryCard } from '@/components/StandingsHistoryCard';
 
 const divisionColors: Record<string, string> = {
   'Elite': 'bg-amber-500/20 text-amber-400 border-amber-500/30',
