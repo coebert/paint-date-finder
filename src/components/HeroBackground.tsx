@@ -6,8 +6,8 @@
  *  - prefer AVIF, falling back to WebP and JPG
  *
  * Using a CSS background-image (image-set) hides the URL from Lighthouse's LCP
- * detector and from the preload scanner — switching to <img> is the single
- * biggest LCP win on this page.
+ * detector and from the preload scanner — switching to a real picture element
+ * is the single biggest LCP win on this page.
  */
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
