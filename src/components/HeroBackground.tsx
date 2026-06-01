@@ -6,8 +6,8 @@
  *  - prefer AVIF, falling back to WebP and JPG
  *
  * Using a CSS background-image (image-set) hides the URL from Lighthouse's LCP
- * detector and from the preload scanner — switching to <img> is the single
- * biggest LCP win on this page.
+ * detector and from the preload scanner — switching to a real picture element
+ * is the single biggest LCP win on this page.
  */
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -37,10 +37,11 @@ export function HeroBackground() {
     <>
       {/*
         Solid placeholder layer sized to the viewport. Because both this and
-        the <img> are `fixed inset-0` (out of normal flow), neither can shift
-        page content — CLS contribution is structurally 0. The placeholder
-        uses a dark woods-tone gradient that matches the hero's average colour
-        so the swap to the real image is imperceptible rather than a flash.
+        the picture element are `fixed inset-0` (out of normal flow), neither
+        can shift page content — CLS contribution is structurally 0. The
+        placeholder uses a dark woods-tone gradient that matches the hero's
+        average colour so the swap to the real image is imperceptible rather
+        than a flash.
       */}
       <div
         aria-hidden="true"
