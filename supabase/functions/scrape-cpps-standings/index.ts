@@ -1,13 +1,16 @@
-// Scrapes the public CPPS standings page (okpb.co.uk) and updates the
-// `teams` table with the latest division positions and points.
+// Keeps the CPPS league standings in sync by calling the public okpb.co.uk
+// REST API. The site is an AngularJS SPA backed by JSON endpoints:
 //
-// The page lists the top 4 teams per division in the format:
-//   Division Name
-//   [1. Team Name](url "184 Points")
-//   ...
+//   GET /cpps/rest/team           → all registered teams grouped by division
+//                                   for the current year.
+//   GET /cpps/rest/results/       → full standings per division for each
+//                                   season (we use the current year, first
+//                                   entry in the array).
 //
-// We parse those lines, match teams by case-insensitive name within the
-// CPPS league, insert new ones when missing, and update position + points.
+// We sync each team's division + is_active from the roster endpoint and
+// then overlay position + points from the results endpoint. Existing
+// editorial fields (logo_url, captain_name, website, description, etc.)
+// are never overwritten.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
@@ -17,123 +20,54 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const SOURCE_URL = "https://www.okpb.co.uk/";
+const BASE = "https://www.okpb.co.uk";
+const UA =
+  "Mozilla/5.0 (compatible; FindAWalkOnBot/1.0; +https://findawalkon.com)";
 
-const DIVISION_HEADINGS: Record<string, string> = {
-  "elite division": "Elite",
-  elite: "Elite",
-  "division 2": "Division 2",
-  "division 3": "Division 3",
-  "division 4": "Division 4",
-  "division 5": "Division 5",
-  "breakout division": "Breakout",
-  breakout: "Breakout",
-};
+// Normalize CPPS division titles ("Elite Division", "Division 2", ...) to
+// the short labels used in our database.
+function normalizeDivision(title: string): string | null {
+  const t = title.trim().toLowerCase();
+  if (t.startsWith("elite")) return "Elite";
+  if (t.startsWith("breakout")) return "Breakout";
+  const m = t.match(/^division\s+(\d+)/);
+  if (m) return `Division ${m[1]}`;
+  return null;
+}
 
-interface ParsedStanding {
-  division: string;
-  position: number;
+interface RosterTeam {
+  id: number;
   name: string;
-  points: number;
+  logourl?: string | null;
+}
+interface RosterDivision {
+  title: string;
+  row: RosterTeam[];
+}
+interface RosterYear {
+  year: string;
+  division: RosterDivision[];
 }
 
-function stripTags(html: string): string {
-  return html
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<[^>]+>/g, "\n")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">");
+interface ResultsTeam {
+  id: number;
+  name: string;
+  position: number | null;
+  score: number | null;
+}
+interface ResultsDivision {
+  title: string;
+  row: ResultsTeam[];
+}
+interface ResultsYear {
+  year: string;
+  division: ResultsDivision[];
 }
 
-function parseStandings(html: string): ParsedStanding[] {
-  // Extract anchor entries with their title attribute for points, plus
-  // their visible text (e.g. "1. Trash Pandas"). We also need the
-  // preceding division heading.
-  const results: ParsedStanding[] = [];
-
-  // Find anchors with a "NN Points" title attribute
-  const anchorRe =
-    /<a\b[^>]*?title\s*=\s*"(\d+)\s*Points"[^>]*>([\s\S]*?)<\/a>/gi;
-
-  // Collect positions of each anchor and the nearest preceding heading text.
-  const text = html;
-  const matches: Array<{ index: number; pts: number; label: string }> = [];
-  let m: RegExpExecArray | null;
-  while ((m = anchorRe.exec(text)) !== null) {
-    const label = stripTags(m[2]).replace(/\s+/g, " ").trim();
-    matches.push({ index: m.index, pts: parseInt(m[1], 10), label });
-  }
-
-  // Find division headings positions
-  const headingRe = new RegExp(
-    `(${Object.keys(DIVISION_HEADINGS)
-      .map((h) => h.replace(/ /g, "\\s+"))
-      .join("|")})`,
-    "gi",
-  );
-  const headingHits: Array<{ index: number; division: string }> = [];
-  let h: RegExpExecArray | null;
-  const plain = stripTags(text);
-  while ((h = headingRe.exec(plain)) !== null) {
-    const key = h[1].toLowerCase().replace(/\s+/g, " ");
-    headingHits.push({ index: h.index, division: DIVISION_HEADINGS[key] });
-  }
-
-  // Re-scan plain text for "N. Team Name" lines paired with the previous
-  // heading and the Nth anchor inside that section.
-  const lineRe = /(\d+)\.\s+([^\n\r]+?)\s*$/gm;
-  const lines: Array<{ index: number; pos: number; name: string }> = [];
-  let l: RegExpExecArray | null;
-  while ((l = lineRe.exec(plain)) !== null) {
-    const pos = parseInt(l[1], 10);
-    const name = l[2].trim();
-    if (pos < 1 || pos > 20 || name.length < 2 || name.length > 80) continue;
-    // Skip obvious non-team lines
-    if (/^(round|event|date|time|page|home|menu)/i.test(name)) continue;
-    lines.push({ index: l.index, pos, name });
-  }
-
-  // Pair lines to nearest preceding division heading and to a points anchor
-  // by team name match.
-  const ptsByLabel = new Map<string, number>();
-  for (const a of matches) {
-    // anchor label like "1. Trash Pandas"
-    const stripped = a.label.replace(/^\d+\.\s*/, "").trim().toLowerCase();
-    if (stripped) ptsByLabel.set(stripped, a.pts);
-  }
-
-  for (const ln of lines) {
-    let currentDivision: string | null = null;
-    for (const head of headingHits) {
-      if (head.index <= ln.index) currentDivision = head.division;
-      else break;
-    }
-    if (!currentDivision) continue;
-    if (ln.pos > 4) continue; // page only lists top 4 reliably
-    const key = ln.name.toLowerCase();
-    const pts = ptsByLabel.get(key);
-    if (pts == null) continue;
-    results.push({
-      division: currentDivision,
-      position: ln.pos,
-      name: ln.name,
-      points: pts,
-    });
-  }
-
-  // Deduplicate (division, position)
-  const seen = new Set<string>();
-  return results.filter((r) => {
-    const k = `${r.division}#${r.position}`;
-    if (seen.has(k)) return false;
-    seen.add(k);
-    return true;
-  });
+async function getJson<T>(path: string): Promise<T> {
+  const r = await fetch(`${BASE}${path}`, { headers: { "User-Agent": UA } });
+  if (!r.ok) throw new Error(`GET ${path} → ${r.status}`);
+  return (await r.json()) as T;
 }
 
 Deno.serve(async (req) => {
@@ -141,74 +75,110 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const supabase = createClient(supabaseUrl, serviceKey);
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
 
   try {
-    const res = await fetch(SOURCE_URL, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (compatible; FindAWalkOnBot/1.0; +https://findawalkon.com)",
-      },
-    });
-    if (!res.ok) throw new Error(`Fetch failed ${res.status}`);
-    const html = await res.text();
+    const [rosters, results] = await Promise.all([
+      getJson<RosterYear[]>("/cpps/rest/team"),
+      getJson<ResultsYear[]>("/cpps/rest/results/"),
+    ]);
 
-    const standings = parseStandings(html);
-    if (standings.length === 0) {
-      return new Response(
-        JSON.stringify({ ok: false, error: "No standings parsed", chars: html.length }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 502 },
-      );
+    const currentRoster = rosters.find((y) =>
+      y.year?.toLowerCase() === "current"
+    ) ?? rosters[0];
+    if (!currentRoster) throw new Error("No current roster returned");
+
+    // results is keyed by year — take the most recent numeric year.
+    const currentResults = [...results]
+      .filter((y) => /^\d{4}$/.test(y.year))
+      .sort((a, b) => Number(b.year) - Number(a.year))[0];
+
+    // Build desired state: name → { division, position, points, cppsId }
+    type Desired = {
+      name: string;
+      division: string;
+      position: number | null;
+      points: number;
+    };
+    const desired = new Map<string, Desired>(); // key: lower(name)
+
+    for (const div of currentRoster.division) {
+      const division = normalizeDivision(div.title);
+      if (!division) continue;
+      for (const t of div.row) {
+        if (!t?.name) continue;
+        desired.set(t.name.toLowerCase(), {
+          name: t.name,
+          division,
+          position: null,
+          points: 0,
+        });
+      }
     }
 
-    // Load existing CPPS teams once
+    if (currentResults) {
+      for (const div of currentResults.division) {
+        const division = normalizeDivision(div.title);
+        if (!division) continue;
+        for (const t of div.row) {
+          if (!t?.name) continue;
+          const key = t.name.toLowerCase();
+          const existing = desired.get(key) ?? {
+            name: t.name,
+            division,
+            position: null,
+            points: 0,
+          };
+          existing.division = division;
+          existing.position = t.position ?? null;
+          existing.points = typeof t.score === "number" ? t.score : 0;
+          desired.set(key, existing);
+        }
+      }
+    }
+
+    // Load existing CPPS teams
     const { data: existing, error: exErr } = await supabase
       .from("teams")
-      .select("id,name,division,position,points")
+      .select("id,name,division,position,points,is_active")
       .eq("league", "CPPS");
     if (exErr) throw exErr;
-
-    const byName = new Map<string, typeof existing[number]>();
+    const byName = new Map<string, NonNullable<typeof existing>[number]>();
     for (const t of existing ?? []) byName.set(t.name.toLowerCase(), t);
 
-    // Reset position for all CPPS teams in scraped divisions so stale
-    // rankings disappear.
-    const divisions = [...new Set(standings.map((s) => s.division))];
-    if (divisions.length) {
-      const { error: clearErr } = await supabase
-        .from("teams")
-        .update({ position: null })
-        .eq("league", "CPPS")
-        .in("division", divisions);
-      if (clearErr) throw clearErr;
-    }
+    const desiredKeys = new Set(desired.keys());
 
     let inserted = 0;
     let updated = 0;
+    let deactivated = 0;
 
-    for (const s of standings) {
-      const found = byName.get(s.name.toLowerCase());
+    // Upsert active teams
+    for (const [key, d] of desired) {
+      const found = byName.get(key);
       if (found) {
-        const { error } = await supabase
-          .from("teams")
-          .update({
-            division: s.division,
-            position: s.position,
-            points: s.points,
-            is_active: true,
-          })
-          .eq("id", found.id);
-        if (error) throw error;
-        updated++;
+        const patch: Record<string, unknown> = {};
+        if (found.division !== d.division) patch.division = d.division;
+        if (found.position !== d.position) patch.position = d.position;
+        if ((found.points ?? 0) !== d.points) patch.points = d.points;
+        if (found.is_active !== true) patch.is_active = true;
+        if (Object.keys(patch).length) {
+          const { error } = await supabase
+            .from("teams")
+            .update(patch)
+            .eq("id", found.id);
+          if (error) throw error;
+          updated++;
+        }
       } else {
         const { error } = await supabase.from("teams").insert({
-          name: s.name,
-          division: s.division,
+          name: d.name,
+          division: d.division,
           league: "CPPS",
-          position: s.position,
-          points: s.points,
+          position: d.position,
+          points: d.points,
           is_active: true,
         });
         if (error) throw error;
@@ -216,13 +186,28 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Deactivate CPPS teams no longer in the roster (do not delete — keeps
+    // historic editorial content intact).
+    for (const [key, t] of byName) {
+      if (desiredKeys.has(key)) continue;
+      if (t.is_active === false) continue;
+      const { error } = await supabase
+        .from("teams")
+        .update({ is_active: false, position: null })
+        .eq("id", t.id);
+      if (error) throw error;
+      deactivated++;
+    }
+
     return new Response(
       JSON.stringify({
         ok: true,
-        parsed: standings.length,
+        roster_year: currentRoster.year,
+        results_year: currentResults?.year ?? null,
+        desired: desired.size,
         inserted,
         updated,
-        source: SOURCE_URL,
+        deactivated,
         scraped_at: new Date().toISOString(),
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -231,7 +216,10 @@ Deno.serve(async (req) => {
     console.error("scrape-cpps-standings error", e);
     return new Response(
       JSON.stringify({ ok: false, error: (e as Error).message }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 },
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      },
     );
   }
 });
