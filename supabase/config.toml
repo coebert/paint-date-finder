@@ -1,1 +1,4 @@
 project_id = "jsibyruejumcpldutyqg"
+
+[functions.scrape-cpps-standings]
+verify_jwt = false
