@@ -8,6 +8,7 @@ export interface StandingsHistoryPoint {
   position: number | null;
   points: number;
   captured_at: string;
+  season: string;
 }
 
 export function useTeamStandingsHistory(teamId: string | undefined) {
@@ -17,11 +18,11 @@ export function useTeamStandingsHistory(teamId: string | undefined) {
     queryFn: async (): Promise<StandingsHistoryPoint[]> => {
       const { data, error } = await supabase
         .from('team_standings_history')
-        .select('id, team_id, division, position, points, captured_at')
+        .select('id, team_id, division, position, points, captured_at, season')
         .eq('team_id', teamId!)
         .order('captured_at', { ascending: true });
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as StandingsHistoryPoint[];
     },
   });
 }

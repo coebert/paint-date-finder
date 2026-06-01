@@ -156,11 +156,17 @@ Deno.serve(async (req) => {
     let deactivated = 0;
     let historyRows = 0;
 
+    const season =
+      currentResults?.year && /^\d{4}$/.test(currentResults.year)
+        ? currentResults.year
+        : String(new Date().getUTCFullYear());
+
     const historyBatch: Array<{
       team_id: string;
       division: string;
       position: number | null;
       points: number;
+      season: string;
     }> = [];
 
     for (const [key, d] of desired) {
@@ -189,6 +195,7 @@ Deno.serve(async (req) => {
             division: d.division,
             position: d.position,
             points: d.points,
+            season,
           });
         }
       } else {
@@ -212,10 +219,12 @@ Deno.serve(async (req) => {
             division: d.division,
             position: d.position,
             points: d.points,
+            season,
           });
         }
       }
     }
+
 
     for (const [key, t] of byName) {
       if (desiredKeys.has(key)) continue;
