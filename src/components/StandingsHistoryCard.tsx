@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { TrendingUp, TrendingDown, Minus, History } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, History, ArrowUp, ArrowDown } from 'lucide-react';
 import {
   useTeamStandingsHistory,
   type StandingsHistoryPoint,
