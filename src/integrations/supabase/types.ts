@@ -444,6 +444,41 @@ export type Database = {
           },
         ]
       }
+      team_standings_history: {
+        Row: {
+          captured_at: string
+          division: string
+          id: string
+          points: number
+          position: number | null
+          team_id: string
+        }
+        Insert: {
+          captured_at?: string
+          division: string
+          id?: string
+          points?: number
+          position?: number | null
+          team_id: string
+        }
+        Update: {
+          captured_at?: string
+          division?: string
+          id?: string
+          points?: number
+          position?: number | null
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_standings_history_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teams: {
         Row: {
           captain_name: string | null
