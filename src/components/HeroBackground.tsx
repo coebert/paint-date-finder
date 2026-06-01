@@ -9,6 +9,8 @@
  * detector and from the preload scanner — switching to <img> is the single
  * biggest LCP win on this page.
  */
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
 // @ts-expect-error vite-imagetools query string returns a typed picture object
 import hero from '@/assets/woodsball-bg.jpg?w=640;1024;1536;1920&format=avif;webp;jpg&as=picture';
 
