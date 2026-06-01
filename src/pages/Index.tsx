@@ -19,9 +19,7 @@ import { useVisitTracking } from '@/hooks/useVisitTracking';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { NearMeFilter } from '@/components/NearMeFilter';
 import { getVenueCoords, haversineMiles } from '@/lib/geo';
-import woodsballBgJpg from '@/assets/woodsball-bg.jpg';
-import woodsballBgWebp from '@/assets/woodsball-bg.webp';
-import woodsballBgAvif from '@/assets/woodsball-bg.avif';
+import { HeroBackground, heroPreload } from '@/components/HeroBackground';
 
 
 export default function Index() {
@@ -145,17 +143,24 @@ export default function Index() {
         description="Find and book walk-on paintball events across the UK. Browse upcoming dates, venues and event types on a map, calendar or list."
         path="/"
       >
-        <link rel="preload" as="image" href={woodsballBgAvif} type="image/avif" fetchPriority="high" />
+        {/* Preload the responsive AVIF set so the browser can fetch the
+            right-sized hero image before React mounts the <picture>. */}
+        {heroPreload.avifSrcset && (
+          <link
+            rel="preload"
+            as="image"
+            type="image/avif"
+            // @ts-expect-error React types lag the imagesrcset preload attrs
+            imagesrcset={heroPreload.avifSrcset}
+            imagesizes="100vw"
+            fetchPriority="high"
+          />
+        )}
         {eventListJsonLd && (
           <script type="application/ld+json">{JSON.stringify(eventListJsonLd)}</script>
         )}
       </RouteHead>
-      <div
-        className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: `image-set(url(${woodsballBgAvif}) type("image/avif"), url(${woodsballBgWebp}) type("image/webp"), url(${woodsballBgJpg}) type("image/jpeg"))`,
-        }}
-      />
+      <HeroBackground />
       <div className="fixed inset-0 z-0 bg-background/35" />
       <div className="relative z-10">
       {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
