@@ -12,6 +12,7 @@ exports[`ImageWithSkeleton — visual contract > matches structural snapshot (in
     alt="snap"
     class="transition-opacity duration-300 opacity-0"
     decoding="async"
+    fetchpriority="auto"
     loading="lazy"
     src="/x.png"
   />
@@ -26,6 +27,7 @@ exports[`ImageWithSkeleton — visual contract > matches structural snapshot (lo
     alt="snap"
     class="transition-opacity duration-300 opacity-100"
     decoding="async"
+    fetchpriority="auto"
     loading="lazy"
     src="/x.png"
   />
