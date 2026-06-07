@@ -14,6 +14,7 @@ export interface PaintballEvent {
   image_url: string | null;
   price_info: string | null;
   is_verified: boolean;
+  is_beginner_friendly?: boolean;
   source_url: string | null;
   created_at: string;
   updated_at: string;
