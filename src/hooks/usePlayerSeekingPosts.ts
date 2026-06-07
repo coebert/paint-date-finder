@@ -31,7 +31,7 @@ export function usePlayerSeekingPosts() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('player_seeking_posts')
-        .select('*')
+        .select('id, player_name, target_date, region, event_type, notes, expires_at, is_hidden, created_at')
         .order('target_date', { ascending: true });
       if (error) throw error;
       return data as PlayerSeekingPost[];

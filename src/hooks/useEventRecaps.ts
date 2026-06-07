@@ -31,7 +31,7 @@ export function useApprovedRecaps(eventId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('event_recaps')
-        .select('*')
+        .select('id, event_id, uploader_name, media_url, media_type, caption, status, created_at, reviewed_at')
         .eq('event_id', eventId!)
         .eq('status', 'approved')
         .order('created_at', { ascending: false });
