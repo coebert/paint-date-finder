@@ -1,10 +1,12 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { RouteHead } from '@/components/RouteHead';
 import { useEvents, useVenues } from '@/hooks/useEvents';
 import { useRegions } from '@/hooks/useRegions';
-import { EventType, PaintballEvent } from '@/types/events';
+import { EventType, PaintballEvent, EVENT_TYPE_LABELS } from '@/types/events';
 import { Header } from '@/components/Header';
 import { EventFilters } from '@/components/EventFilters';
+import { EventTypeChips } from '@/components/EventTypeChips';
 import { EventCalendar } from '@/components/EventCalendar';
 import { EventList } from '@/components/EventList';
 import { EventMap } from '@/components/EventMap';
@@ -29,7 +31,31 @@ export default function Index() {
     setShowSplash(false);
   }, []);
   const [view, setView] = useState<'calendar' | 'list' | 'map'>('calendar');
-  const [eventType, setEventType] = useState<EventType | undefined>();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const typeParam = searchParams.get('type');
+  const beginnerParam = searchParams.get('beginner') === '1';
+  const validType = typeParam && (typeParam in EVENT_TYPE_LABELS) ? (typeParam as EventType) : undefined;
+
+  const eventType = validType;
+  const beginnerOnly = beginnerParam;
+
+  const setEventType = useCallback((t: EventType | undefined) => {
+    setSearchParams((prev) => {
+      const sp = new URLSearchParams(prev);
+      if (t) sp.set('type', t); else sp.delete('type');
+      return sp;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  const setBeginnerOnly = useCallback((v: boolean) => {
+    setSearchParams((prev) => {
+      const sp = new URLSearchParams(prev);
+      if (v) sp.set('beginner', '1'); else sp.delete('beginner');
+      return sp;
+    }, { replace: true });
+  }, [setSearchParams]);
+
   const [venue, setVenue] = useState('');
   const [region, setRegion] = useState('');
   const [verifiedOnly, setVerifiedOnly] = useState(true);
