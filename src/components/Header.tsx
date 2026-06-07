@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Calendar, List, Plus, Map, Send, Settings, LogIn, Users, LayoutGrid, Sparkles } from 'lucide-react';
+import { Calendar, List, Plus, Map, Send, Settings, LogIn, Users, LayoutGrid, Sparkles, UserSearch } from 'lucide-react';
 import { HeroLogo } from '@/components/HeroLogo';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -91,6 +91,13 @@ export function Header({ view, onViewChange, onAddEvent, onSubmitEvent, onImport
               <Link to="/teams">
                 <Users className="h-4 w-4" />
                 Teams
+              </Link>
+            </Button>
+
+            <Button variant="outline" className="gap-2" asChild>
+              <Link to="/looking-for-a-game">
+                <UserSearch className="h-4 w-4" />
+                Looking for a Game
               </Link>
             </Button>
 

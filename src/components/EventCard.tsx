@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { PaintballEvent } from '@/types/events';
 import { EventTypeBadge } from './EventTypeBadge';
 import { EventSourceBadge } from './EventSourceBadge';
@@ -7,6 +8,7 @@ import { Calendar, MapPin, Clock, ExternalLink, Pencil, ShieldCheck, ShieldAlert
 import { format, parseISO } from 'date-fns';
 import { useIsAdmin } from '@/hooks/useAuth';
 import { useFlaggedEventIds } from '@/hooks/useEventFlags';
+import { useVenueDetails } from '@/hooks/useVenueDetails';
 import { cn } from '@/lib/utils';
 
 interface EventCardProps {
@@ -19,6 +21,8 @@ export function EventCard({ event, onEdit, distanceMiles }: EventCardProps) {
   const eventDate = parseISO(event.event_date);
   const { data: isAdmin } = useIsAdmin();
   const { data: flaggedIds } = useFlaggedEventIds();
+  const { data: venueDetails } = useVenueDetails();
+  const venueSlug = venueDetails?.get(event.venue_name)?.slug ?? null;
   const isFlagged = flaggedIds?.has(event.id) ?? false;
 
   return (
@@ -85,7 +89,17 @@ export function EventCard({ event, onEdit, distanceMiles }: EventCardProps) {
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <MapPin className="h-4 w-4 text-accent" />
           <span className="truncate flex-1">
-            {event.venue_name}
+            {venueSlug ? (
+              <Link
+                to={`/venues/${venueSlug}`}
+                onClick={(e) => e.stopPropagation()}
+                className="text-foreground hover:text-accent underline-offset-2 hover:underline"
+              >
+                {event.venue_name}
+              </Link>
+            ) : (
+              event.venue_name
+            )}
             {event.venue_location && `, ${event.venue_location}`}
           </span>
           {typeof distanceMiles === 'number' && (

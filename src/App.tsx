@@ -21,6 +21,11 @@ import AdminTypography from "./pages/admin/AdminTypography";
 import AdminSEO from "./pages/admin/AdminSEO";
 import FieldLayout from "./pages/FieldLayout";
 import EventDetail from "./pages/EventDetail";
+import LookingForGame from "./pages/LookingForGame";
+import VenueProfile from "./pages/VenueProfile";
+import AdminVenues from "./pages/admin/AdminVenues";
+import AdminPlayerPosts from "./pages/admin/AdminPlayerPosts";
+import AdminRecaps from "./pages/admin/AdminRecaps";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +42,8 @@ const App = () => (
           <Route path="/teams/:id" element={<TeamDetail />} />
           <Route path="/field-layout" element={<FieldLayout />} />
           <Route path="/events/:id" element={<EventDetail />} />
+          <Route path="/venues/:slug" element={<VenueProfile />} />
+          <Route path="/looking-for-a-game" element={<LookingForGame />} />
           
           {/* Admin Routes */}
           <Route
@@ -120,6 +127,19 @@ const App = () => (
             }
           />
           
+          <Route
+            path="/admin/venues"
+            element={<AdminRoute><AdminVenues /></AdminRoute>}
+          />
+          <Route
+            path="/admin/player-posts"
+            element={<AdminRoute><AdminPlayerPosts /></AdminRoute>}
+          />
+          <Route
+            path="/admin/recaps"
+            element={<AdminRoute><AdminRecaps /></AdminRoute>}
+          />
+
           {/* Legacy route redirect */}
           <Route
             path="/submissions"

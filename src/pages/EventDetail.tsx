@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useEventById } from '@/hooks/useEvents';
 import { useVenueDetails } from '@/hooks/useVenueDetails';
 import { EVENT_TYPE_LABELS } from '@/types/events';
+import { RecapGallery } from '@/components/RecapGallery';
 import { toast } from 'sonner';
 
 const SITE_ORIGIN = 'https://findawalkon.com';
@@ -234,7 +235,13 @@ export default function EventDetail() {
           <div className="flex items-center gap-2 text-muted-foreground">
             <MapPin className="h-5 w-5 text-accent" />
             <span>
-              {event.venue_name}
+              {venue?.slug ? (
+                <Link to={`/venues/${venue.slug}`} className="text-foreground hover:text-accent underline-offset-2 hover:underline">
+                  {event.venue_name}
+                </Link>
+              ) : (
+                event.venue_name
+              )}
               {event.venue_location && `, ${event.venue_location}`}
             </span>
           </div>
@@ -307,6 +314,7 @@ export default function EventDetail() {
               <Flag className="h-4 w-4" /> Report
             </Button>
           </div>
+          <RecapGallery eventId={event.id} eventTitle={event.title} eventDate={event.event_date} />
         </main>
 
         <FlagEventDialog
