@@ -344,6 +344,28 @@ function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 }
 
+// Higher number = more important. Competitions/tournaments float above walk-ons
+// so they stay clickable when markers overlap inside or at the edge of a cluster.
+const EVENT_TYPE_PRIORITY: Record<string, number> = {
+  competition: 3,
+  tournament: 3,
+  big_game: 2,
+  scenario: 1,
+  mag_fed: 1,
+  speedball: 1,
+  walk_on: 0,
+  other: 0,
+};
+
+function venuePriority(group: VenueGroup): number {
+  let max = 0;
+  for (const e of group.events) {
+    const p = EVENT_TYPE_PRIORITY[e.event_type] ?? 0;
+    if (p > max) max = p;
+  }
+  return max;
+}
+
 function buildInfoWindowHtml(
   group: VenueGroup,
   venueDetails: Map<string, { website: string | null }> | undefined,
