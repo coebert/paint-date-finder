@@ -68,6 +68,15 @@ export default function VenueProfile() {
   }
   if (venue.website) placeSchema.sameAs = [venue.website];
 
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Events', item: `${SITE_ORIGIN}/` },
+      { '@type': 'ListItem', position: 2, name: venue.name, item: canonicalUrl },
+    ],
+  };
+
   const hirePriceEntries = Object.entries(venue.hire_prices ?? {}).filter(([, v]) => v !== '' && v != null);
 
   return (
@@ -78,6 +87,7 @@ export default function VenueProfile() {
         path={path}
       >
         <script type="application/ld+json">{JSON.stringify(placeSchema)}</script>
+        <script type="application/ld+json">{JSON.stringify(breadcrumbSchema)}</script>
       </RouteHead>
 
       <div className="min-h-screen bg-background">

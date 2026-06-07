@@ -96,6 +96,34 @@ async function fetchEvents(): Promise<SitemapEntry[]> {
   }
 }
 
+async function fetchVenues(): Promise<SitemapEntry[]> {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/venues?select=slug,created_at&slug=not.is.null`,
+      {
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+      },
+    );
+    if (!res.ok) {
+      console.warn(`sitemap: failed to fetch venues (${res.status})`);
+      return [];
+    }
+    const rows: Array<{ slug: string; created_at?: string }> = await res.json();
+    return rows.map((v) => ({
+      path: `/venues/${v.slug}`,
+      lastmod: v.created_at ? v.created_at.split("T")[0] : undefined,
+      changefreq: "weekly",
+      priority: "0.6",
+    }));
+  } catch (e) {
+    console.warn("sitemap: error fetching venues", e);
+    return [];
+  }
+}
+
 function generateSitemap(entries: SitemapEntry[]) {
   const urls = entries.map((e) =>
     [
@@ -127,7 +155,8 @@ function generateSitemap(entries: SitemapEntry[]) {
 
   const teams = await fetchTeams();
   const events = await fetchEvents();
-  const entries = [...staticEntries, ...teams, ...events];
+  const venues = await fetchVenues();
+  const entries = [...staticEntries, ...teams, ...events, ...venues];
   writeFileSync(resolve("public/sitemap.xml"), generateSitemap(entries));
   console.log(`sitemap.xml written (${entries.length} entries)`);
 })();
