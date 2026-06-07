@@ -123,4 +123,19 @@ describe('useApproveSubmission', () => {
     expect(result.current.data).toHaveLength(1);
     expect(result.current.data?.[0].title).toBe('Diamond Wars 2026 - Event 2');
   });
+
+  it('does not insert a duplicate event when approving an already-approved submission', async () => {
+    const approvedSubmission = { ...sampleSubmission, status: 'approved' as any };
+    const { result } = renderHook(() => useApproveSubmission(), { wrapper });
+
+    result.current.mutate({ submission: approvedSubmission });
+
+    await waitFor(() => expect(updateSpy).toHaveBeenCalledTimes(1));
+
+    // Event insert should be skipped for already-approved submissions
+    expect(insertSpy).not.toHaveBeenCalled();
+    expect(updateSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'approved' })
+    );
+  });
 });
