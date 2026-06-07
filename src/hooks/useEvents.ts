@@ -63,7 +63,7 @@ export function useEventById(id: string | undefined) {
         .eq('id', id!)
         .maybeSingle();
       if (error) throw error;
-      return data as PaintballEvent | null;
+      return data ? normalizeEventUrls(data as PaintballEvent) : null;
     },
   });
 }
