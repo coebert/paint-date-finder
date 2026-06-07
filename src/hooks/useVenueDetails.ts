@@ -26,9 +26,9 @@ export function useVenueDetails() {
       // Create a map for quick lookups
       const venueMap = new Map<string, VenueDetails>();
       data.forEach((venue) => {
-        venueMap.set(venue.name, venue as VenueDetails);
+        venueMap.set(venue.name, normalizeVenueUrls(venue as VenueDetails));
       });
-      
+
       return venueMap;
     },
   });
