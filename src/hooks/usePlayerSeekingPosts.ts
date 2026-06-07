@@ -43,12 +43,9 @@ export function useAdminPlayerSeekingPosts() {
   return useQuery({
     queryKey: ['admin-player-seeking-posts'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('player_seeking_posts')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabase.rpc('get_admin_player_seeking_posts');
       if (error) throw error;
-      return data as PlayerSeekingPost[];
+      return (data ?? []) as PlayerSeekingPost[];
     },
   });
 }
@@ -57,27 +54,23 @@ export function useCreatePlayerSeekingPost() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: NewPlayerSeekingPost) => {
-      // expires 7 days after target date
       const target = new Date(input.target_date);
       const expires = new Date(target);
       expires.setDate(expires.getDate() + 7);
       const expires_at = expires.toISOString().slice(0, 10);
 
-      const { data, error } = await supabase
-        .from('player_seeking_posts')
-        .insert({
-          player_name: input.player_name.trim(),
-          contact_email: input.contact_email.trim().toLowerCase(),
-          target_date: input.target_date,
-          region: input.region?.trim() || null,
-          event_type: input.event_type ?? null,
-          notes: input.notes?.trim() || null,
-          expires_at,
-        })
-        .select('id, delete_token')
-        .single();
+      const { data, error } = await supabase.rpc('create_player_seeking_post', {
+        _player_name: input.player_name.trim(),
+        _contact_email: input.contact_email.trim().toLowerCase(),
+        _target_date: input.target_date,
+        _expires_at: expires_at,
+        _region: input.region?.trim() || null,
+        _event_type: input.event_type ?? null,
+        _notes: input.notes?.trim() || null,
+      });
       if (error) throw error;
-      return data;
+      const row = Array.isArray(data) ? data[0] : data;
+      return row as { id: string; delete_token: string };
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['player-seeking-posts'] });

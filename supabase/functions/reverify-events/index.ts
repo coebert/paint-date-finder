@@ -120,7 +120,7 @@ Deno.serve(async (req) => {
   // safe to re-trigger.
   const authHeader = req.headers.get("Authorization");
   const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "";
-  let authorized = bearer && (bearer === serviceKey || bearer === anonKey);
+  let authorized = bearer === serviceKey;
   let triggeredBy = "cron";
 
   if (!authorized && bearer) {

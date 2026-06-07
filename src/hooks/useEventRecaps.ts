@@ -45,12 +45,9 @@ export function useAdminRecaps() {
   return useQuery({
     queryKey: ['admin-event-recaps'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('event_recaps')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabase.rpc('get_admin_event_recaps');
       if (error) throw error;
-      return data as EventRecap[];
+      return (data ?? []) as EventRecap[];
     },
   });
 }
