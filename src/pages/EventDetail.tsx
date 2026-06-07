@@ -69,6 +69,50 @@ export default function EventDetail() {
     ? `${event.event_date}T${event.end_time}`
     : undefined;
 
+  const venue = venueDetails?.get(event.venue_name) ?? null;
+
+  const locationSchema: Record<string, unknown> = {
+    '@type': 'Place',
+    name: event.venue_name,
+  };
+  if (event.venue_location) {
+    locationSchema.address = {
+      '@type': 'PostalAddress',
+      addressLocality: event.venue_location,
+    };
+  }
+  if (venue?.latitude != null && venue?.longitude != null) {
+    locationSchema.geo = {
+      '@type': 'GeoCoordinates',
+      latitude: venue.latitude,
+      longitude: venue.longitude,
+    };
+  }
+
+  const organizerSchema: Record<string, unknown> = {
+    '@type': 'Organization',
+    name: event.venue_name,
+  };
+  if (venue?.website) {
+    organizerSchema.url = venue.website;
+  }
+
+  let extractedPrice: string | undefined;
+  const priceMatch = event.price_info?.match(/£\s*(\d+(?:\.\d+)?)/);
+  if (priceMatch) {
+    extractedPrice = priceMatch[1];
+  }
+
+  const offersSchema = event.price_info || event.booking_url
+    ? {
+        '@type': 'Offer',
+        availability: 'https://schema.org/InStock',
+        url: event.booking_url ?? canonicalUrl,
+        ...(event.price_info ? { description: event.price_info } : {}),
+        ...(extractedPrice ? { price: extractedPrice, priceCurrency: 'GBP' } : {}),
+      }
+    : undefined;
+
   const eventSchema = {
     '@context': 'https://schema.org',
     '@type': 'Event',
@@ -79,23 +123,12 @@ export default function EventDetail() {
     endDate,
     eventStatus: 'https://schema.org/EventScheduled',
     eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+    inLanguage: 'en-GB',
     url: canonicalUrl,
-    location: {
-      '@type': 'Place',
-      name: event.venue_name,
-      address: event.venue_location ?? undefined,
-    },
-    organizer: { '@type': 'Organization', name: event.venue_name },
-    ...(event.price_info
-      ? {
-          offers: {
-            '@type': 'Offer',
-            description: event.price_info,
-            availability: 'https://schema.org/InStock',
-            url: event.booking_url ?? canonicalUrl,
-          },
-        }
-      : {}),
+    location: locationSchema,
+    organizer: organizerSchema,
+    about: { '@type': 'Thing', name: 'Paintball' },
+    ...(offersSchema ? { offers: offersSchema } : {}),
   };
 
   const breadcrumbSchema = {
