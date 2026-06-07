@@ -44,7 +44,14 @@ export function SubmitRecapDialog({ eventId, eventTitle, open, onOpenChange }: P
       toast.error(parsed.error.errors[0].message);
       return;
     }
-    await create.mutateAsync({ event_id: eventId, ...parsed.data });
+    await create.mutateAsync({
+      event_id: eventId,
+      uploader_name: parsed.data.uploader_name,
+      uploader_email: parsed.data.uploader_email,
+      media_url: parsed.data.media_url,
+      media_type: parsed.data.media_type,
+      caption: parsed.data.caption,
+    });
     setForm({ uploader_name: '', uploader_email: '', media_url: '', media_type: 'image', caption: '' });
     onOpenChange(false);
   };
