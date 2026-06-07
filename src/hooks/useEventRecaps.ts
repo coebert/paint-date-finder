@@ -31,7 +31,7 @@ export function useApprovedRecaps(eventId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('event_recaps')
-        .select('*')
+        .select('id, event_id, uploader_name, media_url, media_type, caption, status, created_at, reviewed_at')
         .eq('event_id', eventId!)
         .eq('status', 'approved')
         .order('created_at', { ascending: false });
@@ -45,12 +45,9 @@ export function useAdminRecaps() {
   return useQuery({
     queryKey: ['admin-event-recaps'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('event_recaps')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabase.rpc('get_admin_event_recaps');
       if (error) throw error;
-      return data as EventRecap[];
+      return (data ?? []) as EventRecap[];
     },
   });
 }
