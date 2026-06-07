@@ -68,8 +68,40 @@ export function normalizeHttpUrl(url: string | null | undefined): string | null 
 
   try {
     const parsed = new URL(candidate);
-    return SAFE_URL_SCHEMES.includes(parsed.protocol) ? parsed.toString() : null;
+    if (!SAFE_URL_SCHEMES.includes(parsed.protocol)) return null;
+    // Canonicalize: strip trailing slash from root path only
+    let href = parsed.toString();
+    if (parsed.pathname === '/' && !parsed.search && !parsed.hash) {
+      href = href.replace(/\/$/, '');
+    }
+    return href;
   } catch {
     return null;
   }
+}
+
+/**
+ * Normalize all URL fields on an event object for consistent display.
+ * Returns a new object so the original is not mutated.
+ */
+export function normalizeEventUrls<T extends { booking_url: string | null; source_url: string | null; image_url: string | null }>(
+  event: T
+): T {
+  return {
+    ...event,
+    booking_url: normalizeHttpUrl(event.booking_url),
+    source_url: normalizeHttpUrl(event.source_url),
+    image_url: normalizeHttpUrl(event.image_url),
+  };
+}
+
+/**
+ * Normalize the website field on a venue object for consistent display.
+ * Returns a new object so the original is not mutated.
+ */
+export function normalizeVenueUrls<T extends { website: string | null }>(venue: T): T {
+  return {
+    ...venue,
+    website: normalizeHttpUrl(venue.website),
+  };
 }
