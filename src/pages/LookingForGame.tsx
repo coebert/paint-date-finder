@@ -188,11 +188,9 @@ export default function LookingForGame() {
                       <p className="text-xs text-accent">{EVENT_TYPE_LABELS[p.event_type as EventType]}</p>
                     )}
                     {p.notes && <p className="text-sm text-muted-foreground whitespace-pre-line">{p.notes}</p>}
-                    <Button variant="outline" size="sm" className="gap-1 w-full" asChild>
-                      <a href={`mailto:${p.contact_email}?subject=${encodeURIComponent('Re: paintball walk-on on ' + p.target_date)}`}>
-                        <Mail className="h-3.5 w-3.5" /> Contact
-                      </a>
-                    </Button>
+                    <p className="text-xs text-muted-foreground italic">
+                      Contact details are kept private — moderators will pass on responses.
+                    </p>
                   </CardContent>
                 </Card>
               ))}
