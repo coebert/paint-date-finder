@@ -6,6 +6,8 @@ export interface VenueDetails {
   name: string;
   location: string | null;
   website: string | null;
+  latitude: number | null;
+  longitude: number | null;
   created_at: string;
 }
 
