@@ -220,6 +220,11 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
     clustererRef.current = new MarkerClusterer({
       map: mapRef.current,
       markers,
+      renderer: clusterRenderer,
+      onClusterClick: (_e, cluster, map) => {
+        // Progressive reveal: zoom into the cluster bounds on click.
+        if (cluster.bounds) map.fitBounds(cluster.bounds, 64);
+      },
     });
 
     // Fit bounds to filtered markers when a region is chosen.
