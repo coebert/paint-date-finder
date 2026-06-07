@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { EventSubmission, SubmissionStatus } from '@/types/submissions';
+import { normalizeEventUrls } from '@/lib/validation';
 import { toast } from 'sonner';
 
 export function useSubmissions(status?: SubmissionStatus) {
