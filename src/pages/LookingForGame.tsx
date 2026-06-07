@@ -62,6 +62,24 @@ export default function LookingForGame() {
     });
   }, [posts, filterRegion, filterType]);
 
+  const pageSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: 'Looking for a Game',
+    description: "Players post when they're looking for a walk-on paintball game by date and region. Venues and teams can fill spare slots.",
+    url: `${SITE_ORIGIN}/looking-for-a-game`,
+    inLanguage: 'en-GB',
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListElement: filtered.map((p, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        name: `${p.player_name} — ${format(parseISO(p.target_date), 'd MMM yyyy')}`,
+        url: `${SITE_ORIGIN}/looking-for-a-game`,
+      })),
+    },
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const parsed = schema.safeParse(form);
