@@ -47,7 +47,7 @@ export function useEvents(filters?: {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as PaintballEvent[];
+      return (data as PaintballEvent[]).map(normalizeEventUrls);
     },
   });
 }
