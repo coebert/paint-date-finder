@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useEventById } from '@/hooks/useEvents';
 import { useVenueDetails } from '@/hooks/useVenueDetails';
 import { EVENT_TYPE_LABELS } from '@/types/events';
+import { RecapGallery } from '@/components/RecapGallery';
 import { toast } from 'sonner';
 
 const SITE_ORIGIN = 'https://findawalkon.com';
