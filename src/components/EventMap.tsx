@@ -215,23 +215,34 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
     markersRef.current.forEach(m => m.setMap(null));
     markersRef.current = [];
 
+    const getMarkerIcon = (priority: number, hovered: boolean) => {
+      const isHighPriority = priority >= 2;
+      const baseSize = isHighPriority ? 44 : 32;
+      const size = hovered ? baseSize + 10 : baseSize;
+      const fill = priority >= 3 ? '#d97706' : priority === 2 ? '#c2410c' : '#8a9a5b';
+      const opacity = hovered ? '0.55' : '0.3';
+      const outlineColor = hovered ? '#f4f1e8' : '#0f1408';
+      const outlineWidth = hovered ? 3 : 2;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+        <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 2}" fill="${fill}" fill-opacity="${opacity}"/>
+        <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 6}" fill="${fill}" stroke="${outlineColor}" stroke-width="${outlineWidth}"/>
+        ${hovered ? `<circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 1}" fill="none" stroke="#f4f1e8" stroke-width="1.5" stroke-opacity="0.6"/>` : ''}
+      </svg>`;
+      return {
+        url: `data:image/svg+xml;base64,${btoa(svg)}`,
+        scaledSize: new g.maps.Size(size, size),
+        anchor: new g.maps.Point(size / 2, size / 2),
+      };
+    };
+
     const markers = filteredGroups.map(group => {
       const priority = venuePriority(group);
       const isHighPriority = priority >= 2;
       const size = isHighPriority ? 44 : 32;
-      const fill = priority >= 3 ? '#d97706' : priority === 2 ? '#c2410c' : '#8a9a5b';
-      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-        <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 2}" fill="${fill}" fill-opacity="0.3"/>
-        <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 8}" fill="${fill}" stroke="#0f1408" stroke-width="2"/>
-      </svg>`;
       const marker = new g.maps.Marker({
         position: { lat: group.lat, lng: group.lng },
         title: `${group.name} — ${group.events.length} event${group.events.length === 1 ? '' : 's'}${isHighPriority ? ' (featured)' : ''}`,
-        icon: {
-          url: `data:image/svg+xml;base64,${btoa(svg)}`,
-          scaledSize: new g.maps.Size(size, size),
-          anchor: new g.maps.Point(size / 2, size / 2),
-        },
+        icon: getMarkerIcon(priority, false),
         label: group.events.length > 1
           ? { text: String(group.events.length), color: '#0f1408', fontSize: '11px', fontWeight: '700' }
           : undefined,
@@ -239,6 +250,16 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
         zIndex: 100 + priority * 100 + group.events.length,
         optimized: false,
       });
+
+      marker.addListener('mouseover', () => {
+        marker.setIcon(getMarkerIcon(priority, true));
+        marker.setZIndex(1000 + priority * 100 + group.events.length);
+      });
+      marker.addListener('mouseout', () => {
+        marker.setIcon(getMarkerIcon(priority, false));
+        marker.setZIndex(100 + priority * 100 + group.events.length);
+      });
+
       marker.addListener('click', () => {
         if (!mapRef.current || !infoWindowRef.current) return;
         infoWindowRef.current.setContent(buildInfoWindowHtml(group, venueDetails));
