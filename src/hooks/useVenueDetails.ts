@@ -5,6 +5,7 @@ import { normalizeVenueUrls } from '@/lib/validation';
 export interface VenueDetails {
   id: string;
   name: string;
+  slug: string | null;
   location: string | null;
   website: string | null;
   latitude: number | null;

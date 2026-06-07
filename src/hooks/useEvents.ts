@@ -10,6 +10,7 @@ export function useEvents(filters?: {
   startDate?: string;
   endDate?: string;
   verifiedOnly?: boolean;
+  beginnerOnly?: boolean;
   regionVenues?: string[];
 }) {
   return useQuery({
@@ -38,6 +39,10 @@ export function useEvents(filters?: {
 
       if (filters?.verifiedOnly) {
         query = query.eq('is_verified', true);
+      }
+
+      if (filters?.beginnerOnly) {
+        query = query.eq('is_beginner_friendly', true);
       }
 
       if (filters?.regionVenues && filters.regionVenues.length > 0) {
