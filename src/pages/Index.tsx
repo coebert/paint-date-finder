@@ -78,6 +78,7 @@ export default function Index() {
     eventType,
     venue,
     verifiedOnly,
+    beginnerOnly,
     regionVenues,
   });
 
@@ -114,6 +115,7 @@ export default function Index() {
 
   const handleClearFilters = () => {
     setEventType(undefined);
+    setBeginnerOnly(false);
     setVenue('');
     setRegion('');
     setVerifiedOnly(false);
