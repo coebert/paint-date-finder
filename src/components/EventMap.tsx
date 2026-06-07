@@ -309,6 +309,12 @@ function buildInfoWindowHtml(
       dateLabel = format(parseISO(e.event_date), 'EEE d MMM yyyy');
     } catch { /* keep raw */ }
     const time = e.start_time ? ` · ${e.start_time.slice(0, 5)}` : '';
+    const bookLink = e.booking_url
+      ? `<a href="${escapeHtml(e.booking_url)}" target="_blank" rel="noopener"
+            style="display:inline-block;margin-top:6px;font-size:11px;padding:3px 8px;border-radius:6px;background:#d97706;color:#0f1408;text-decoration:none;font-weight:700">
+            Book ↗
+          </a>`
+      : '';
     return `
       <li style="margin:0;padding:8px 0;border-top:1px solid rgba(255,255,255,0.08)">
         <button data-event-id="${escapeHtml(e.id)}"
@@ -316,6 +322,7 @@ function buildInfoWindowHtml(
           <div style="font-weight:600;color:#f4f1e8;font-size:13px;line-height:1.3">${escapeHtml(e.title)}</div>
           <div style="font-size:11px;color:#b5b09c;margin-top:2px">${escapeHtml(dateLabel)}${escapeHtml(time)}</div>
         </button>
+        ${bookLink}
       </li>`;
   }).join('');
 
