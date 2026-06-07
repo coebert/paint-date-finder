@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { normalizeVenueUrls } from '@/lib/validation';
 
 export interface VenueDetails {
   id: string;
@@ -25,9 +26,9 @@ export function useVenueDetails() {
       // Create a map for quick lookups
       const venueMap = new Map<string, VenueDetails>();
       data.forEach((venue) => {
-        venueMap.set(venue.name, venue as VenueDetails);
+        venueMap.set(venue.name, normalizeVenueUrls(venue as VenueDetails));
       });
-      
+
       return venueMap;
     },
   });

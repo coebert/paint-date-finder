@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { PaintballEvent, EventType } from '@/types/events';
+import { normalizeEventUrls } from '@/lib/validation';
 import { toast } from 'sonner';
 
 export function useEvents(filters?: {
@@ -46,7 +47,7 @@ export function useEvents(filters?: {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as PaintballEvent[];
+      return (data as PaintballEvent[]).map(normalizeEventUrls);
     },
   });
 }
@@ -62,7 +63,7 @@ export function useEventById(id: string | undefined) {
         .eq('id', id!)
         .maybeSingle();
       if (error) throw error;
-      return data as PaintballEvent | null;
+      return data ? normalizeEventUrls(data as PaintballEvent) : null;
     },
   });
 }
