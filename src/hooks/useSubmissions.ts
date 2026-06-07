@@ -53,26 +53,29 @@ export function useApproveSubmission() {
 
   return useMutation({
     mutationFn: async ({ submission, adminNotes }: { submission: EventSubmission; adminNotes?: string }) => {
-      // First, create the event from the submission
-      const { error: eventError } = await supabase
-        .from('events')
-        .insert({
-          title: submission.title,
-          description: submission.description,
-          event_type: submission.event_type,
-          venue_name: submission.venue_name,
-          venue_location: submission.venue_location,
-          event_date: submission.event_date,
-          start_time: submission.start_time,
-          end_time: submission.end_time,
-          booking_url: submission.booking_url,
-          price_info: submission.price_info,
-          source_url: submission.source_url,
-          image_url: submission.image_url,
-          is_verified: true,
-        });
+      // Prevent duplicate events if this submission was already approved
+      if (submission.status !== 'approved') {
+        // First, create the event from the submission
+        const { error: eventError } = await supabase
+          .from('events')
+          .insert({
+            title: submission.title,
+            description: submission.description,
+            event_type: submission.event_type,
+            venue_name: submission.venue_name,
+            venue_location: submission.venue_location,
+            event_date: submission.event_date,
+            start_time: submission.start_time,
+            end_time: submission.end_time,
+            booking_url: submission.booking_url,
+            price_info: submission.price_info,
+            source_url: submission.source_url,
+            image_url: submission.image_url,
+            is_verified: true,
+          });
 
-      if (eventError) throw eventError;
+        if (eventError) throw eventError;
+      }
 
       // Then update the submission status
       const { error: updateError } = await supabase
