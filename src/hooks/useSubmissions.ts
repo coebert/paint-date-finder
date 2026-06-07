@@ -20,7 +20,7 @@ export function useSubmissions(status?: SubmissionStatus) {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as EventSubmission[];
+      return (data as EventSubmission[]).map(normalizeEventUrls);
     },
   });
 }
