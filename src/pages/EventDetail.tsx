@@ -103,13 +103,24 @@ export default function EventDetail() {
     extractedPrice = priceMatch[1];
   }
 
-  const offersSchema = event.price_info || event.booking_url
+  const bookingUrl = event.booking_url || venueWebsite || canonicalUrl;
+
+  const offersSchema = event.price_info || event.booking_url || venueWebsite
     ? {
         '@type': 'Offer',
         availability: 'https://schema.org/InStock',
-        url: event.booking_url ?? canonicalUrl,
+        url: bookingUrl,
         ...(event.price_info ? { description: event.price_info } : {}),
         ...(extractedPrice ? { price: extractedPrice, priceCurrency: 'GBP' } : {}),
+        ...(venueWebsite
+          ? {
+              seller: {
+                '@type': 'Organization',
+                name: event.venue_name,
+                url: venueWebsite,
+              },
+            }
+          : {}),
       }
     : undefined;
 
