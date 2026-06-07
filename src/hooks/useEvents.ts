@@ -51,6 +51,22 @@ export function useEvents(filters?: {
   });
 }
 
+export function useEventById(id: string | undefined) {
+  return useQuery({
+    queryKey: ['event', id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .eq('id', id!)
+        .maybeSingle();
+      if (error) throw error;
+      return data as PaintballEvent | null;
+    },
+  });
+}
+
 export function useVenues() {
   return useQuery({
     queryKey: ['venues'],

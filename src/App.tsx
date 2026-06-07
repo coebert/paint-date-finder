@@ -20,6 +20,7 @@ import AdminVitals from "./pages/admin/AdminVitals";
 import AdminTypography from "./pages/admin/AdminTypography";
 import AdminSEO from "./pages/admin/AdminSEO";
 import FieldLayout from "./pages/FieldLayout";
+import EventDetail from "./pages/EventDetail";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/teams" element={<Teams />} />
           <Route path="/teams/:id" element={<TeamDetail />} />
           <Route path="/field-layout" element={<FieldLayout />} />
+          <Route path="/events/:id" element={<EventDetail />} />
           
           {/* Admin Routes */}
           <Route

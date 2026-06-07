@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { PaintballEvent } from '@/types/events';
 import { EventTypeBadge } from './EventTypeBadge';
@@ -11,7 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Calendar, MapPin, Clock, ExternalLink, Globe, Pencil, CheckCircle, AlertCircle, Flag, AlertTriangle, Undo2, Loader2 } from 'lucide-react';
+import { Calendar, MapPin, Clock, ExternalLink, Globe, Pencil, CheckCircle, AlertCircle, Flag, AlertTriangle, Undo2, Loader2, Link2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useVenueDetails } from '@/hooks/useVenueDetails';
 import { useIsAdmin } from '@/hooks/useAuth';
@@ -191,6 +192,17 @@ export function EventDetailDialog({ event, open, onOpenChange, onEdit }: EventDe
                 </a>
               </Button>
             )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-primary hover:text-primary/80 gap-1"
+              asChild
+            >
+              <Link to={`/events/${event.id}`} onClick={() => onOpenChange(false)}>
+                <Link2 className="h-4 w-4" />
+                Open page
+              </Link>
+            </Button>
           </div>
 
           {event.price_info && (

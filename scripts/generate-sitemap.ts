@@ -66,6 +66,36 @@ async function fetchTeams(): Promise<SitemapEntry[]> {
   }
 }
 
+async function fetchEvents(): Promise<SitemapEntry[]> {
+  try {
+    // Only include events from today onwards to keep the sitemap focused on indexable upcoming pages.
+    const today = new Date().toISOString().split("T")[0];
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/events?select=id,updated_at,event_date&event_date=gte.${today}`,
+      {
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+      },
+    );
+    if (!res.ok) {
+      console.warn(`sitemap: failed to fetch events (${res.status})`);
+      return [];
+    }
+    const rows: Array<{ id: string; updated_at?: string }> = await res.json();
+    return rows.map((e) => ({
+      path: `/events/${e.id}`,
+      lastmod: e.updated_at ? e.updated_at.split("T")[0] : undefined,
+      changefreq: "weekly",
+      priority: "0.7",
+    }));
+  } catch (e) {
+    console.warn("sitemap: error fetching events", e);
+    return [];
+  }
+}
+
 function generateSitemap(entries: SitemapEntry[]) {
   const urls = entries.map((e) =>
     [
@@ -96,7 +126,8 @@ function generateSitemap(entries: SitemapEntry[]) {
   });
 
   const teams = await fetchTeams();
-  const entries = [...staticEntries, ...teams];
+  const events = await fetchEvents();
+  const entries = [...staticEntries, ...teams, ...events];
   writeFileSync(resolve("public/sitemap.xml"), generateSitemap(entries));
   console.log(`sitemap.xml written (${entries.length} entries)`);
 })();
