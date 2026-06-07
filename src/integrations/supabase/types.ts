@@ -58,6 +58,56 @@ export type Database = {
           },
         ]
       }
+      event_recaps: {
+        Row: {
+          caption: string | null
+          created_at: string
+          delete_token: string
+          event_id: string
+          id: string
+          media_type: string
+          media_url: string
+          reviewed_at: string | null
+          status: string
+          uploader_email: string
+          uploader_name: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          delete_token?: string
+          event_id: string
+          id?: string
+          media_type: string
+          media_url: string
+          reviewed_at?: string | null
+          status?: string
+          uploader_email: string
+          uploader_name: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          delete_token?: string
+          event_id?: string
+          id?: string
+          media_type?: string
+          media_url?: string
+          reviewed_at?: string | null
+          status?: string
+          uploader_email?: string
+          uploader_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_recaps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_submissions: {
         Row: {
           admin_notes: string | null
@@ -143,6 +193,7 @@ export type Database = {
           event_type: Database["public"]["Enums"]["event_type"]
           id: string
           image_url: string | null
+          is_beginner_friendly: boolean
           is_verified: boolean | null
           last_verified_at: string | null
           price_info: string | null
@@ -165,6 +216,7 @@ export type Database = {
           event_type?: Database["public"]["Enums"]["event_type"]
           id?: string
           image_url?: string | null
+          is_beginner_friendly?: boolean
           is_verified?: boolean | null
           last_verified_at?: string | null
           price_info?: string | null
@@ -187,6 +239,7 @@ export type Database = {
           event_type?: Database["public"]["Enums"]["event_type"]
           id?: string
           image_url?: string | null
+          is_beginner_friendly?: boolean
           is_verified?: boolean | null
           last_verified_at?: string | null
           price_info?: string | null
@@ -274,6 +327,48 @@ export type Database = {
           scrape_stale?: boolean
           stale_event_count?: number
           updates_stale?: boolean
+        }
+        Relationships: []
+      }
+      player_seeking_posts: {
+        Row: {
+          contact_email: string
+          created_at: string
+          delete_token: string
+          event_type: Database["public"]["Enums"]["event_type"] | null
+          expires_at: string
+          id: string
+          is_hidden: boolean
+          notes: string | null
+          player_name: string
+          region: string | null
+          target_date: string
+        }
+        Insert: {
+          contact_email: string
+          created_at?: string
+          delete_token?: string
+          event_type?: Database["public"]["Enums"]["event_type"] | null
+          expires_at: string
+          id?: string
+          is_hidden?: boolean
+          notes?: string | null
+          player_name: string
+          region?: string | null
+          target_date: string
+        }
+        Update: {
+          contact_email?: string
+          created_at?: string
+          delete_token?: string
+          event_type?: Database["public"]["Enums"]["event_type"] | null
+          expires_at?: string
+          id?: string
+          is_hidden?: boolean
+          notes?: string | null
+          player_name?: string
+          region?: string | null
+          target_date?: string
         }
         Relationships: []
       }
@@ -653,32 +748,50 @@ export type Database = {
       venues: {
         Row: {
           created_at: string
+          facilities: string[]
+          field_map_url: string | null
+          gallery: Json
+          hire_prices: Json
           id: string
           latitude: number | null
           location: string | null
           longitude: number | null
           name: string
           region: string | null
+          slug: string | null
+          walk_on_rules: string | null
           website: string | null
         }
         Insert: {
           created_at?: string
+          facilities?: string[]
+          field_map_url?: string | null
+          gallery?: Json
+          hire_prices?: Json
           id?: string
           latitude?: number | null
           location?: string | null
           longitude?: number | null
           name: string
           region?: string | null
+          slug?: string | null
+          walk_on_rules?: string | null
           website?: string | null
         }
         Update: {
           created_at?: string
+          facilities?: string[]
+          field_map_url?: string | null
+          gallery?: Json
+          hire_prices?: Json
           id?: string
           latitude?: number | null
           location?: string | null
           longitude?: number | null
           name?: string
           region?: string | null
+          slug?: string | null
+          walk_on_rules?: string | null
           website?: string | null
         }
         Relationships: []
@@ -731,6 +844,10 @@ export type Database = {
         Returns: boolean
       }
       delete_field_layout: {
+        Args: { _id: string; _token: string }
+        Returns: boolean
+      }
+      delete_player_seeking_post: {
         Args: { _id: string; _token: string }
         Returns: boolean
       }
