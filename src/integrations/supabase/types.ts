@@ -839,6 +839,21 @@ export type Database = {
           id: string
         }[]
       }
+      create_player_seeking_post: {
+        Args: {
+          _contact_email: string
+          _event_type?: Database["public"]["Enums"]["event_type"]
+          _expires_at: string
+          _notes?: string
+          _player_name: string
+          _region?: string
+          _target_date: string
+        }
+        Returns: {
+          delete_token: string
+          id: string
+        }[]
+      }
       delete_event_flag: {
         Args: { _id: string; _token: string }
         Returns: boolean
@@ -850,6 +865,50 @@ export type Database = {
       delete_player_seeking_post: {
         Args: { _id: string; _token: string }
         Returns: boolean
+      }
+      get_admin_event_recaps: {
+        Args: never
+        Returns: {
+          caption: string | null
+          created_at: string
+          delete_token: string
+          event_id: string
+          id: string
+          media_type: string
+          media_url: string
+          reviewed_at: string | null
+          status: string
+          uploader_email: string
+          uploader_name: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "event_recaps"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      get_admin_player_seeking_posts: {
+        Args: never
+        Returns: {
+          contact_email: string
+          created_at: string
+          delete_token: string
+          event_type: Database["public"]["Enums"]["event_type"] | null
+          expires_at: string
+          id: string
+          is_hidden: boolean
+          notes: string | null
+          player_name: string
+          region: string | null
+          target_date: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "player_seeking_posts"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_admin_team_contacts: {
         Args: never
