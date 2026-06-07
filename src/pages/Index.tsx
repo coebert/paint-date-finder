@@ -217,6 +217,13 @@ export default function Index() {
           </p>
         </section>
 
+        <EventTypeChips
+          eventType={eventType}
+          beginnerOnly={beginnerOnly}
+          onEventTypeChange={setEventType}
+          onBeginnerOnlyChange={setBeginnerOnly}
+        />
+
         <EventFilters
           eventType={eventType}
           venue={venue}
