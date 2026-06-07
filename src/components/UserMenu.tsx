@@ -27,7 +27,7 @@ export function UserMenu() {
 
   if (authLoading) {
     return (
-      <Button variant="ghost" size="icon" disabled>
+      <Button variant="ghost" size="icon" disabled aria-label="Loading user menu">
         <Loader2 className="h-4 w-4 animate-spin" />
       </Button>
     );
@@ -40,7 +40,7 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
+        <Button variant="ghost" size="icon" className="relative" aria-label="User menu">
           <User className="h-4 w-4" />
           {isAdmin && (
             <span className="absolute -top-1 -right-1 h-3 w-3 bg-accent rounded-full flex items-center justify-center">
