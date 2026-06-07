@@ -1,4 +1,4 @@
-import { BarChart3, Calendar, FileText, Flag, Home, Radar, Settings, Users, Layers, Activity, Type, Search } from "lucide-react";
+import { BarChart3, Calendar, FileText, Flag, Home, Radar, Settings, Users, Layers, Activity, Type, Search, MapPin, UserSearch, Camera } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 
@@ -22,6 +22,9 @@ const menuItems = [
   { title: "Submissions", url: "/admin/submissions", icon: FileText },
   { title: "Bulk Import", url: "/admin/bulk-import", icon: Layers },
   { title: "Events", url: "/admin/events", icon: Calendar },
+  { title: "Venues", url: "/admin/venues", icon: MapPin },
+  { title: "Recaps", url: "/admin/recaps", icon: Camera },
+  { title: "Player Posts", url: "/admin/player-posts", icon: UserSearch },
   { title: "Flags", url: "/admin/flags", icon: Flag },
   { title: "Teams", url: "/admin/teams", icon: Users },
   { title: "Auto-Scraper", url: "/admin/scraper", icon: Radar },
