@@ -89,12 +89,32 @@ export default function LookingForGame() {
 
   return (
     <>
+      const pageSchema = {
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: 'Looking for a Game',
+        description: "Players post when they're looking for a walk-on paintball game by date and region. Venues and teams can fill spare slots.",
+        url: `${SITE_ORIGIN}/looking-for-a-game`,
+        inLanguage: 'en-GB',
+        mainEntity: {
+          '@type': 'ItemList',
+          itemListElement: filtered.map((p, i) => ({
+            '@type': 'ListItem',
+            position: i + 1,
+            name: `${p.player_name} — ${format(parseISO(p.target_date), 'd MMM yyyy')}`,
+            url: `${SITE_ORIGIN}/looking-for-a-game`,
+          })),
+        },
+      };
+
       <RouteHead
         title="Looking for a paintball game — Find A Walk-On"
         titleFull
         description="Players post when they're looking for a walk-on paintball game by date and region. Venues and teams can fill spare slots."
         path="/looking-for-a-game"
-      />
+      >
+        <script type="application/ld+json">{JSON.stringify(pageSchema)}</script>
+      </RouteHead>
       <div className="min-h-screen bg-background">
         <header className="tactical-gradient border-b border-border/50">
           <div className="container mx-auto px-4 py-6 max-w-4xl">
