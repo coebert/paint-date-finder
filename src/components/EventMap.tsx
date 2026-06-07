@@ -6,7 +6,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Calendar, ExternalLink, MapPin, Navigation } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { MarkerClusterer } from '@googlemaps/markerclusterer';
+import { MarkerClusterer, type Renderer } from '@googlemaps/markerclusterer';
 import { VENUE_COORDINATES, type UKRegion } from '@/lib/venueCoordinates';
 import { useVenueDetails } from '@/hooks/useVenueDetails';
 
