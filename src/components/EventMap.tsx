@@ -40,6 +40,35 @@ const DARK_MAP_STYLES: google.maps.MapTypeStyle[] = [
   { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#262a1c' }] },
 ];
 
+// Themed cluster bubble: olive base, orange when very dense. Size scales with count.
+const clusterRenderer: Renderer = {
+  render: ({ count, position }) => {
+    const g = (window as any).google as typeof google;
+    const size = count < 10 ? 40 : count < 25 ? 48 : count < 50 ? 56 : 64;
+    const fill = count < 10 ? '#8a9a5b' : count < 25 ? '#a8a247' : count < 50 ? '#d97706' : '#c2410c';
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 2}" fill="${fill}" fill-opacity="0.35"/>
+      <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 8}" fill="${fill}" stroke="#0f1408" stroke-width="2"/>
+    </svg>`;
+    return new g.maps.Marker({
+      position,
+      icon: {
+        url: `data:image/svg+xml;base64,${btoa(svg)}`,
+        scaledSize: new g.maps.Size(size, size),
+        anchor: new g.maps.Point(size / 2, size / 2),
+      },
+      label: {
+        text: String(count),
+        color: '#0f1408',
+        fontSize: '13px',
+        fontWeight: '800',
+      },
+      title: `${count} venues — click to zoom in`,
+      zIndex: 1000 + count,
+    });
+  },
+};
+
 let mapsLoadingPromise: Promise<typeof google> | null = null;
 
 function loadGoogleMaps(): Promise<typeof google> {
