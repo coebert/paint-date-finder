@@ -80,9 +80,6 @@ const sampleSubmission: EventSubmission = {
   admin_notes: null,
   reviewed_at: null,
   created_at: new Date().toISOString(),
-  sanity_warnings: [],
-  venue_match_status: 'unknown',
-  source_quote: null,
 };
 
 describe('useApproveSubmission', () => {
