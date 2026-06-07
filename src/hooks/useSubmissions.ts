@@ -69,7 +69,7 @@ export function useApproveSubmission() {
           price_info: submission.price_info,
           source_url: submission.source_url,
           image_url: submission.image_url,
-          is_verified: false,
+          is_verified: true,
         });
 
       if (eventError) throw eventError;
