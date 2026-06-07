@@ -216,19 +216,34 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
     markersRef.current = [];
 
     const markers = filteredGroups.map(group => {
+      const priority = venuePriority(group);
+      const isHighPriority = priority >= 2;
+      const size = isHighPriority ? 44 : 32;
+      const fill = priority >= 3 ? '#d97706' : priority === 2 ? '#c2410c' : '#8a9a5b';
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+        <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 2}" fill="${fill}" fill-opacity="0.3"/>
+        <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 8}" fill="${fill}" stroke="#0f1408" stroke-width="2"/>
+      </svg>`;
       const marker = new g.maps.Marker({
         position: { lat: group.lat, lng: group.lng },
-        title: `${group.name} — ${group.events.length} event${group.events.length === 1 ? '' : 's'}`,
+        title: `${group.name} — ${group.events.length} event${group.events.length === 1 ? '' : 's'}${isHighPriority ? ' (featured)' : ''}`,
+        icon: {
+          url: `data:image/svg+xml;base64,${btoa(svg)}`,
+          scaledSize: new g.maps.Size(size, size),
+          anchor: new g.maps.Point(size / 2, size / 2),
+        },
         label: group.events.length > 1
           ? { text: String(group.events.length), color: '#0f1408', fontSize: '11px', fontWeight: '700' }
           : undefined,
+        // Higher priority floats above overlapping markers, keeping it clickable.
+        zIndex: 100 + priority * 100 + group.events.length,
+        optimized: false,
       });
       marker.addListener('click', () => {
         if (!mapRef.current || !infoWindowRef.current) return;
         infoWindowRef.current.setContent(buildInfoWindowHtml(group, venueDetails));
         infoWindowRef.current.open({ map: mapRef.current, anchor: marker });
 
-        // Wire up event-click handlers in the rendered HTML.
         google.maps.event.addListenerOnce(infoWindowRef.current, 'domready', () => {
           const root = document.querySelector('[data-event-map-info]');
           root?.querySelectorAll<HTMLElement>('[data-event-id]').forEach(el => {
@@ -329,6 +344,28 @@ function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 }
 
+// Higher number = more important. Competitions/tournaments float above walk-ons
+// so they stay clickable when markers overlap inside or at the edge of a cluster.
+const EVENT_TYPE_PRIORITY: Record<string, number> = {
+  competition: 3,
+  tournament: 3,
+  big_game: 2,
+  scenario: 1,
+  mag_fed: 1,
+  speedball: 1,
+  walk_on: 0,
+  other: 0,
+};
+
+function venuePriority(group: VenueGroup): number {
+  let max = 0;
+  for (const e of group.events) {
+    const p = EVENT_TYPE_PRIORITY[e.event_type] ?? 0;
+    if (p > max) max = p;
+  }
+  return max;
+}
+
 function buildInfoWindowHtml(
   group: VenueGroup,
   venueDetails: Map<string, { website: string | null }> | undefined,
@@ -336,7 +373,12 @@ function buildInfoWindowHtml(
   const website = venueDetails?.get(group.name)?.website ?? null;
   const directions = `https://www.google.com/maps/dir/?api=1&destination=${group.lat},${group.lng}`;
 
-  const sorted = [...group.events].sort((a, b) => a.event_date.localeCompare(b.event_date));
+  const sorted = [...group.events].sort((a, b) => {
+    const pa = EVENT_TYPE_PRIORITY[a.event_type] ?? 0;
+    const pb = EVENT_TYPE_PRIORITY[b.event_type] ?? 0;
+    if (pa !== pb) return pb - pa;
+    return a.event_date.localeCompare(b.event_date);
+  });
   const items = sorted.slice(0, 8).map(e => {
     let dateLabel = e.event_date;
     try {
