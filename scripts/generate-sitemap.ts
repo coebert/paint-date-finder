@@ -96,7 +96,8 @@ function generateSitemap(entries: SitemapEntry[]) {
   });
 
   const teams = await fetchTeams();
-  const entries = [...staticEntries, ...teams];
+  const events = await fetchEvents();
+  const entries = [...staticEntries, ...teams, ...events];
   writeFileSync(resolve("public/sitemap.xml"), generateSitemap(entries));
   console.log(`sitemap.xml written (${entries.length} entries)`);
 })();
