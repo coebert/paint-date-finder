@@ -6,6 +6,8 @@ import { z } from 'zod';
 import { RouteHead } from '@/components/RouteHead';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+
+const SITE_ORIGIN = 'https://findawalkon.com';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
