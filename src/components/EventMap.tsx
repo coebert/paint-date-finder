@@ -373,7 +373,12 @@ function buildInfoWindowHtml(
   const website = venueDetails?.get(group.name)?.website ?? null;
   const directions = `https://www.google.com/maps/dir/?api=1&destination=${group.lat},${group.lng}`;
 
-  const sorted = [...group.events].sort((a, b) => a.event_date.localeCompare(b.event_date));
+  const sorted = [...group.events].sort((a, b) => {
+    const pa = EVENT_TYPE_PRIORITY[a.event_type] ?? 0;
+    const pb = EVENT_TYPE_PRIORITY[b.event_type] ?? 0;
+    if (pa !== pb) return pb - pa;
+    return a.event_date.localeCompare(b.event_date);
+  });
   const items = sorted.slice(0, 8).map(e => {
     let dateLabel = e.event_date;
     try {
