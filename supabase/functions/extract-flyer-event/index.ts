@@ -582,8 +582,9 @@ Deno.serve(async (req) => {
     );
   }
 
-  // Open to both public submitters (SubmitEventDialog) and admins (AdminFlyerImportCard).
-  // Best-effort identify the caller for logging; do not block anonymous callers.
+  // Require an authenticated user (any signed-in account) to prevent
+  // anonymous abuse of paid AI / Firecrawl calls. Both public submitters
+  // (SubmitEventDialog) and admins (AdminFlyerImportCard) must be signed in.
   const authHeader = req.headers.get("Authorization");
   let userId: string | null = null;
   if (authHeader?.startsWith("Bearer ")) {
@@ -596,6 +597,15 @@ Deno.serve(async (req) => {
     } catch {
       userId = null;
     }
+  }
+  if (!userId) {
+    return new Response(
+      JSON.stringify({ error: "Authentication required" }),
+      {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
 
   let body: RequestBody;
