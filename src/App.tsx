@@ -28,6 +28,7 @@ import AdminPlayerPosts from "./pages/admin/AdminPlayerPosts";
 import AdminRecaps from "./pages/admin/AdminRecaps";
 import RegionsIndex from "./pages/RegionsIndex";
 import RegionPage from "./pages/RegionPage";
+import AdminGscRegions from "./pages/admin/AdminGscRegions";
 
 const queryClient = new QueryClient();
 
@@ -131,6 +132,11 @@ const App = () => (
               </AdminRoute>
             }
           />
+          <Route
+            path="/admin/gsc-regions"
+            element={<AdminRoute><AdminGscRegions /></AdminRoute>}
+          />
+          
           
           <Route
             path="/admin/venues"

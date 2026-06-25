@@ -1,4 +1,4 @@
-import { BarChart3, Calendar, FileText, Flag, Home, Radar, Settings, Users, Layers, Activity, Type, Search, MapPin, UserSearch, Camera } from "lucide-react";
+import { BarChart3, Calendar, FileText, Flag, Home, Radar, Settings, Users, Layers, Activity, Type, Search, MapPin, UserSearch, Camera, Globe } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 
@@ -30,6 +30,7 @@ const menuItems = [
   { title: "Auto-Scraper", url: "/admin/scraper", icon: Radar },
   { title: "Web Vitals", url: "/admin/vitals", icon: Activity },
   { title: "SEO Monitor", url: "/admin/seo", icon: Search },
+  { title: "GSC Regions", url: "/admin/gsc-regions", icon: Globe },
   { title: "Typography QA", url: "/admin/typography", icon: Type },
 ];
 
