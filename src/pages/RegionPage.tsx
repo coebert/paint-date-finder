@@ -160,11 +160,7 @@ export default function RegionPage() {
             ) : upcoming.length > 0 ? (
               <div className="space-y-3">
                 {upcoming.map((e) => (
-                  <EventCard
-                    key={e.id}
-                    event={e}
-                    venueWebsite={venueDetails?.get(e.venue_name)?.website ?? null}
-                  />
+                  <EventCard key={e.id} event={e} />
                 ))}
               </div>
             ) : (
