@@ -26,6 +26,8 @@ import VenueProfile from "./pages/VenueProfile";
 import AdminVenues from "./pages/admin/AdminVenues";
 import AdminPlayerPosts from "./pages/admin/AdminPlayerPosts";
 import AdminRecaps from "./pages/admin/AdminRecaps";
+import RegionsIndex from "./pages/RegionsIndex";
+import RegionPage from "./pages/RegionPage";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +46,9 @@ const App = () => (
           <Route path="/events/:id" element={<EventDetail />} />
           <Route path="/venues/:slug" element={<VenueProfile />} />
           <Route path="/looking-for-a-game" element={<LookingForGame />} />
+          <Route path="/paintball" element={<RegionsIndex />} />
+          <Route path="/paintball/:slug" element={<RegionPage />} />
+          
           
           {/* Admin Routes */}
           <Route
