@@ -88,16 +88,101 @@ function isInstagram(url: string): boolean {
   }
 }
 
-/** fetch() with an AbortController-backed timeout. */
+/**
+ * SSRF guard. Reject URLs that resolve (or are literally addressed) to
+ * loopback, link-local, private, or reserved ranges before any outbound
+ * fetch. Hostnames are resolved via DNS so a malicious DNS record cannot
+ * smuggle a 127.0.0.1 / 169.254.x / 10.x / metadata.google.internal target.
+ */
+const PRIVATE_HOST_REGEX =
+  /^(localhost|metadata\.google\.internal|metadata|.*\.internal|.*\.local)$/i;
+
+function isPrivateIp(ip: string): boolean {
+  const v4 = ip.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
+  if (v4) {
+    const [a, b] = [parseInt(v4[1], 10), parseInt(v4[2], 10)];
+    if (a === 10) return true;
+    if (a === 127) return true;
+    if (a === 0) return true;
+    if (a === 169 && b === 254) return true; // link-local incl. cloud metadata
+    if (a === 172 && b >= 16 && b <= 31) return true;
+    if (a === 192 && b === 168) return true;
+    if (a >= 224) return true; // multicast / reserved
+    return false;
+  }
+  // IPv6: block loopback, link-local, unique-local, mapped private v4
+  const lower = ip.toLowerCase();
+  if (lower === "::1" || lower === "::") return true;
+  if (lower.startsWith("fe80:") || lower.startsWith("fc") || lower.startsWith("fd")) return true;
+  if (lower.startsWith("::ffff:")) {
+    const mapped = lower.slice(7);
+    return isPrivateIp(mapped);
+  }
+  return false;
+}
+
+async function assertSafeOutboundUrl(rawUrl: string): Promise<void> {
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    throw new Error("Invalid URL");
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new Error("Only http(s) URLs are allowed");
+  }
+  const host = parsed.hostname.replace(/^\[|\]$/g, "");
+  if (!host) throw new Error("Invalid URL host");
+  if (PRIVATE_HOST_REGEX.test(host)) {
+    throw new Error("Refusing to fetch internal host");
+  }
+  // If host is a literal IP, check directly.
+  if (/^[0-9.]+$/.test(host) || host.includes(":")) {
+    if (isPrivateIp(host)) throw new Error("Refusing to fetch private IP");
+    return;
+  }
+  // Resolve DNS and ensure no record points to a private range.
+  try {
+    const [a, aaaa] = await Promise.all([
+      Deno.resolveDns(host, "A").catch(() => [] as string[]),
+      Deno.resolveDns(host, "AAAA").catch(() => [] as string[]),
+    ]);
+    const all = [...a, ...aaaa];
+    if (all.length === 0) throw new Error("DNS resolution failed");
+    for (const ip of all) {
+      if (isPrivateIp(ip)) throw new Error("Refusing to fetch private IP");
+    }
+  } catch (e) {
+    throw new Error(
+      e instanceof Error && e.message.startsWith("Refusing")
+        ? e.message
+        : "URL host could not be safely resolved",
+    );
+  }
+}
+
+/** fetch() with an AbortController-backed timeout and SSRF guard. */
 async function fetchWithTimeout(
   url: string,
   init: RequestInit,
   timeoutMs: number,
 ): Promise<Response> {
+  await assertSafeOutboundUrl(url);
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
-    return await fetch(url, { ...init, signal: ctrl.signal });
+    // Disable redirects so an open-redirect target on a public host cannot
+    // be used to bounce to a private IP without re-validation.
+    const res = await fetch(url, { ...init, signal: ctrl.signal, redirect: "manual" });
+    if (res.status >= 300 && res.status < 400) {
+      const loc = res.headers.get("location");
+      if (loc) {
+        const next = new URL(loc, url).toString();
+        await assertSafeOutboundUrl(next);
+        return await fetch(next, { ...init, signal: ctrl.signal, redirect: "manual" });
+      }
+    }
+    return res;
   } finally {
     clearTimeout(timer);
   }

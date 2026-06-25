@@ -88,7 +88,7 @@ export function useAdminEventFlags() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('event_flags' as any)
-        .select('*, events(title, venue_name, event_date)')
+        .select('id, event_id, reason, details, created_at, resolved_at, resolved_by, events(title, venue_name, event_date)')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
