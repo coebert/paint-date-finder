@@ -165,6 +165,49 @@ export default function Index() {
     };
   }, [events]);
 
+  const faqJsonLd = useMemo(
+    () => ({
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: [
+        {
+          '@type': 'Question',
+          name: 'What is a paintball walk-on?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'A walk-on is a paintball event where individual players can turn up and join in without organising a group booking — perfect for solo players, small teams and anyone wanting more game time at .68 caliber.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'Where can I find paintball events near me in the UK?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Browse upcoming UK walk-on paintball events by region, venue, date or format on Find A Walk-On. Pick a region (South East, North West, Yorkshire, Scotland and more) or use the map view to spot events near you.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'Are these events for beginners?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Many walk-ons welcome beginners and offer hire gear. Filter to beginner-friendly events on the home page to see only events suitable for new players.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'How are events verified?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Every event listed on Find A Walk-On is manually checked and verified by the community before it appears in the calendar — no auto-imported or unverified dates.',
+          },
+        },
+      ],
+    }),
+    [],
+  );
+
+
   return (
     <div className="min-h-screen bg-background relative">
       <RouteHead
