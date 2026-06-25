@@ -232,6 +232,7 @@ export default function Index() {
         {eventListJsonLd && (
           <script type="application/ld+json">{JSON.stringify(eventListJsonLd)}</script>
         )}
+        <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
       </RouteHead>
       <HeroBackground />
       <div className="fixed inset-0 z-0 bg-background/35" />
