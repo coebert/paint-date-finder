@@ -247,6 +247,16 @@ export default function Index() {
       />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
+        <section className="space-y-2">
+          <h1 className="font-display text-3xl md:text-4xl tracking-wide text-foreground">
+            UK paintball walk-on events &amp; venues
+          </h1>
+          <p className="text-muted-foreground max-w-3xl">
+            Find paintball near you. Browse community-verified .68 caliber walk-on days,
+            scenario games and tournaments across the UK — by date, venue, region or format.
+          </p>
+        </section>
+
         <section
           aria-labelledby="ai-summary-heading"
           data-ai-summary
@@ -262,6 +272,33 @@ export default function Index() {
             League and other UK teams. All events are vetted by the community before listing.
           </p>
         </section>
+
+        <section aria-labelledby="regions-heading" className="rounded-lg border border-border/50 bg-card/30 p-4">
+          <h2 id="regions-heading" className="text-base font-semibold text-foreground mb-2">
+            Browse paintball by UK region
+          </h2>
+          <ul className="flex flex-wrap gap-2">
+            {ALL_REGIONS.map((r) => (
+              <li key={r.slug}>
+                <Link
+                  to={`/paintball/${r.slug}`}
+                  className="inline-block rounded-full border border-border/60 bg-background/60 px-3 py-1 text-sm text-foreground hover:border-accent hover:text-accent transition-colors"
+                >
+                  Paintball in {r.name}
+                </Link>
+              </li>
+            ))}
+            <li>
+              <Link
+                to="/paintball"
+                className="inline-block rounded-full border border-accent/60 bg-accent/10 px-3 py-1 text-sm text-accent hover:bg-accent/20 transition-colors"
+              >
+                See all regions →
+              </Link>
+            </li>
+          </ul>
+        </section>
+
 
         <EventTypeChips
           eventType={eventType}
