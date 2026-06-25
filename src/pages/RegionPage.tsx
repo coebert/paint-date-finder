@@ -44,7 +44,7 @@ export default function RegionPage() {
     verifiedOnly: false,
     regionVenues: venueNames.length ? venueNames : undefined,
   });
-  const { data: venueDetails } = useVenueDetails();
+  
 
   const upcoming = useMemo(() => {
     if (!allEvents) return [];
