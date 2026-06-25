@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EventCard } from '@/components/EventCard';
 import { useEvents } from '@/hooks/useEvents';
-import { useVenueDetails } from '@/hooks/useVenueDetails';
+// venue details map not currently needed here; EventCard handles its own lookups
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { getRegionBySlug } from '@/lib/regions';
