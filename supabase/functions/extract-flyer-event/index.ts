@@ -97,7 +97,7 @@ function isInstagram(url: string): boolean {
 const PRIVATE_HOST_REGEX =
   /^(localhost|metadata\.google\.internal|metadata|.*\.internal|.*\.local)$/i;
 
-function isPrivateIp(ip: string): boolean {
+export function isPrivateIp(ip: string): boolean {
   const v4 = ip.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
   if (v4) {
     const [a, b] = [parseInt(v4[1], 10), parseInt(v4[2], 10)];
