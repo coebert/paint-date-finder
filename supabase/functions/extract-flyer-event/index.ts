@@ -121,7 +121,7 @@ export function isPrivateIp(ip: string): boolean {
   return false;
 }
 
-async function assertSafeOutboundUrl(rawUrl: string): Promise<void> {
+export async function assertSafeOutboundUrl(rawUrl: string): Promise<void> {
   let parsed: URL;
   try {
     parsed = new URL(rawUrl);
