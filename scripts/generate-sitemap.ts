@@ -150,13 +150,25 @@ function generateSitemap(entries: SitemapEntry[]) {
   const staticPaths = discoverStaticRoutes();
   const staticEntries: SitemapEntry[] = staticPaths.map((p) => {
     if (p === "/") return { path: p, changefreq: "daily", priority: "1.0" };
+    if (p === "/paintball") return { path: p, changefreq: "weekly", priority: "0.9" };
     return { path: p, changefreq: "weekly", priority: "0.8" };
   });
+
+  // Region landing pages — static list kept in sync with src/lib/regions.ts
+  const regionSlugs = [
+    "south-east", "south-west", "west-midlands", "east-midlands",
+    "north-west", "north-east", "yorkshire", "scotland", "wales",
+  ];
+  const regionEntries: SitemapEntry[] = regionSlugs.map((s) => ({
+    path: `/paintball/${s}`,
+    changefreq: "weekly",
+    priority: "0.85",
+  }));
 
   const teams = await fetchTeams();
   const events = await fetchEvents();
   const venues = await fetchVenues();
-  const entries = [...staticEntries, ...teams, ...events, ...venues];
+  const entries = [...staticEntries, ...regionEntries, ...teams, ...events, ...venues];
   writeFileSync(resolve("public/sitemap.xml"), generateSitemap(entries));
   console.log(`sitemap.xml written (${entries.length} entries)`);
 })();

@@ -10,6 +10,7 @@ import { useVenueProfileBySlug } from '@/hooks/useVenueProfile';
 import { useEvents } from '@/hooks/useEvents';
 import { format, parseISO, isBefore, startOfDay } from 'date-fns';
 import { ImageWithSkeleton } from '@/components/ImageWithSkeleton';
+import { regionSlug } from '@/lib/regions';
 
 const SITE_ORIGIN = 'https://findawalkon.com';
 
@@ -98,9 +99,20 @@ export default function VenueProfile() {
             </Button>
             <h1 className="font-display text-3xl md:text-4xl tracking-wide text-foreground">{venue.name}</h1>
             {venue.location && (
-              <p className="text-muted-foreground mt-2 inline-flex items-center gap-1.5">
+              <p className="text-muted-foreground mt-2 inline-flex items-center gap-1.5 flex-wrap">
                 <MapPin className="h-4 w-4 text-accent" /> {venue.location}
-                {venue.region && <span className="text-muted-foreground/70">· {venue.region}</span>}
+                {venue.region && (
+                  <span className="text-muted-foreground/70">
+                    ·{' '}
+                    {regionSlug(venue.region) ? (
+                      <Link to={`/paintball/${regionSlug(venue.region)}`} className="hover:text-accent underline-offset-2 hover:underline">
+                        {venue.region}
+                      </Link>
+                    ) : (
+                      venue.region
+                    )}
+                  </span>
+                )}
               </p>
             )}
             <div className="flex flex-wrap items-center gap-2 mt-3">

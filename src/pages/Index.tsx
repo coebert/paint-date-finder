@@ -22,6 +22,8 @@ import { useUserLocation } from '@/hooks/useUserLocation';
 import { NearMeFilter } from '@/components/NearMeFilter';
 import { getVenueCoords, haversineMiles } from '@/lib/geo';
 import { HeroBackground, heroPreload } from '@/components/HeroBackground';
+import { ALL_REGIONS } from '@/lib/regions';
+import { Link } from 'react-router-dom';
 
 
 export default function Index() {
@@ -163,6 +165,49 @@ export default function Index() {
     };
   }, [events]);
 
+  const faqJsonLd = useMemo(
+    () => ({
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: [
+        {
+          '@type': 'Question',
+          name: 'What is a paintball walk-on?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'A walk-on is a paintball event where individual players can turn up and join in without organising a group booking — perfect for solo players, small teams and anyone wanting more game time at .68 caliber.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'Where can I find paintball events near me in the UK?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Browse upcoming UK walk-on paintball events by region, venue, date or format on Find A Walk-On. Pick a region (South East, North West, Yorkshire, Scotland and more) or use the map view to spot events near you.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'Are these events for beginners?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Many walk-ons welcome beginners and offer hire gear. Filter to beginner-friendly events on the home page to see only events suitable for new players.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'How are events verified?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Every event listed on Find A Walk-On is manually checked and verified by the community before it appears in the calendar — no auto-imported or unverified dates.',
+          },
+        },
+      ],
+    }),
+    [],
+  );
+
+
   return (
     <div className="min-h-screen bg-background relative">
       <RouteHead
@@ -187,6 +232,7 @@ export default function Index() {
         {eventListJsonLd && (
           <script type="application/ld+json">{JSON.stringify(eventListJsonLd)}</script>
         )}
+        <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
       </RouteHead>
       <HeroBackground />
       <div className="fixed inset-0 z-0 bg-background/35" />
@@ -201,6 +247,16 @@ export default function Index() {
       />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
+        <section className="space-y-2">
+          <h1 className="font-display text-3xl md:text-4xl tracking-wide text-foreground">
+            UK paintball walk-on events &amp; venues
+          </h1>
+          <p className="text-muted-foreground max-w-3xl">
+            Find paintball near you. Browse community-verified .68 caliber walk-on days,
+            scenario games and tournaments across the UK — by date, venue, region or format.
+          </p>
+        </section>
+
         <section
           aria-labelledby="ai-summary-heading"
           data-ai-summary
@@ -216,6 +272,33 @@ export default function Index() {
             League and other UK teams. All events are vetted by the community before listing.
           </p>
         </section>
+
+        <section aria-labelledby="regions-heading" className="rounded-lg border border-border/50 bg-card/30 p-4">
+          <h2 id="regions-heading" className="text-base font-semibold text-foreground mb-2">
+            Browse paintball by UK region
+          </h2>
+          <ul className="flex flex-wrap gap-2">
+            {ALL_REGIONS.map((r) => (
+              <li key={r.slug}>
+                <Link
+                  to={`/paintball/${r.slug}`}
+                  className="inline-block rounded-full border border-border/60 bg-background/60 px-3 py-1 text-sm text-foreground hover:border-accent hover:text-accent transition-colors"
+                >
+                  Paintball in {r.name}
+                </Link>
+              </li>
+            ))}
+            <li>
+              <Link
+                to="/paintball"
+                className="inline-block rounded-full border border-accent/60 bg-accent/10 px-3 py-1 text-sm text-accent hover:bg-accent/20 transition-colors"
+              >
+                See all regions →
+              </Link>
+            </li>
+          </ul>
+        </section>
+
 
         <EventTypeChips
           eventType={eventType}
