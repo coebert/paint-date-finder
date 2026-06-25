@@ -16,8 +16,20 @@ function isPast(eventDate: string) {
   return parseISO(eventDate) < new Date(new Date().toDateString());
 }
 
+/** Defence-in-depth: only render http(s) media URLs to prevent javascript:/data: XSS. */
+function safeHttpUrl(u: string | null | undefined): string | null {
+  if (!u) return null;
+  try {
+    const parsed = new URL(u);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? parsed.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 export function RecapGallery({ eventId, eventTitle, eventDate }: Props) {
-  const { data: recaps = [] } = useApprovedRecaps(eventId);
+  const { data: rawRecaps = [] } = useApprovedRecaps(eventId);
+  const recaps = rawRecaps.filter((r) => safeHttpUrl(r.media_url));
   const [submitOpen, setSubmitOpen] = useState(false);
   const past = isPast(eventDate);
 
