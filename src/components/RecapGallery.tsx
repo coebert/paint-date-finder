@@ -17,7 +17,7 @@ function isPast(eventDate: string) {
 }
 
 /** Defence-in-depth: only render http(s) media URLs to prevent javascript:/data: XSS. */
-function safeHttpUrl(u: string | null | undefined): string | null {
+export function safeHttpUrl(u: string | null | undefined): string | null {
   if (!u) return null;
   try {
     const parsed = new URL(u);

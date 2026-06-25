@@ -97,7 +97,7 @@ function isInstagram(url: string): boolean {
 const PRIVATE_HOST_REGEX =
   /^(localhost|metadata\.google\.internal|metadata|.*\.internal|.*\.local)$/i;
 
-function isPrivateIp(ip: string): boolean {
+export function isPrivateIp(ip: string): boolean {
   const v4 = ip.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
   if (v4) {
     const [a, b] = [parseInt(v4[1], 10), parseInt(v4[2], 10)];
@@ -114,14 +114,23 @@ function isPrivateIp(ip: string): boolean {
   const lower = ip.toLowerCase();
   if (lower === "::1" || lower === "::") return true;
   if (lower.startsWith("fe80:") || lower.startsWith("fc") || lower.startsWith("fd")) return true;
-  if (lower.startsWith("::ffff:")) {
-    const mapped = lower.slice(7);
-    return isPrivateIp(mapped);
+  // IPv4-mapped IPv6 in dotted form (::ffff:127.0.0.1)
+  if (lower.startsWith("::ffff:") && lower.includes(".")) {
+    return isPrivateIp(lower.slice(7));
+  }
+  // IPv4-mapped IPv6 in hex form (::ffff:7f00:1 == 127.0.0.1) — WHATWG URL
+  // normalizes the dotted form into this shape.
+  const hexMapped = lower.match(/^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
+  if (hexMapped) {
+    const hi = parseInt(hexMapped[1], 16);
+    const lo = parseInt(hexMapped[2], 16);
+    const dotted = `${(hi >> 8) & 0xff}.${hi & 0xff}.${(lo >> 8) & 0xff}.${lo & 0xff}`;
+    return isPrivateIp(dotted);
   }
   return false;
 }
 
-async function assertSafeOutboundUrl(rawUrl: string): Promise<void> {
+export async function assertSafeOutboundUrl(rawUrl: string): Promise<void> {
   let parsed: URL;
   try {
     parsed = new URL(rawUrl);
