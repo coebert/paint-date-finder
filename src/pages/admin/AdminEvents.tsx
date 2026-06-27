@@ -49,8 +49,36 @@ export default function AdminEvents() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<PaintballEvent | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [dedupeRunning, setDedupeRunning] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: events, isLoading, error } = useEvents({});
+  const deleteEvent = useDeleteEvent();
+
+  const handleDedupe = async (dryRun: boolean) => {
+    if (!dryRun && !confirm(
+      'Run deduplication on all events?\n\nThis will merge duplicates into the oldest matching event using the same fuzzy rules as the scraper (venue + date ±2 days + similar title). The duplicates will be deleted.'
+    )) return;
+    setDedupeRunning(true);
+    const toastId = toast.loading(dryRun ? 'Scanning for duplicates…' : 'Merging duplicate events…');
+    try {
+      const { data, error } = await supabase.functions.invoke('dedupe-events-backfill', {
+        body: { dryRun },
+      });
+      if (error) throw error;
+      toast.success(
+        dryRun
+          ? `Found ${data?.duplicatesFound ?? 0} duplicates across ${data?.scanned ?? 0} events`
+          : `Merged ${data?.merged ?? 0} duplicates (scanned ${data?.scanned ?? 0})`,
+        { id: toastId },
+      );
+      if (!dryRun) queryClient.invalidateQueries({ queryKey: ['events'] });
+    } catch (e) {
+      toast.error((e as Error).message || 'Dedupe failed', { id: toastId });
+    } finally {
+      setDedupeRunning(false);
+    }
+  };
   const deleteEvent = useDeleteEvent();
 
   const filteredEvents = events?.filter(event => 
