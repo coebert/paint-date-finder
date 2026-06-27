@@ -99,8 +99,11 @@ describe('useApproveSubmission', () => {
     insertSpy.mockClear();
     updateSpy.mockClear();
     selectMock.mockClear();
+    rpcSpy.mockClear();
     (globalThis as any).__events = [];
+    (globalThis as any).__duplicateEventId = null;
   });
+
 
   it('inserts approved submissions with is_verified=true so they appear on the calendar', async () => {
     const { result } = renderHook(() => useApproveSubmission(), { wrapper });
