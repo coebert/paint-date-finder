@@ -8,9 +8,20 @@ const insertSpy = vi.fn();
 const updateSpy = vi.fn();
 const selectMock = vi.fn();
 
+const rpcSpy = vi.fn();
+
 vi.mock('@/integrations/supabase/client', () => {
   return {
     supabase: {
+      rpc: (name: string, args: any) => {
+        rpcSpy(name, args);
+        // Default: no duplicate found, merge no-op
+        if (name === 'find_duplicate_event') {
+          const dupId = (globalThis as any).__duplicateEventId ?? null;
+          return Promise.resolve({ data: dupId, error: null });
+        }
+        return Promise.resolve({ data: null, error: null });
+      },
       from: (table: string) => {
         if (table === 'events') {
           return {
@@ -46,6 +57,7 @@ vi.mock('@/integrations/supabase/client', () => {
     },
   };
 });
+
 
 vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() },
