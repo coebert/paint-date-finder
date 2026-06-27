@@ -28,6 +28,7 @@ import AdminPlayerPosts from "./pages/admin/AdminPlayerPosts";
 import AdminRecaps from "./pages/admin/AdminRecaps";
 import RegionsIndex from "./pages/RegionsIndex";
 import RegionPage from "./pages/RegionPage";
+import CityPage from "./pages/CityPage";
 import AdminGscRegions from "./pages/admin/AdminGscRegions";
 import AdminRegionAudit from "./pages/admin/AdminRegionAudit";
 
@@ -49,6 +50,7 @@ const App = () => (
           <Route path="/venues/:slug" element={<VenueProfile />} />
           <Route path="/looking-for-a-game" element={<LookingForGame />} />
           <Route path="/paintball" element={<RegionsIndex />} />
+          <Route path="/paintball/city/:slug" element={<CityPage />} />
           <Route path="/paintball/:slug" element={<RegionPage />} />
           
           
