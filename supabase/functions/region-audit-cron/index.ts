@@ -35,10 +35,19 @@ const CITY_OVERLAP_MIN = 2;
 
 type Severity = "ok" | "warn" | "fail";
 interface Issue { severity: Severity; code: string; message: string; suggestion: string }
+interface IndexStatus {
+  verdict: string | null;
+  coverageState: string | null;
+  indexingState: string | null;
+  lastCrawlTime: string | null;
+  error: string | null;
+}
 interface Row {
   slug: string; name: string; url: string;
   venueCount: number; upcomingCount: number;
   introWords: number; totalWords: number;
+  duplicationScore: number; // 0..1, max Jaccard vs any other region intro
+  indexStatus: IndexStatus | null;
   worstSeverity: Severity; issues: Issue[];
   duplicatePartners: string[];
   cityOverlapPartners: { region: string; cities: string[] }[];
