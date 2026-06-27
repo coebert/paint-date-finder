@@ -196,6 +196,7 @@ export type Database = {
           is_beginner_friendly: boolean
           is_verified: boolean | null
           last_verified_at: string | null
+          merged_sources: Json
           price_info: string | null
           source_quote: string | null
           source_url: string | null
@@ -219,6 +220,7 @@ export type Database = {
           is_beginner_friendly?: boolean
           is_verified?: boolean | null
           last_verified_at?: string | null
+          merged_sources?: Json
           price_info?: string | null
           source_quote?: string | null
           source_url?: string | null
@@ -242,6 +244,7 @@ export type Database = {
           is_beginner_friendly?: boolean
           is_verified?: boolean | null
           last_verified_at?: string | null
+          merged_sources?: Json
           price_info?: string | null
           source_quote?: string | null
           source_url?: string | null
@@ -929,6 +932,17 @@ export type Database = {
         Args: { _id: string; _token: string }
         Returns: boolean
       }
+      find_duplicate_event: {
+        Args: {
+          _date: string
+          _date_window?: number
+          _title: string
+          _title_threshold?: number
+          _venue: string
+          _venue_threshold?: number
+        }
+        Returns: string
+      }
       get_admin_event_recaps: {
         Args: never
         Returns: {
@@ -995,6 +1009,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      merge_event_source: {
+        Args: { _event_id: string; _source: Json }
+        Returns: undefined
       }
     }
     Enums: {
