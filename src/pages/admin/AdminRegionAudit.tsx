@@ -13,6 +13,7 @@ import {
   XCircle,
   Lightbulb,
   Clock,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
@@ -85,6 +86,7 @@ export default function AdminRegionAudit() {
   });
 
   const [running, setRunning] = useState(false);
+  const [autoFixing, setAutoFixing] = useState(false);
   const [lastSeen, setLastSeen] = useState<string | null>(() =>
     typeof window === "undefined" ? null : localStorage.getItem(LAST_SEEN_KEY),
   );
