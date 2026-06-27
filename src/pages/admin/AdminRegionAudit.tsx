@@ -328,6 +328,44 @@ export default function AdminRegionAudit() {
           </Card>
         )}
 
+        {previous && rows.length > 0 && (() => {
+          const sumWords = rows.reduce((s, r) => s + r.totalWords, 0);
+          const prevSumWords = previous.rows.reduce((s, r) => s + r.totalWords, 0);
+          const avgDup = rows.reduce((s, r) => s + (r.duplicationScore ?? 0), 0) / rows.length;
+          const prevAvgDup = previous.rows.reduce((s, r) => s + (r.duplicationScore ?? 0), 0) / Math.max(previous.rows.length, 1);
+          const issuesDelta = (latest!.fail_count + latest!.warn_count) - (previous.fail_count + previous.warn_count);
+          const indexedNow = rows.filter((r) => r.indexStatus?.verdict === "PASS").length;
+          const indexedPrev = previous.rows.filter((r) => r.indexStatus?.verdict === "PASS").length;
+          const Stat = ({ label, value, delta, betterWhen }: { label: string; value: string; delta: number; betterWhen: "higher" | "lower" }) => {
+            const improved = betterWhen === "higher" ? delta > 0 : delta < 0;
+            const cls = delta === 0 ? "text-muted-foreground" : improved ? "text-primary" : "text-destructive";
+            const sign = delta > 0 ? "+" : "";
+            return (
+              <div className="flex flex-col">
+                <span className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</span>
+                <span className="text-lg font-semibold text-foreground">{value}</span>
+                <span className={`text-xs ${cls}`}>{delta === 0 ? "no change" : `${sign}${delta}`}</span>
+              </div>
+            );
+          };
+          return (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Outcome vs previous run</CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Compared to run on {format(parseISO(previous.created_at), "dd/MM/yyyy HH:mm 'UTC'")}
+                </p>
+              </CardHeader>
+              <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Stat label="Total words (all regions)" value={String(sumWords)} delta={sumWords - prevSumWords} betterWhen="higher" />
+                <Stat label="Avg duplication score" value={avgDup.toFixed(2)} delta={Number((avgDup - prevAvgDup).toFixed(2))} betterWhen="lower" />
+                <Stat label="Open issues" value={String(latest!.fail_count + latest!.warn_count)} delta={issuesDelta} betterWhen="lower" />
+                <Stat label="Pages indexed (PASS)" value={`${indexedNow}/${rows.length}`} delta={indexedNow - indexedPrev} betterWhen="higher" />
+              </CardContent>
+            </Card>
+          );
+        })()}
+
         {rows.length > 0 && (
           <div className="space-y-4">
             {rows
