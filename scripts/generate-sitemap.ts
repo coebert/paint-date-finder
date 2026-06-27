@@ -165,10 +165,22 @@ function generateSitemap(entries: SitemapEntry[]) {
     priority: "0.85",
   }));
 
+  // City landing pages — static list kept in sync with src/lib/cities.ts
+  const citySlugs = [
+    "london", "manchester", "birmingham", "glasgow", "bristol", "edinburgh",
+    "liverpool", "newcastle", "sheffield", "leeds", "nottingham", "cardiff",
+    "leicester", "coventry", "sunderland", "derby", "swansea", "york",
+  ];
+  const cityEntries: SitemapEntry[] = citySlugs.map((s) => ({
+    path: `/paintball/city/${s}`,
+    changefreq: "weekly",
+    priority: "0.8",
+  }));
+
   const teams = await fetchTeams();
   const events = await fetchEvents();
   const venues = await fetchVenues();
-  const entries = [...staticEntries, ...regionEntries, ...teams, ...events, ...venues];
+  const entries = [...staticEntries, ...regionEntries, ...cityEntries, ...teams, ...events, ...venues];
   writeFileSync(resolve("public/sitemap.xml"), generateSitemap(entries));
   console.log(`sitemap.xml written (${entries.length} entries)`);
 })();

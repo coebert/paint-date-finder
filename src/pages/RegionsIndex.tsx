@@ -4,6 +4,7 @@ import { RouteHead } from '@/components/RouteHead';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ALL_REGIONS } from '@/lib/regions';
+import { ALL_CITIES } from '@/lib/cities';
 
 const SITE_ORIGIN = 'https://findawalkon.com';
 
@@ -84,6 +85,24 @@ export default function RegionsIndex() {
               </li>
             ))}
           </ul>
+
+          <section aria-labelledby="cities-heading" className="mt-10 border-t border-border/50 pt-6">
+            <h2 id="cities-heading" className="font-display text-2xl tracking-wide text-foreground mb-3">
+              Popular cities
+            </h2>
+            <p className="text-muted-foreground text-sm mb-4">
+              Jump straight to paintball walk-ons in the UK's biggest cities.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {ALL_CITIES.map((c) => (
+                <Link key={c.slug} to={`/paintball/city/${c.slug}`}>
+                  <Badge variant="outline" className="border-border/60 text-muted-foreground hover:text-foreground hover:border-accent">
+                    Paintball in {c.name}
+                  </Badge>
+                </Link>
+              ))}
+            </div>
+          </section>
         </main>
       </div>
     </>
