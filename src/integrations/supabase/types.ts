@@ -372,6 +372,39 @@ export type Database = {
         }
         Relationships: []
       }
+      region_audit_runs: {
+        Row: {
+          created_at: string
+          fail_count: number
+          fingerprint: string
+          id: string
+          ok_count: number
+          rows: Json
+          triggered_by: string
+          warn_count: number
+        }
+        Insert: {
+          created_at?: string
+          fail_count?: number
+          fingerprint: string
+          id?: string
+          ok_count?: number
+          rows: Json
+          triggered_by?: string
+          warn_count?: number
+        }
+        Update: {
+          created_at?: string
+          fail_count?: number
+          fingerprint?: string
+          id?: string
+          ok_count?: number
+          rows?: Json
+          triggered_by?: string
+          warn_count?: number
+        }
+        Relationships: []
+      }
       reverification_runs: {
         Row: {
           errors: Json
