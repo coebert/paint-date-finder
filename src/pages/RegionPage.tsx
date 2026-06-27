@@ -218,6 +218,23 @@ export default function RegionPage() {
             )}
           </section>
 
+          {cities.length > 0 && (
+            <section aria-labelledby="cities-heading" className="border-t border-border/50 pt-6">
+              <h2 id="cities-heading" className="font-display text-xl text-foreground mb-3">
+                Paintball by city in {region.name}
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {cities.map((c) => (
+                  <Link key={c.slug} to={`/paintball/city/${c.slug}`}>
+                    <Badge variant="outline" className="border-border/60 text-muted-foreground hover:text-foreground hover:border-accent">
+                      Paintball in {c.name}
+                    </Badge>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
           <section className="border-t border-border/50 pt-6">
             <h2 className="font-display text-xl text-foreground mb-2">Looking elsewhere?</h2>
             <p className="text-muted-foreground text-sm">
