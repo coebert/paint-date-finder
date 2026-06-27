@@ -369,6 +369,14 @@ export default function AdminScraper() {
     refetch: refetchSources,
     isFetching: sourcesFetching,
   } = useTrustedSources();
+  // Poll the runs list. While a run is in-flight (or one was just triggered)
+  // refresh every 3s so the user sees status & counts update in near-real-time.
+  // Otherwise idle-poll every 30s so a freshly created cron run appears without
+  // a manual reload.
+  const [hasInFlightRun, setHasInFlightRun] = useState(false);
+  const runScrape = useRunScrape();
+  const pollInterval = hasInFlightRun || runScrape.isPending ? 3000 : 30000;
+
   const {
     data: runs = [],
     isLoading: runsLoading,
@@ -376,10 +384,15 @@ export default function AdminScraper() {
     error: runsErrorObj,
     refetch: refetchRuns,
     isFetching: runsFetching,
-  } = useScrapeRuns();
+    dataUpdatedAt: runsUpdatedAt,
+  } = useScrapeRuns({ refetchInterval: pollInterval });
   const remove = useDeleteTrustedSource();
   const setActive = useSetTrustedSourceActive();
-  const runScrape = useRunScrape();
+
+  useEffect(() => {
+    setHasInFlightRun(runs.some(isRunInFlight));
+  }, [runs]);
+
 
 
   return (
