@@ -135,6 +135,25 @@ export default function AdminEvents() {
           <Plus className="h-4 w-4" />
           Add Event
         </Button>
+        <Button
+          variant="outline"
+          onClick={() => handleDedupe(true)}
+          disabled={dedupeRunning}
+          className="gap-2"
+          title="Scan for duplicates without making changes"
+        >
+          {dedupeRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Layers className="h-4 w-4" />}
+          Scan duplicates
+        </Button>
+        <Button
+          variant="secondary"
+          onClick={() => handleDedupe(false)}
+          disabled={dedupeRunning}
+          className="gap-2"
+        >
+          {dedupeRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Layers className="h-4 w-4" />}
+          Dedupe all events
+        </Button>
       </div>
 
       {/* Events Table */}
