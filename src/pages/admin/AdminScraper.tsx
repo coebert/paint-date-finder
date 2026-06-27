@@ -708,13 +708,52 @@ export default function AdminScraper() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Recent runs</CardTitle>
-            <CardDescription>
-              Last 20 scraper executions. Candidates land in Submissions for
-              review.
-            </CardDescription>
+          <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <CardTitle className="flex items-center gap-2">
+                Recent runs
+                {hasInFlightRun || runScrape.isPending ? (
+                  <span
+                    className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-accent"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <span className="relative inline-flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-60" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
+                    </span>
+                    Live
+                  </span>
+                ) : null}
+              </CardTitle>
+              <CardDescription>
+                Last 20 scraper executions. Candidates land in Submissions for review.
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              {runsUpdatedAt ? (
+                <span title={new Date(runsUpdatedAt).toLocaleString()}>
+                  Updated {formatDistanceToNow(new Date(runsUpdatedAt), { addSuffix: true })}
+                </span>
+              ) : null}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => refetchRuns()}
+                disabled={runsFetching}
+                aria-label="Refresh runs"
+                title="Refresh now"
+              >
+                {runsFetching ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <RotateCcw className="h-3.5 w-3.5" />
+                )}
+              </Button>
+            </div>
           </CardHeader>
+
           <CardContent className="px-3 sm:px-6">
             {runsLoading ? (
               <RunsSkeleton />
