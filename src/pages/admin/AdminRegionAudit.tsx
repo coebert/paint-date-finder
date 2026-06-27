@@ -182,10 +182,22 @@ export default function AdminRegionAudit() {
                 Scheduled nightly at 03:15 UTC. Run on demand any time.
               </p>
             </div>
-            <Button onClick={runNow} disabled={running} className="gap-2">
-              {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
-              {running ? "Running…" : "Run now"}
-            </Button>
+            <div className="flex gap-2 flex-wrap">
+              <Button
+                onClick={autoFixAll}
+                disabled={autoFixing || running || autoFixableCount === 0}
+                variant="secondary"
+                className="gap-2"
+                title={autoFixableCount === 0 ? "No auto-fixable issues" : `Use AI to fix ${autoFixableCount} region${autoFixableCount === 1 ? "" : "s"}`}
+              >
+                {autoFixing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                {autoFixing ? "Fixing…" : `Auto-fix all (${autoFixableCount})`}
+              </Button>
+              <Button onClick={runNow} disabled={running || autoFixing} className="gap-2">
+                {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
+                {running ? "Running…" : "Run now"}
+              </Button>
+            </div>
           </CardHeader>
           {latest && (
             <CardContent className="text-xs text-muted-foreground flex flex-wrap gap-4">
