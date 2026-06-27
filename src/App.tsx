@@ -29,6 +29,7 @@ import AdminRecaps from "./pages/admin/AdminRecaps";
 import RegionsIndex from "./pages/RegionsIndex";
 import RegionPage from "./pages/RegionPage";
 import AdminGscRegions from "./pages/admin/AdminGscRegions";
+import AdminRegionAudit from "./pages/admin/AdminRegionAudit";
 
 const queryClient = new QueryClient();
 
@@ -135,6 +136,10 @@ const App = () => (
           <Route
             path="/admin/gsc-regions"
             element={<AdminRoute><AdminGscRegions /></AdminRoute>}
+          />
+          <Route
+            path="/admin/region-audit"
+            element={<AdminRoute><AdminRegionAudit /></AdminRoute>}
           />
           
           
