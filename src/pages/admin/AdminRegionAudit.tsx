@@ -81,6 +81,21 @@ export function useLatestRegionAuditRun() {
 export default function AdminRegionAudit() {
   const qc = useQueryClient();
   const { data: latest, isLoading } = useLatestRegionAuditRun();
+  const { data: previous } = useQuery({
+    queryKey: ["region-audit-runs", "previous", latest?.id],
+    enabled: !!latest,
+    queryFn: async (): Promise<RunRow | null> => {
+      const { data, error } = await supabase
+        .from("region_audit_runs")
+        .select("*")
+        .lt("created_at", latest!.created_at)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return (data as unknown as RunRow) ?? null;
+    },
+  });
   const { data: history } = useQuery({
     queryKey: ["region-audit-runs", "history"],
     queryFn: async () => {
@@ -93,6 +108,12 @@ export default function AdminRegionAudit() {
       return data ?? [];
     },
   });
+
+  const prevBySlug = useMemo(() => {
+    const map = new Map<string, StoredRow>();
+    for (const r of previous?.rows ?? []) map.set(r.slug, r);
+    return map;
+  }, [previous]);
 
   const [running, setRunning] = useState(false);
   const [autoFixing, setAutoFixing] = useState(false);
