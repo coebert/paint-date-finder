@@ -943,6 +943,18 @@ export type Database = {
         }
         Returns: string
       }
+      find_duplicate_event_excluding: {
+        Args: {
+          _date: string
+          _date_window?: number
+          _id: string
+          _title: string
+          _title_threshold?: number
+          _venue: string
+          _venue_threshold?: number
+        }
+        Returns: string
+      }
       get_admin_event_recaps: {
         Args: never
         Returns: {
