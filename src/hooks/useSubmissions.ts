@@ -72,7 +72,7 @@ export function useApproveSubmission() {
             _event_id: duplicateId,
             _source: {
               source_url: submission.source_url ?? null,
-              source_quote: submission.source_quote ?? null,
+              source_quote: (submission as { source_quote?: string | null }).source_quote ?? null,
               description: submission.description ?? null,
               booking_url: submission.booking_url ?? null,
               price_info: submission.price_info ?? null,
