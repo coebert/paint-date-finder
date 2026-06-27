@@ -701,9 +701,38 @@ export default function AdminScraper() {
             </CardDescription>
           </CardHeader>
           <CardContent className="px-3 sm:px-6">
-            {runs.length === 0 ? (
-              <p className="text-muted-foreground">No runs yet.</p>
+            {runsLoading ? (
+              <RunsSkeleton />
+            ) : runsError ? (
+              <ErrorState
+                title="Couldn't load recent runs"
+                message={runsErrorObj instanceof Error ? runsErrorObj.message : "An unknown error occurred while fetching run history."}
+                onRetry={() => refetchRuns()}
+                isRetrying={runsFetching}
+              />
+            ) : runs.length === 0 ? (
+              <EmptyState
+                icon={History}
+                title="No runs yet"
+                description="When the weekly scrape kicks off — or you click 'Run scrape now' — execution results will appear here."
+                action={
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => runScrape.mutate()}
+                    disabled={runScrape.isPending || sources.length === 0}
+                  >
+                    {runScrape.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Play className="mr-2 h-4 w-4" />
+                    )}
+                    Run scrape now
+                  </Button>
+                }
+              />
             ) : (
+
               <>
                 {/* Mobile cards */}
                 <ul className="flex flex-col gap-2 md:hidden">
