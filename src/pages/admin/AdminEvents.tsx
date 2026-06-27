@@ -20,9 +20,13 @@ import {
   Plus, 
   Search,
   ExternalLink,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  Layers,
+  Loader2
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { EventTypeBadge } from '@/components/EventTypeBadge';
 import { AddEventDialog } from '@/components/AddEventDialog';
 import { EventEditDialog } from '@/components/EventEditDialog';
@@ -45,9 +49,36 @@ export default function AdminEvents() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<PaintballEvent | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [dedupeRunning, setDedupeRunning] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: events, isLoading, error } = useEvents({});
   const deleteEvent = useDeleteEvent();
+
+  const handleDedupe = async (dryRun: boolean) => {
+    if (!dryRun && !confirm(
+      'Run deduplication on all events?\n\nThis will merge duplicates into the oldest matching event using the same fuzzy rules as the scraper (venue + date ±2 days + similar title). The duplicates will be deleted.'
+    )) return;
+    setDedupeRunning(true);
+    const toastId = toast.loading(dryRun ? 'Scanning for duplicates…' : 'Merging duplicate events…');
+    try {
+      const { data, error } = await supabase.functions.invoke('dedupe-events-backfill', {
+        body: { dryRun },
+      });
+      if (error) throw error;
+      toast.success(
+        dryRun
+          ? `Found ${data?.duplicatesFound ?? 0} duplicates across ${data?.scanned ?? 0} events`
+          : `Merged ${data?.merged ?? 0} duplicates (scanned ${data?.scanned ?? 0})`,
+        { id: toastId },
+      );
+      if (!dryRun) queryClient.invalidateQueries({ queryKey: ['events'] });
+    } catch (e) {
+      toast.error((e as Error).message || 'Dedupe failed', { id: toastId });
+    } finally {
+      setDedupeRunning(false);
+    }
+  };
 
   const filteredEvents = events?.filter(event => 
     event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -103,6 +134,25 @@ export default function AdminEvents() {
         <Button onClick={() => setAddDialogOpen(true)} className="gap-2">
           <Plus className="h-4 w-4" />
           Add Event
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => handleDedupe(true)}
+          disabled={dedupeRunning}
+          className="gap-2"
+          title="Scan for duplicates without making changes"
+        >
+          {dedupeRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Layers className="h-4 w-4" />}
+          Scan duplicates
+        </Button>
+        <Button
+          variant="secondary"
+          onClick={() => handleDedupe(false)}
+          disabled={dedupeRunning}
+          className="gap-2"
+        >
+          {dedupeRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Layers className="h-4 w-4" />}
+          Dedupe all events
         </Button>
       </div>
 
