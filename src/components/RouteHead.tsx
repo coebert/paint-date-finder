@@ -4,6 +4,8 @@ import { ReactNode } from 'react';
 const SITE_NAME = 'Find A Walk-On';
 const SITE_ORIGIN = 'https://findawalkon.com';
 const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}/og-image.jpg`;
+const DEFAULT_OG_IMAGE_WIDTH = 1200;
+const DEFAULT_OG_IMAGE_HEIGHT = 630;
 
 export interface RouteHeadProps {
   /** Page title (will be appended with " | Find A Walk-On" unless `titleFull` is true). */
@@ -24,6 +26,12 @@ export interface RouteHeadProps {
   ogType?: 'website' | 'article' | 'profile';
   /** Absolute URL of social-preview image. Defaults to /og-image.jpg. */
   ogImage?: string;
+  /** Open Graph image width in pixels. Defaults to 1200. */
+  ogImageWidth?: number;
+  /** Open Graph image height in pixels. Defaults to 630. */
+  ogImageHeight?: number;
+  /** Twitter image alt text. Defaults to the page title. */
+  twitterImageAlt?: string;
   /** Optional extra tags (JSON-LD scripts, additional meta, preloads, etc.). */
   children?: ReactNode;
 }
@@ -45,11 +53,15 @@ export function RouteHead({
   robots = 'index,follow',
   ogType = 'website',
   ogImage = DEFAULT_OG_IMAGE,
+  ogImageWidth = DEFAULT_OG_IMAGE_WIDTH,
+  ogImageHeight = DEFAULT_OG_IMAGE_HEIGHT,
+  twitterImageAlt,
   children,
 }: RouteHeadProps) {
   const fullTitle = titleFull ? title : `${title} | ${SITE_NAME}`;
   const canonicalUrl =
     canonical ?? (path ? `${SITE_ORIGIN}${path}` : undefined);
+  const imageAlt = twitterImageAlt ?? fullTitle;
 
   return (
     <Helmet>
@@ -65,14 +77,18 @@ export function RouteHead({
       <meta property="og:site_name" content={SITE_NAME} />
       <meta property="og:locale" content="en_GB" />
       <meta property="og:image" content={ogImage} />
+      <meta property="og:image:width" content={String(ogImageWidth)} />
+      <meta property="og:image:height" content={String(ogImageHeight)} />
 
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
       {canonicalUrl && <meta name="twitter:url" content={canonicalUrl} />}
       <meta name="twitter:image" content={ogImage} />
+      <meta name="twitter:image:alt" content={imageAlt} />
 
       {children}
     </Helmet>
   );
 }
+
