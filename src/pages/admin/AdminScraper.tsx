@@ -46,9 +46,12 @@ import {
   useUpsertTrustedSource,
   type TrustedSource,
 } from "@/hooks/useScraper";
-import { Loader2, Play, Plus, Trash2, ExternalLink, Pencil, RotateCcw } from "lucide-react";
+import { Loader2, Play, Plus, Trash2, ExternalLink, Pencil, RotateCcw, AlertCircle, Inbox, History } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { AdminFlyerImportCard } from "@/components/admin/AdminFlyerImportCard";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
 
 function SourceDialog({
   trigger,
