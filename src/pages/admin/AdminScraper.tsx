@@ -239,17 +239,18 @@ export default function AdminScraper() {
       <div className="space-y-6">
         <AdminFlyerImportCard />
         <Card>
-          <CardHeader className="flex flex-row items-start justify-between gap-4">
-            <div>
+          <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
               <CardTitle>Trusted sources</CardTitle>
               <CardDescription>
                 URLs scraped automatically every Monday at 06:00 UTC.
               </CardDescription>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 sm:flex-nowrap">
               <Button
                 onClick={() => runScrape.mutate()}
                 disabled={runScrape.isPending || sources.length === 0}
+                className="flex-1 sm:flex-none"
               >
                 {runScrape.isPending ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -260,7 +261,7 @@ export default function AdminScraper() {
               </Button>
               <SourceDialog
                 trigger={
-                  <Button variant="outline">
+                  <Button variant="outline" className="flex-1 sm:flex-none">
                     <Plus className="mr-2 h-4 w-4" />
                     Add source
                   </Button>
@@ -268,7 +269,7 @@ export default function AdminScraper() {
               />
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-3 sm:px-6">
             {isLoading ? (
               <p className="text-muted-foreground">Loading…</p>
             ) : sources.length === 0 ? (
@@ -276,116 +277,32 @@ export default function AdminScraper() {
                 No sources yet. Add a venue URL to get started.
               </p>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Venue</TableHead>
-                    <TableHead>URL</TableHead>
-                    <TableHead>Active</TableHead>
-                    <TableHead>Last scraped</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Last run</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <>
+                {/* Mobile: card list */}
+                <ul className="flex flex-col gap-3 md:hidden">
                   {sources.map((s) => (
-                    <TableRow key={s.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex flex-col gap-1">
-                          <span>{s.venue_name}</span>
-                          {s.source_type === "facebook_group" ? (
-                            <Badge variant="outline" className="w-fit text-[10px]">
-                              FB group · multi-venue
-                            </Badge>
-                          ) : null}
+                    <li
+                      key={s.id}
+                      className="rounded-lg border border-border/60 bg-card/50 p-3 space-y-2"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium truncate">{s.venue_name}</div>
+                          <a
+                            href={s.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="mt-0.5 inline-flex items-center gap-1 text-xs text-accent hover:underline break-all"
+                          >
+                            <span className="truncate">{s.url}</span>
+                            <ExternalLink className="h-3 w-3 shrink-0" />
+                          </a>
                         </div>
-                      </TableCell>
-                      <TableCell className="max-w-[280px] truncate">
-                        <a
-                          href={s.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-accent hover:underline"
-                        >
-                          {s.url}
-                          <ExternalLink className="h-3 w-3" />
-                        </a>
-                      </TableCell>
-                      <TableCell>
-                        {s.is_active ? (
-                          <Badge variant="outline">on</Badge>
-                        ) : (
-                          <Badge variant="secondary">off</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {s.last_scraped_at
-                          ? formatDistanceToNow(new Date(s.last_scraped_at), {
-                              addSuffix: true,
-                            })
-                          : "never"}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col gap-1">
-                          {statusBadge(s.last_status)}
-                          {s.last_used_firecrawl ? (
-                            <Badge variant="outline" className="w-fit text-[10px]">
-                              firecrawl
-                            </Badge>
-                          ) : null}
-                          {s.last_error_message ? (
-                            <ErrorDetails message={s.last_error_message} />
-                          ) : null}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {s.last_scraped_at ? (
-                          <div className="flex flex-col items-end text-xs">
-                            <span>
-                              <span className="text-muted-foreground">returned</span>{" "}
-                              <span className="font-medium">{s.last_returned ?? 0}</span>
-                              {" · "}
-                              <span className="text-muted-foreground">inserted</span>{" "}
-                              <span className="font-medium text-accent">
-                                {s.last_inserted ?? 0}
-                              </span>
-                            </span>
-                            <span className="text-muted-foreground">
-                              deduped {s.last_deduped ?? 0}
-                              {(s.last_invalid_date ?? 0) > 0
-                                ? ` · invalid ${s.last_invalid_date}`
-                                : ""}
-                              {s.last_chars != null
-                                ? ` · ${s.last_chars.toLocaleString()} chars`
-                                : ""}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground text-xs">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          {s.source_type === "facebook_group" && !s.is_active ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 gap-1"
-                              disabled={setActive.isPending}
-                              onClick={() =>
-                                setActive.mutate({ id: s.id, is_active: true })
-                              }
-                              title="Re-enable this Facebook group source"
-                            >
-                              <RotateCcw className="h-3.5 w-3.5" />
-                              Re-enable
-                            </Button>
-                          ) : null}
+                        <div className="flex shrink-0 items-center gap-1">
                           <SourceDialog
                             source={s}
                             trigger={
-                              <Button variant="ghost" size="icon">
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
                                 <Pencil className="h-4 w-4" />
                               </Button>
                             }
@@ -393,6 +310,7 @@ export default function AdminScraper() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            className="h-8 w-8"
                             onClick={() => {
                               if (confirm(`Remove ${s.venue_name}?`))
                                 remove.mutate(s.id);
@@ -401,11 +319,204 @@ export default function AdminScraper() {
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
-                      </TableCell>
-                    </TableRow>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {s.is_active ? (
+                          <Badge variant="outline" className="text-[10px]">on</Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-[10px]">off</Badge>
+                        )}
+                        {statusBadge(s.last_status)}
+                        {s.source_type === "facebook_group" ? (
+                          <Badge variant="outline" className="text-[10px]">
+                            FB group
+                          </Badge>
+                        ) : null}
+                        {s.last_used_firecrawl ? (
+                          <Badge variant="outline" className="text-[10px]">
+                            firecrawl
+                          </Badge>
+                        ) : null}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {s.last_scraped_at
+                          ? `Last scraped ${formatDistanceToNow(new Date(s.last_scraped_at), { addSuffix: true })}`
+                          : "Never scraped"}
+                      </div>
+                      {s.last_scraped_at ? (
+                        <div className="text-xs tabular-nums">
+                          <span className="text-muted-foreground">returned</span>{" "}
+                          <span className="font-medium">{s.last_returned ?? 0}</span>
+                          {" · "}
+                          <span className="text-muted-foreground">inserted</span>{" "}
+                          <span className="font-medium text-accent">{s.last_inserted ?? 0}</span>
+                          {" · "}
+                          <span className="text-muted-foreground">deduped</span>{" "}
+                          <span className="font-medium">{s.last_deduped ?? 0}</span>
+                          {(s.last_invalid_date ?? 0) > 0 ? (
+                            <>
+                              {" · "}
+                              <span className="text-muted-foreground">invalid</span>{" "}
+                              <span className="font-medium">{s.last_invalid_date}</span>
+                            </>
+                          ) : null}
+                        </div>
+                      ) : null}
+                      {s.last_error_message ? (
+                        <ErrorDetails message={s.last_error_message} />
+                      ) : null}
+                      {s.source_type === "facebook_group" && !s.is_active ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full gap-1"
+                          disabled={setActive.isPending}
+                          onClick={() =>
+                            setActive.mutate({ id: s.id, is_active: true })
+                          }
+                        >
+                          <RotateCcw className="h-3.5 w-3.5" />
+                          Re-enable
+                        </Button>
+                      ) : null}
+                    </li>
                   ))}
-                </TableBody>
-              </Table>
+                </ul>
+
+                {/* Desktop: full table */}
+                <div className="hidden md:block overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Venue</TableHead>
+                        <TableHead>URL</TableHead>
+                        <TableHead>Active</TableHead>
+                        <TableHead>Last scraped</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Last run</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {sources.map((s) => (
+                        <TableRow key={s.id}>
+                          <TableCell className="font-medium">
+                            <div className="flex flex-col gap-1">
+                              <span>{s.venue_name}</span>
+                              {s.source_type === "facebook_group" ? (
+                                <Badge variant="outline" className="w-fit text-[10px]">
+                                  FB group · multi-venue
+                                </Badge>
+                              ) : null}
+                            </div>
+                          </TableCell>
+                          <TableCell className="max-w-[280px] truncate">
+                            <a
+                              href={s.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 text-accent hover:underline"
+                            >
+                              {s.url}
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          </TableCell>
+                          <TableCell>
+                            {s.is_active ? (
+                              <Badge variant="outline">on</Badge>
+                            ) : (
+                              <Badge variant="secondary">off</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {s.last_scraped_at
+                              ? formatDistanceToNow(new Date(s.last_scraped_at), {
+                                  addSuffix: true,
+                                })
+                              : "never"}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col gap-1">
+                              {statusBadge(s.last_status)}
+                              {s.last_used_firecrawl ? (
+                                <Badge variant="outline" className="w-fit text-[10px]">
+                                  firecrawl
+                                </Badge>
+                              ) : null}
+                              {s.last_error_message ? (
+                                <ErrorDetails message={s.last_error_message} />
+                              ) : null}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {s.last_scraped_at ? (
+                              <div className="flex flex-col items-end text-xs">
+                                <span>
+                                  <span className="text-muted-foreground">returned</span>{" "}
+                                  <span className="font-medium">{s.last_returned ?? 0}</span>
+                                  {" · "}
+                                  <span className="text-muted-foreground">inserted</span>{" "}
+                                  <span className="font-medium text-accent">
+                                    {s.last_inserted ?? 0}
+                                  </span>
+                                </span>
+                                <span className="text-muted-foreground">
+                                  deduped {s.last_deduped ?? 0}
+                                  {(s.last_invalid_date ?? 0) > 0
+                                    ? ` · invalid ${s.last_invalid_date}`
+                                    : ""}
+                                  {s.last_chars != null
+                                    ? ` · ${s.last_chars.toLocaleString()} chars`
+                                    : ""}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-xs">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-1">
+                              {s.source_type === "facebook_group" && !s.is_active ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 gap-1"
+                                  disabled={setActive.isPending}
+                                  onClick={() =>
+                                    setActive.mutate({ id: s.id, is_active: true })
+                                  }
+                                  title="Re-enable this Facebook group source"
+                                >
+                                  <RotateCcw className="h-3.5 w-3.5" />
+                                  Re-enable
+                                </Button>
+                              ) : null}
+                              <SourceDialog
+                                source={s}
+                                trigger={
+                                  <Button variant="ghost" size="icon">
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                }
+                              />
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  if (confirm(`Remove ${s.venue_name}?`))
+                                    remove.mutate(s.id);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
@@ -418,38 +529,66 @@ export default function AdminScraper() {
               review.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-3 sm:px-6">
             {runs.length === 0 ? (
               <p className="text-muted-foreground">No runs yet.</p>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Started</TableHead>
-                    <TableHead>Trigger</TableHead>
-                    <TableHead>Sources</TableHead>
-                    <TableHead>Candidates</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <>
+                {/* Mobile cards */}
+                <ul className="flex flex-col gap-2 md:hidden">
                   {runs.map((r) => (
-                    <TableRow key={r.id}>
-                      <TableCell className="text-muted-foreground">
-                        {formatDistanceToNow(new Date(r.started_at), {
-                          addSuffix: true,
-                        })}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{r.triggered_by}</Badge>
-                      </TableCell>
-                      <TableCell>{r.sources_processed}</TableCell>
-                      <TableCell>{r.candidates_created}</TableCell>
-                      <TableCell>{statusBadge(r.status)}</TableCell>
-                    </TableRow>
+                    <li
+                      key={r.id}
+                      className="rounded-lg border border-border/60 bg-card/50 p-3 flex items-center justify-between gap-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-medium truncate">
+                          {formatDistanceToNow(new Date(r.started_at), { addSuffix: true })}
+                        </div>
+                        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                          <Badge variant="outline" className="text-[10px]">{r.triggered_by}</Badge>
+                          <span>{r.sources_processed} sources</span>
+                          <span>·</span>
+                          <span>{r.candidates_created} candidates</span>
+                        </div>
+                      </div>
+                      <div className="shrink-0">{statusBadge(r.status)}</div>
+                    </li>
                   ))}
-                </TableBody>
-              </Table>
+                </ul>
+
+                {/* Desktop table */}
+                <div className="hidden md:block overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Started</TableHead>
+                        <TableHead>Trigger</TableHead>
+                        <TableHead>Sources</TableHead>
+                        <TableHead>Candidates</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {runs.map((r) => (
+                        <TableRow key={r.id}>
+                          <TableCell className="text-muted-foreground">
+                            {formatDistanceToNow(new Date(r.started_at), {
+                              addSuffix: true,
+                            })}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{r.triggered_by}</Badge>
+                          </TableCell>
+                          <TableCell>{r.sources_processed}</TableCell>
+                          <TableCell>{r.candidates_created}</TableCell>
+                          <TableCell>{statusBadge(r.status)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
@@ -457,3 +596,4 @@ export default function AdminScraper() {
     </AdminLayout>
   );
 }
+
