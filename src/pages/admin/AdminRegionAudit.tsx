@@ -121,6 +121,42 @@ export default function AdminRegionAudit() {
     }
   }
 
+  const autoFixableCodes = new Set([
+    "thin_intro",
+    "low_word_count",
+    "few_cities",
+    "duplicate_intro",
+    "overlapping_cities",
+  ]);
+  const autoFixableCount = useMemo(() => {
+    if (!latest) return 0;
+    return latest.rows.filter((r) => r.issues.some((i) => autoFixableCodes.has(i.code))).length;
+  }, [latest]);
+
+  async function autoFixAll() {
+    if (autoFixableCount === 0) {
+      toast.info("Nothing to auto-fix in the latest run.");
+      return;
+    }
+    setAutoFixing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("region-audit-autofix", { body: {} });
+      if (error) throw error;
+      const fixed = (data as { fixed?: number } | null)?.fixed ?? 0;
+      const skipped = (data as { skipped?: unknown[] } | null)?.skipped ?? [];
+      toast.success(`Auto-fixed ${fixed} region${fixed === 1 ? "" : "s"}${skipped.length ? ` (${skipped.length} skipped)` : ""}`);
+      // Immediately re-run audit so the issues clear.
+      const { error: rErr } = await supabase.functions.invoke("region-audit-cron", { body: {} });
+      if (rErr) throw rErr;
+      await qc.invalidateQueries({ queryKey: ["region-audit-runs"] });
+      await qc.invalidateQueries({ queryKey: ["region-content-override"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Auto-fix failed");
+    } finally {
+      setAutoFixing(false);
+    }
+  }
+
   // First-time visitors: silently mark current state seen.
   useEffect(() => {
     if (latest && !lastSeen) {
