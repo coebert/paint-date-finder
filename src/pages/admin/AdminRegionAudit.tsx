@@ -13,6 +13,7 @@ import {
   XCircle,
   Lightbulb,
   Clock,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
@@ -85,6 +86,7 @@ export default function AdminRegionAudit() {
   });
 
   const [running, setRunning] = useState(false);
+  const [autoFixing, setAutoFixing] = useState(false);
   const [lastSeen, setLastSeen] = useState<string | null>(() =>
     typeof window === "undefined" ? null : localStorage.getItem(LAST_SEEN_KEY),
   );
@@ -119,6 +121,42 @@ export default function AdminRegionAudit() {
     }
   }
 
+  const autoFixableCodes = new Set([
+    "thin_intro",
+    "low_word_count",
+    "few_cities",
+    "duplicate_intro",
+    "overlapping_cities",
+  ]);
+  const autoFixableCount = useMemo(() => {
+    if (!latest) return 0;
+    return latest.rows.filter((r) => r.issues.some((i) => autoFixableCodes.has(i.code))).length;
+  }, [latest]);
+
+  async function autoFixAll() {
+    if (autoFixableCount === 0) {
+      toast.info("Nothing to auto-fix in the latest run.");
+      return;
+    }
+    setAutoFixing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("region-audit-autofix", { body: {} });
+      if (error) throw error;
+      const fixed = (data as { fixed?: number } | null)?.fixed ?? 0;
+      const skipped = (data as { skipped?: unknown[] } | null)?.skipped ?? [];
+      toast.success(`Auto-fixed ${fixed} region${fixed === 1 ? "" : "s"}${skipped.length ? ` (${skipped.length} skipped)` : ""}`);
+      // Immediately re-run audit so the issues clear.
+      const { error: rErr } = await supabase.functions.invoke("region-audit-cron", { body: {} });
+      if (rErr) throw rErr;
+      await qc.invalidateQueries({ queryKey: ["region-audit-runs"] });
+      await qc.invalidateQueries({ queryKey: ["region-content-override"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Auto-fix failed");
+    } finally {
+      setAutoFixing(false);
+    }
+  }
+
   // First-time visitors: silently mark current state seen.
   useEffect(() => {
     if (latest && !lastSeen) {
@@ -144,10 +182,22 @@ export default function AdminRegionAudit() {
                 Scheduled nightly at 03:15 UTC. Run on demand any time.
               </p>
             </div>
-            <Button onClick={runNow} disabled={running} className="gap-2">
-              {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
-              {running ? "Running…" : "Run now"}
-            </Button>
+            <div className="flex gap-2 flex-wrap">
+              <Button
+                onClick={autoFixAll}
+                disabled={autoFixing || running || autoFixableCount === 0}
+                variant="secondary"
+                className="gap-2"
+                title={autoFixableCount === 0 ? "No auto-fixable issues" : `Use AI to fix ${autoFixableCount} region${autoFixableCount === 1 ? "" : "s"}`}
+              >
+                {autoFixing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                {autoFixing ? "Fixing…" : `Auto-fix all (${autoFixableCount})`}
+              </Button>
+              <Button onClick={runNow} disabled={running || autoFixing} className="gap-2">
+                {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
+                {running ? "Running…" : "Run now"}
+              </Button>
+            </div>
           </CardHeader>
           {latest && (
             <CardContent className="text-xs text-muted-foreground flex flex-wrap gap-4">

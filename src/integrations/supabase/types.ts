@@ -405,6 +405,36 @@ export type Database = {
         }
         Relationships: []
       }
+      region_content_overrides: {
+        Row: {
+          created_at: string
+          extra_cities: string[]
+          extra_copy: string | null
+          generated_by: string | null
+          intro: string | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          extra_cities?: string[]
+          extra_copy?: string | null
+          generated_by?: string | null
+          intro?: string | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          extra_cities?: string[]
+          extra_copy?: string | null
+          generated_by?: string | null
+          intro?: string | null
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       reverification_runs: {
         Row: {
           errors: Json

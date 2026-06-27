@@ -12,6 +12,7 @@ import { useEvents } from '@/hooks/useEvents';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { getRegionBySlug } from '@/lib/regions';
+import { useRegionOverride } from '@/hooks/useRegionOverride';
 
 const SITE_ORIGIN = 'https://findawalkon.com';
 
@@ -44,7 +45,13 @@ export default function RegionPage() {
     verifiedOnly: false,
     regionVenues: venueNames.length ? venueNames : undefined,
   });
-  
+  const { data: override } = useRegionOverride(region.slug);
+
+  const effectiveIntro = override?.intro?.trim() || region.intro;
+  const effectiveCities = useMemo(() => {
+    const merged = [...region.cities, ...(override?.extra_cities ?? [])];
+    return Array.from(new Set(merged));
+  }, [region.cities, override?.extra_cities]);
 
   const upcoming = useMemo(() => {
     if (!allEvents) return [];
@@ -55,7 +62,7 @@ export default function RegionPage() {
   const path = `/paintball/${region.slug}`;
   const canonicalUrl = `${SITE_ORIGIN}${path}`;
   const title = `Paintball in ${region.name} — Walk-on events & venues`;
-  const description = region.intro.length > 158 ? region.intro.slice(0, 155) + '…' : region.intro;
+  const description = effectiveIntro.length > 158 ? effectiveIntro.slice(0, 155) + '…' : effectiveIntro;
 
   const breadcrumbSchema = {
     '@context': 'https://schema.org',
@@ -98,14 +105,19 @@ export default function RegionPage() {
             <h1 className="font-display text-3xl md:text-4xl tracking-wide text-foreground">
               Paintball in {region.name}
             </h1>
-            <p className="text-muted-foreground mt-3 max-w-2xl">{region.intro}</p>
+            <p className="text-muted-foreground mt-3 max-w-2xl">{effectiveIntro}</p>
             <div className="flex flex-wrap gap-1.5 mt-4">
-              {region.cities.map((c) => (
+              {effectiveCities.map((c) => (
                 <Badge key={c} variant="outline" className="border-border/60 text-muted-foreground">
                   {c}
                 </Badge>
               ))}
             </div>
+            {override?.extra_copy && (
+              <p className="text-muted-foreground mt-4 max-w-2xl text-sm leading-relaxed">
+                {override.extra_copy}
+              </p>
+            )}
           </div>
         </header>
 
