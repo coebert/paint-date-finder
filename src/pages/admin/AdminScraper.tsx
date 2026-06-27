@@ -421,13 +421,33 @@ export default function AdminScraper() {
             </div>
           </CardHeader>
           <CardContent className="px-3 sm:px-6">
-            {isLoading ? (
-              <p className="text-muted-foreground">Loading…</p>
+            {sourcesLoading ? (
+              <SourcesSkeleton />
+            ) : sourcesError ? (
+              <ErrorState
+                title="Couldn't load trusted sources"
+                message={sourcesErrorObj instanceof Error ? sourcesErrorObj.message : "An unknown error occurred while fetching sources."}
+                onRetry={() => refetchSources()}
+                isRetrying={sourcesFetching}
+              />
             ) : sources.length === 0 ? (
-              <p className="text-muted-foreground">
-                No sources yet. Add a venue URL to get started.
-              </p>
+              <EmptyState
+                icon={Inbox}
+                title="No trusted sources yet"
+                description="Add a venue website or Facebook group URL and the scraper will queue candidate events for review every Monday."
+                action={
+                  <SourceDialog
+                    trigger={
+                      <Button variant="outline" size="sm">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add your first source
+                      </Button>
+                    }
+                  />
+                }
+              />
             ) : (
+
               <>
                 {/* Mobile: card list */}
                 <ul className="flex flex-col gap-3 md:hidden">
