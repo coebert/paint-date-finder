@@ -23,10 +23,19 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 type Severity = "ok" | "warn" | "fail";
 
 interface StoredIssue { severity: Severity; code: string; message: string; suggestion: string }
+interface IndexStatus {
+  verdict: string | null;
+  coverageState: string | null;
+  indexingState: string | null;
+  lastCrawlTime: string | null;
+  error: string | null;
+}
 interface StoredRow {
   slug: string; name: string; url: string;
   venueCount: number; upcomingCount: number;
   introWords: number; totalWords: number;
+  duplicationScore?: number;
+  indexStatus?: IndexStatus | null;
   worstSeverity: Severity;
   issues: StoredIssue[];
   duplicatePartners: string[];
@@ -52,6 +61,54 @@ function SeverityBadge({ severity }: { severity: Severity }) {
   return <Badge className="gap-1 bg-primary/15 text-primary border-primary/30 hover:bg-primary/20"><CheckCircle2 className="h-3 w-3" /> OK</Badge>;
 }
 
+function MetricBadge({
+  label, value, prev, betterWhen, prefix = "", format,
+}: {
+  label: string;
+  value: number;
+  prev: number | undefined;
+  betterWhen: "higher" | "lower";
+  prefix?: string;
+  format?: (v: number) => string;
+}) {
+  const fmt = format ?? ((v: number) => String(Math.round(v)));
+  let deltaEl: JSX.Element | null = null;
+  if (typeof prev === "number" && prev !== value) {
+    const diff = value - prev;
+    const improved = betterWhen === "higher" ? diff > 0 : diff < 0;
+    const sign = diff > 0 ? "+" : "";
+    const cls = improved ? "text-primary" : "text-destructive";
+    deltaEl = <span className={`ml-1 ${cls}`}>({sign}{format ? format(diff) : Math.round(diff)})</span>;
+  }
+  return (
+    <Badge variant="outline" className="font-normal">
+      {prefix}{fmt(value)} {label}{deltaEl}
+    </Badge>
+  );
+}
+
+function IndexBadge({ current, prev }: { current: IndexStatus | null; prev: IndexStatus | null }) {
+  if (!current) return null;
+  if (current.error) {
+    return <Badge variant="outline" className="border-muted text-muted-foreground">GSC: error</Badge>;
+  }
+  const v = current.verdict ?? "—";
+  const tone =
+    v === "PASS" ? "bg-primary/15 text-primary border-primary/30"
+    : v === "PARTIAL" ? "border-yellow-500/50 text-yellow-500"
+    : v === "FAIL" ? "border-destructive/50 text-destructive"
+    : "border-muted text-muted-foreground";
+  const changed = prev && prev.verdict !== current.verdict;
+  return (
+    <Badge variant="outline" className={`gap-1 ${tone}`} title={current.coverageState ?? undefined}>
+      Index: {v}
+      {changed && prev?.verdict && (
+        <span className="ml-1 opacity-70">(was {prev.verdict})</span>
+      )}
+    </Badge>
+  );
+}
+
 export function useLatestRegionAuditRun() {
   return useQuery({
     queryKey: ["region-audit-runs", "latest"],
@@ -72,6 +129,21 @@ export function useLatestRegionAuditRun() {
 export default function AdminRegionAudit() {
   const qc = useQueryClient();
   const { data: latest, isLoading } = useLatestRegionAuditRun();
+  const { data: previous } = useQuery({
+    queryKey: ["region-audit-runs", "previous", latest?.id],
+    enabled: !!latest,
+    queryFn: async (): Promise<RunRow | null> => {
+      const { data, error } = await supabase
+        .from("region_audit_runs")
+        .select("*")
+        .lt("created_at", latest!.created_at)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return (data as unknown as RunRow) ?? null;
+    },
+  });
   const { data: history } = useQuery({
     queryKey: ["region-audit-runs", "history"],
     queryFn: async () => {
@@ -84,6 +156,12 @@ export default function AdminRegionAudit() {
       return data ?? [];
     },
   });
+
+  const prevBySlug = useMemo(() => {
+    const map = new Map<string, StoredRow>();
+    for (const r of previous?.rows ?? []) map.set(r.slug, r);
+    return map;
+  }, [previous]);
 
   const [running, setRunning] = useState(false);
   const [autoFixing, setAutoFixing] = useState(false);
@@ -250,6 +328,44 @@ export default function AdminRegionAudit() {
           </Card>
         )}
 
+        {previous && rows.length > 0 && (() => {
+          const sumWords = rows.reduce((s, r) => s + r.totalWords, 0);
+          const prevSumWords = previous.rows.reduce((s, r) => s + r.totalWords, 0);
+          const avgDup = rows.reduce((s, r) => s + (r.duplicationScore ?? 0), 0) / rows.length;
+          const prevAvgDup = previous.rows.reduce((s, r) => s + (r.duplicationScore ?? 0), 0) / Math.max(previous.rows.length, 1);
+          const issuesDelta = (latest!.fail_count + latest!.warn_count) - (previous.fail_count + previous.warn_count);
+          const indexedNow = rows.filter((r) => r.indexStatus?.verdict === "PASS").length;
+          const indexedPrev = previous.rows.filter((r) => r.indexStatus?.verdict === "PASS").length;
+          const Stat = ({ label, value, delta, betterWhen }: { label: string; value: string; delta: number; betterWhen: "higher" | "lower" }) => {
+            const improved = betterWhen === "higher" ? delta > 0 : delta < 0;
+            const cls = delta === 0 ? "text-muted-foreground" : improved ? "text-primary" : "text-destructive";
+            const sign = delta > 0 ? "+" : "";
+            return (
+              <div className="flex flex-col">
+                <span className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</span>
+                <span className="text-lg font-semibold text-foreground">{value}</span>
+                <span className={`text-xs ${cls}`}>{delta === 0 ? "no change" : `${sign}${delta}`}</span>
+              </div>
+            );
+          };
+          return (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Outcome vs previous run</CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Compared to run on {format(parseISO(previous.created_at), "dd/MM/yyyy HH:mm 'UTC'")}
+                </p>
+              </CardHeader>
+              <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Stat label="Total words (all regions)" value={String(sumWords)} delta={sumWords - prevSumWords} betterWhen="higher" />
+                <Stat label="Avg duplication score" value={avgDup.toFixed(2)} delta={Number((avgDup - prevAvgDup).toFixed(2))} betterWhen="lower" />
+                <Stat label="Open issues" value={String(latest!.fail_count + latest!.warn_count)} delta={issuesDelta} betterWhen="lower" />
+                <Stat label="Pages indexed (PASS)" value={`${indexedNow}/${rows.length}`} delta={indexedNow - indexedPrev} betterWhen="higher" />
+              </CardContent>
+            </Card>
+          );
+        })()}
+
         {rows.length > 0 && (
           <div className="space-y-4">
             {rows
@@ -285,11 +401,21 @@ export default function AdminRegionAudit() {
                           {row.url} <ExternalLink className="h-3 w-3" />
                         </a>
                       </div>
-                      <div className="flex gap-2 text-xs text-muted-foreground flex-wrap">
+                      <div className="flex gap-2 text-xs text-muted-foreground flex-wrap items-center">
                         <Badge variant="outline">{row.venueCount} venues</Badge>
                         <Badge variant="outline">{row.upcomingCount} upcoming</Badge>
-                        <Badge variant="outline">{row.introWords} intro words</Badge>
-                        <Badge variant="outline">~{row.totalWords} total words</Badge>
+                        <MetricBadge label="intro words" value={row.introWords} prev={prevBySlug.get(row.slug)?.introWords} betterWhen="higher" />
+                        <MetricBadge label="total words" value={row.totalWords} prev={prevBySlug.get(row.slug)?.totalWords} betterWhen="higher" prefix="~" />
+                        {typeof row.duplicationScore === "number" && (
+                          <MetricBadge
+                            label="duplication"
+                            value={row.duplicationScore}
+                            prev={prevBySlug.get(row.slug)?.duplicationScore}
+                            betterWhen="lower"
+                            format={(v) => v.toFixed(2)}
+                          />
+                        )}
+                        <IndexBadge current={row.indexStatus ?? null} prev={prevBySlug.get(row.slug)?.indexStatus ?? null} />
                       </div>
                     </div>
                   </CardHeader>
