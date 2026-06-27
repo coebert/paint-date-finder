@@ -268,11 +268,20 @@ Deno.serve(async (req) => {
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 
   // Admin-only: this endpoint runs paid scrape jobs.
-  // Cron callers authenticate with the service role key.
+  // Cron callers authenticate with the service-role key, a dedicated
+  // SCRAPE_CRON_SECRET (preferred), or — as a fallback — the project anon
+  // key, which is what pg_cron's net.http_post sends when no other secret is
+  // wired into the scheduled SQL. We additionally throttle cron callers to
+  // one run per 5 minutes so a leaked anon key can't burn AI credits.
   const authHeader = req.headers.get("Authorization");
   const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "";
-  const isCron = bearer && bearer === SERVICE_KEY;
-  if (!bearer) {
+  const cronSecretHeader = req.headers.get("x-cron-secret") ?? "";
+  const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+  const CRON_SECRET = Deno.env.get("SCRAPE_CRON_SECRET") ?? "";
+  const isCron =
+    (CRON_SECRET && cronSecretHeader === CRON_SECRET) ||
+    (bearer && (bearer === SERVICE_KEY || (ANON_KEY && bearer === ANON_KEY)));
+  if (!bearer && !isCron) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -301,6 +310,20 @@ Deno.serve(async (req) => {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+  } else {
+    // Throttle cron-style callers: skip if a run started in the last 5 minutes.
+    const { data: recent } = await supabase
+      .from("scrape_runs")
+      .select("id, started_at")
+      .gt("started_at", new Date(Date.now() - 5 * 60 * 1000).toISOString())
+      .limit(1)
+      .maybeSingle();
+    if (recent) {
+      return new Response(
+        JSON.stringify({ skipped: true, reason: "recent run in progress", runId: recent.id }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
   }
 
