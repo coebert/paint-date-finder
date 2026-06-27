@@ -23,10 +23,19 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 type Severity = "ok" | "warn" | "fail";
 
 interface StoredIssue { severity: Severity; code: string; message: string; suggestion: string }
+interface IndexStatus {
+  verdict: string | null;
+  coverageState: string | null;
+  indexingState: string | null;
+  lastCrawlTime: string | null;
+  error: string | null;
+}
 interface StoredRow {
   slug: string; name: string; url: string;
   venueCount: number; upcomingCount: number;
   introWords: number; totalWords: number;
+  duplicationScore?: number;
+  indexStatus?: IndexStatus | null;
   worstSeverity: Severity;
   issues: StoredIssue[];
   duplicatePartners: string[];
