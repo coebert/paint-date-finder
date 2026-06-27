@@ -315,11 +315,21 @@ export default function AdminRegionAudit() {
                           {row.url} <ExternalLink className="h-3 w-3" />
                         </a>
                       </div>
-                      <div className="flex gap-2 text-xs text-muted-foreground flex-wrap">
+                      <div className="flex gap-2 text-xs text-muted-foreground flex-wrap items-center">
                         <Badge variant="outline">{row.venueCount} venues</Badge>
                         <Badge variant="outline">{row.upcomingCount} upcoming</Badge>
-                        <Badge variant="outline">{row.introWords} intro words</Badge>
-                        <Badge variant="outline">~{row.totalWords} total words</Badge>
+                        <MetricBadge label="intro words" value={row.introWords} prev={prevBySlug.get(row.slug)?.introWords} betterWhen="higher" />
+                        <MetricBadge label="total words" value={row.totalWords} prev={prevBySlug.get(row.slug)?.totalWords} betterWhen="higher" prefix="~" />
+                        {typeof row.duplicationScore === "number" && (
+                          <MetricBadge
+                            label="duplication"
+                            value={row.duplicationScore}
+                            prev={prevBySlug.get(row.slug)?.duplicationScore}
+                            betterWhen="lower"
+                            format={(v) => v.toFixed(2)}
+                          />
+                        )}
+                        <IndexBadge current={row.indexStatus ?? null} prev={prevBySlug.get(row.slug)?.indexStatus ?? null} />
                       </div>
                     </div>
                   </CardHeader>
