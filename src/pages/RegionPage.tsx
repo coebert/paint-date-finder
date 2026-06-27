@@ -12,6 +12,7 @@ import { useEvents } from '@/hooks/useEvents';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { getRegionBySlug } from '@/lib/regions';
+import { citiesByRegion } from '@/lib/cities';
 import { useRegionOverride } from '@/hooks/useRegionOverride';
 
 const SITE_ORIGIN = 'https://findawalkon.com';
@@ -87,10 +88,44 @@ export default function RegionPage() {
       }
     : null;
 
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: `Where can I play paintball in ${region.name}?`,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: `Browse verified .68 caliber paintball venues across ${region.name} on this page, with locations, websites and direct booking links.`,
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'How much does a paintball walk-on cost?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Walk-on entry in the UK is typically £15–£35 plus paintballs (boxes ~£35–£60 for 2,000). Each event page lists the exact price set by the venue.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'What is a walk-on?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'A walk-on lets individual players and small teams join a scheduled game day without booking a private group — ideal for solo players who want more trigger time.',
+        },
+      },
+    ],
+  };
+
+  const cities = citiesByRegion(region.name);
+
   return (
     <>
       <RouteHead title={title} titleFull description={description} path={path}>
         <script type="application/ld+json">{JSON.stringify(breadcrumbSchema)}</script>
+        <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
         {itemListSchema && (
           <script type="application/ld+json">{JSON.stringify(itemListSchema)}</script>
         )}
