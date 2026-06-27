@@ -225,6 +225,9 @@ export default function EventDetail() {
         path={path}
         ogType="article"
         ogImage={ogImageUrl}
+        ogImageWidth={1200}
+        ogImageHeight={630}
+        twitterImageAlt={`${event.title} at ${event.venue_name} on ${format(eventDate, 'd MMM yyyy')}`}
       >
         <script type="application/ld+json">{JSON.stringify(eventSchema)}</script>
         <script type="application/ld+json">{JSON.stringify(breadcrumbSchema)}</script>
