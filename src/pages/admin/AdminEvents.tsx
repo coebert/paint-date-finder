@@ -20,9 +20,13 @@ import {
   Plus, 
   Search,
   ExternalLink,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  Layers,
+  Loader2
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { EventTypeBadge } from '@/components/EventTypeBadge';
 import { AddEventDialog } from '@/components/AddEventDialog';
 import { EventEditDialog } from '@/components/EventEditDialog';
