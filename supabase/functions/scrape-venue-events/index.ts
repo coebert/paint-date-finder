@@ -460,10 +460,25 @@ async function runScrape(
         text = await fetchViaFirecrawl(source.url, FIRECRAWL_API_KEY);
         usedFirecrawl = true;
       } else {
-        text = await fetchPageText(source.url);
+        try {
+          text = await fetchPageText(source.url);
+        } catch (fetchErr) {
+          // Some venues (e.g. Campaign Paintball) block default fetch with
+          // 403/Cloudflare; retry transparently via Firecrawl.
+          const msg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
+          if (FIRECRAWL_API_KEY && /\bHTTP (403|401|429|503)\b/.test(msg)) {
+            console.log(
+              `[scrape] source="${source.venue_name}" plain_fetch_blocked (${msg}) — retrying via Firecrawl`,
+            );
+            text = await fetchViaFirecrawl(source.url, FIRECRAWL_API_KEY);
+            usedFirecrawl = true;
+          } else {
+            throw fetchErr;
+          }
+        }
         // Fallback: if plain fetch returned suspiciously little content,
         // retry via Firecrawl (likely an SPA shell).
-        if (text.length < 300 && FIRECRAWL_API_KEY) {
+        if (!usedFirecrawl && text.length < 300 && FIRECRAWL_API_KEY) {
           console.log(
             `[scrape] source="${source.venue_name}" plain_fetch=${text.length} chars — retrying via Firecrawl`,
           );
