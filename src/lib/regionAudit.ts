@@ -95,14 +95,14 @@ export async function runRegionAudit(): Promise<RegionAuditReport> {
   const today = new Date().toISOString().slice(0, 10);
   const { data: events, error: eErr } = await supabase
     .from("events")
-    .select("venue, event_date, is_verified")
+    .select("venue_name, event_date, is_verified")
     .gte("event_date", today)
     .eq("is_verified", true);
   if (eErr) throw eErr;
 
   const upcomingByVenue = new Map<string, number>();
   for (const e of events ?? []) {
-    const v = e.venue as string;
+    const v = e.venue_name as string;
     upcomingByVenue.set(v, (upcomingByVenue.get(v) ?? 0) + 1);
   }
 
