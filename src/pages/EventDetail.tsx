@@ -211,6 +211,12 @@ export default function EventDetail() {
     }
   };
 
+  // Prefer the event's own flyer; otherwise use a templated branded OG card
+  // rendered by the `event-og-image` edge function (1200×630, CDN-cached).
+  const ogImageUrl =
+    event.image_url ||
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/event-og-image?id=${event.id}`;
+
   return (
     <>
       <RouteHead
@@ -218,7 +224,7 @@ export default function EventDetail() {
         description={description}
         path={path}
         ogType="article"
-        ogImage={event.image_url || undefined}
+        ogImage={ogImageUrl}
       >
         <script type="application/ld+json">{JSON.stringify(eventSchema)}</script>
         <script type="application/ld+json">{JSON.stringify(breadcrumbSchema)}</script>
