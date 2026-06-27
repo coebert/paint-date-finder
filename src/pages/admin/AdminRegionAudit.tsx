@@ -61,6 +61,54 @@ function SeverityBadge({ severity }: { severity: Severity }) {
   return <Badge className="gap-1 bg-primary/15 text-primary border-primary/30 hover:bg-primary/20"><CheckCircle2 className="h-3 w-3" /> OK</Badge>;
 }
 
+function MetricBadge({
+  label, value, prev, betterWhen, prefix = "", format,
+}: {
+  label: string;
+  value: number;
+  prev: number | undefined;
+  betterWhen: "higher" | "lower";
+  prefix?: string;
+  format?: (v: number) => string;
+}) {
+  const fmt = format ?? ((v: number) => String(Math.round(v)));
+  let deltaEl: JSX.Element | null = null;
+  if (typeof prev === "number" && prev !== value) {
+    const diff = value - prev;
+    const improved = betterWhen === "higher" ? diff > 0 : diff < 0;
+    const sign = diff > 0 ? "+" : "";
+    const cls = improved ? "text-primary" : "text-destructive";
+    deltaEl = <span className={`ml-1 ${cls}`}>({sign}{format ? format(diff) : Math.round(diff)})</span>;
+  }
+  return (
+    <Badge variant="outline" className="font-normal">
+      {prefix}{fmt(value)} {label}{deltaEl}
+    </Badge>
+  );
+}
+
+function IndexBadge({ current, prev }: { current: IndexStatus | null; prev: IndexStatus | null }) {
+  if (!current) return null;
+  if (current.error) {
+    return <Badge variant="outline" className="border-muted text-muted-foreground">GSC: error</Badge>;
+  }
+  const v = current.verdict ?? "—";
+  const tone =
+    v === "PASS" ? "bg-primary/15 text-primary border-primary/30"
+    : v === "PARTIAL" ? "border-yellow-500/50 text-yellow-500"
+    : v === "FAIL" ? "border-destructive/50 text-destructive"
+    : "border-muted text-muted-foreground";
+  const changed = prev && prev.verdict !== current.verdict;
+  return (
+    <Badge variant="outline" className={`gap-1 ${tone}`} title={current.coverageState ?? undefined}>
+      Index: {v}
+      {changed && prev?.verdict && (
+        <span className="ml-1 opacity-70">(was {prev.verdict})</span>
+      )}
+    </Badge>
+  );
+}
+
 export function useLatestRegionAuditRun() {
   return useQuery({
     queryKey: ["region-audit-runs", "latest"],
