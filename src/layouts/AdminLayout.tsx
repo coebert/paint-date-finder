@@ -67,14 +67,15 @@ export function AdminLayout({ children, title, description }: AdminLayoutProps) 
               <UserMenu />
             </div>
           </header>
-          <main className="flex-1 p-6">
-            <div className="mb-6">
-              <h1 className="font-display text-3xl tracking-wide text-foreground">{title}</h1>
+          <main className="flex-1 p-4 sm:p-6 overflow-x-hidden">
+            <div className="mb-4 sm:mb-6">
+              <h1 className="font-display text-2xl sm:text-3xl tracking-wide text-foreground">{title}</h1>
               {description && (
-                <p className="text-muted-foreground mt-1">{description}</p>
+                <p className="text-muted-foreground mt-1 text-sm sm:text-base">{description}</p>
               )}
             </div>
             {children}
+
           </main>
         </SidebarInset>
       </div>
