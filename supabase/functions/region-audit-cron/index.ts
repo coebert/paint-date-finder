@@ -68,6 +68,37 @@ function worstOf(issues: Issue[]): Severity {
   return "ok";
 }
 
+const GSC_GATEWAY = "https://connector-gateway.lovable.dev/google_search_console";
+const SITE = "https://findawalkon.com/";
+
+async function fetchIndexStatus(lovableKey: string, gscKey: string, url: string): Promise<IndexStatus> {
+  try {
+    const res = await fetch(`${GSC_GATEWAY}/v1/urlInspection/index:inspect`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${lovableKey}`,
+        "X-Connection-Api-Key": gscKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ inspectionUrl: url, siteUrl: SITE }),
+    });
+    if (!res.ok) {
+      return { verdict: null, coverageState: null, indexingState: null, lastCrawlTime: null, error: `HTTP ${res.status}` };
+    }
+    const data = await res.json();
+    const idx = data?.inspectionResult?.indexStatusResult ?? {};
+    return {
+      verdict: idx.verdict ?? null,
+      coverageState: idx.coverageState ?? null,
+      indexingState: idx.indexingState ?? null,
+      lastCrawlTime: idx.lastCrawlTime ?? null,
+      error: null,
+    };
+  } catch (e) {
+    return { verdict: null, coverageState: null, indexingState: null, lastCrawlTime: null, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 async function runAudit(admin: ReturnType<typeof createClient>) {
   const { data: venues, error: vErr } = await admin
     .from("venues").select("id,name,region").not("region", "is", null);
@@ -89,17 +120,48 @@ async function runAudit(admin: ReturnType<typeof createClient>) {
     upcomingByVenue.set(v, (upcomingByVenue.get(v) ?? 0) + 1);
   }
 
-  const tokens = new Map<string, string[]>();
-  REGIONS.forEach((r) => tokens.set(r.slug, tokenize(r.intro)));
+  // Pull region overrides so post-fix metrics reflect the new copy.
+  const { data: overrides } = await admin
+    .from("region_content_overrides")
+    .select("slug,intro,extra_cities,extra_copy");
+  const overrideBySlug = new Map<string, { intro?: string; extra_cities?: string[]; extra_copy?: string }>();
+  for (const o of overrides ?? []) {
+    overrideBySlug.set((o as { slug: string }).slug, o as { intro?: string; extra_cities?: string[]; extra_copy?: string });
+  }
 
-  const rows: Row[] = REGIONS.map((region) => {
+  // Effective region content (base + override).
+  const effective = REGIONS.map((r) => {
+    const ov = overrideBySlug.get(r.slug);
+    const intro = (ov?.intro && ov.intro.trim().length > 0) ? ov.intro : r.intro;
+    const cities = Array.from(new Set([...r.cities, ...((ov?.extra_cities ?? []) as string[])]));
+    const extraCopy = ov?.extra_copy ?? "";
+    return { ...r, intro, cities, extraCopy };
+  });
+
+  const tokens = new Map<string, string[]>();
+  effective.forEach((r) => tokens.set(r.slug, tokenize(`${r.intro} ${r.extraCopy}`)));
+
+  // Pre-compute pairwise jaccard for duplication scores.
+  const dupScore = new Map<string, number>();
+  for (let i = 0; i < effective.length; i++) {
+    let best = 0;
+    for (let j = 0; j < effective.length; j++) {
+      if (i === j) continue;
+      const sim = jaccard(tokens.get(effective[i].slug)!, tokens.get(effective[j].slug)!);
+      if (sim > best) best = sim;
+    }
+    dupScore.set(effective[i].slug, best);
+  }
+
+  const rows: Row[] = effective.map((region) => {
     const venueRows = venuesByRegion.get(region.name) ?? [];
     const venueCount = venueRows.length;
     const upcomingCount = venueRows.reduce((s, v) => s + (upcomingByVenue.get(v.name) ?? 0), 0);
     const introWords = tokenize(region.intro).length;
     const cityWords = region.cities.join(" ").split(/\s+/).length;
     const venueWords = venueRows.reduce((s, v) => s + v.name.split(/\s+/).length, 0);
-    const totalWords = introWords + cityWords + venueWords;
+    const extraWords = region.extraCopy ? tokenize(region.extraCopy).length : 0;
+    const totalWords = introWords + cityWords + venueWords + extraWords;
     const issues: Issue[] = [];
 
     if (introWords < THIN_INTRO_WORDS) issues.push({ severity: "warn", code: "thin_intro", message: `Intro is only ${introWords} words (target ≥${THIN_INTRO_WORDS}).`, suggestion: "Expand the intro with local scene specifics, popular formats, or travel notes." });
@@ -112,6 +174,8 @@ async function runAudit(admin: ReturnType<typeof createClient>) {
     return {
       slug: region.slug, name: region.name, url: `https://findawalkon.com/paintball/${region.slug}`,
       venueCount, upcomingCount, introWords, totalWords,
+      duplicationScore: Number((dupScore.get(region.slug) ?? 0).toFixed(3)),
+      indexStatus: null,
       worstSeverity: "ok" as Severity, issues, duplicatePartners: [], cityOverlapPartners: [],
     };
   });
@@ -124,7 +188,7 @@ async function runAudit(admin: ReturnType<typeof createClient>) {
         a.duplicatePartners.push(b.name);
         b.duplicatePartners.push(a.name);
       }
-      const overlap = REGIONS[i].cities.filter((c) => REGIONS[j].cities.includes(c));
+      const overlap = effective[i].cities.filter((c) => effective[j].cities.includes(c));
       if (overlap.length >= CITY_OVERLAP_MIN) {
         a.cityOverlapPartners.push({ region: b.name, cities: overlap });
         b.cityOverlapPartners.push({ region: a.name, cities: overlap });
@@ -137,8 +201,15 @@ async function runAudit(admin: ReturnType<typeof createClient>) {
     row.worstSeverity = worstOf(row.issues);
   }
 
+  // Best-effort GSC indexing fetch for all region URLs in parallel.
+  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+  const gscKey = Deno.env.get("GOOGLE_SEARCH_CONSOLE_API_KEY");
+  if (lovableKey && gscKey) {
+    const statuses = await Promise.all(rows.map((r) => fetchIndexStatus(lovableKey, gscKey, r.url)));
+    rows.forEach((r, i) => { r.indexStatus = statuses[i]; });
+  }
+
   const summary = rows.reduce((acc, r) => { acc[r.worstSeverity]++; return acc; }, { ok: 0, warn: 0, fail: 0 });
-  // Fingerprint: sorted region:issueCode list — changes whenever any issue appears/disappears.
   const fingerprint = rows
     .flatMap((r) => r.issues.map((i) => `${r.slug}:${i.code}`))
     .sort()
