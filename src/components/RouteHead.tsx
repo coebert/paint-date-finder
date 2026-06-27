@@ -63,11 +63,13 @@ export function RouteHead({
       <meta property="og:type" content={ogType} />
       {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
       <meta property="og:site_name" content={SITE_NAME} />
+      <meta property="og:locale" content="en_GB" />
       <meta property="og:image" content={ogImage} />
 
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
+      {canonicalUrl && <meta name="twitter:url" content={canonicalUrl} />}
       <meta name="twitter:image" content={ogImage} />
 
       {children}
