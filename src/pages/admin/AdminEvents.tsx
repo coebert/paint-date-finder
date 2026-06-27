@@ -79,7 +79,6 @@ export default function AdminEvents() {
       setDedupeRunning(false);
     }
   };
-  const deleteEvent = useDeleteEvent();
 
   const filteredEvents = events?.filter(event => 
     event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
