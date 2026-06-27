@@ -98,11 +98,45 @@ export default function EventDetail() {
     organizerSchema.url = venue.website;
   }
 
+  // Performer = the host venue running the walk-on. Schema.org allows
+  // Organization / PerformingGroup as performer; we use Organization since
+  // these are sites hosting the play rather than named acts.
+  const performerSchema: Record<string, unknown> = {
+    '@type': 'Organization',
+    name: event.venue_name,
+    ...(venue?.website ? { url: venue.website } : {}),
+    ...(venue?.latitude != null && venue?.longitude != null
+      ? {
+          location: {
+            '@type': 'Place',
+            name: event.venue_name,
+            ...(event.venue_location
+              ? {
+                  address: {
+                    '@type': 'PostalAddress',
+                    addressLocality: event.venue_location,
+                    addressCountry: 'GB',
+                  },
+                }
+              : {}),
+            geo: {
+              '@type': 'GeoCoordinates',
+              latitude: venue.latitude,
+              longitude: venue.longitude,
+            },
+          },
+        }
+      : {}),
+  };
+
   let extractedPrice: string | undefined;
   const priceMatch = event.price_info?.match(/£\s*(\d+(?:\.\d+)?)/);
   if (priceMatch) {
     extractedPrice = priceMatch[1];
   }
+
+  const isFree = /\bfree\b/i.test(event.price_info ?? '') ||
+    (extractedPrice !== undefined && Number(extractedPrice) === 0);
 
   const bookingUrl = event.booking_url || venueWebsite || canonicalUrl;
 
@@ -136,9 +170,11 @@ export default function EventDetail() {
     eventStatus: 'https://schema.org/EventScheduled',
     eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
     inLanguage: 'en-GB',
+    isAccessibleForFree: isFree,
     url: canonicalUrl,
     location: locationSchema,
     organizer: organizerSchema,
+    performer: performerSchema,
     about: { '@type': 'Thing', name: 'Paintball' },
     ...(offersSchema ? { offers: offersSchema } : {}),
   };
