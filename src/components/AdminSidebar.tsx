@@ -1,6 +1,11 @@
 import { BarChart3, Calendar, FileText, Flag, Home, Radar, Settings, Users, Layers, Activity, Type, Search, MapPin, UserSearch, Camera, Globe, ClipboardCheck } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
+import { useLatestRegionAuditRun } from "@/pages/admin/AdminRegionAudit";
+import { Badge } from "@/components/ui/badge";
+import { useEffect, useState } from "react";
+
+const LAST_SEEN_KEY = "region-audit:last-seen-fingerprint";
 
 import {
   Sidebar,
@@ -39,6 +44,23 @@ export function AdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const { data: latestAudit } = useLatestRegionAuditRun();
+  const [lastSeen, setLastSeen] = useState<string | null>(() =>
+    typeof window === "undefined" ? null : localStorage.getItem(LAST_SEEN_KEY),
+  );
+  useEffect(() => {
+    const onStorage = () => setLastSeen(localStorage.getItem(LAST_SEEN_KEY));
+    window.addEventListener("storage", onStorage);
+    const interval = window.setInterval(onStorage, 5000);
+    return () => { window.removeEventListener("storage", onStorage); window.clearInterval(interval); };
+  }, []);
+  const auditNewCount = (() => {
+    if (!latestAudit || !lastSeen) return 0;
+    if (latestAudit.fingerprint === lastSeen) return 0;
+    const prev = new Set(lastSeen.split("|").filter(Boolean));
+    const current = latestAudit.rows.flatMap((r) => r.issues.map((i: { code: string }) => `${r.slug}:${i.code}`));
+    return current.filter((c) => !prev.has(c)).length;
+  })();
 
   const isActive = (path: string) => {
     if (path === "/admin") {
@@ -70,25 +92,34 @@ export function AdminSidebar() {
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive(item.url)}
-                    tooltip={item.title}
-                  >
-                    <NavLink
-                      to={item.url}
-                      end={item.url === "/admin"}
-                      className="flex items-center gap-2"
-                      activeClassName="bg-accent text-accent-foreground"
+              {menuItems.map((item) => {
+                const showBadge = item.url === "/admin/region-audit" && auditNewCount > 0;
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive(item.url)}
+                      tooltip={showBadge ? `${item.title} (${auditNewCount} new)` : item.title}
                     >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+                      <NavLink
+                        to={item.url}
+                        end={item.url === "/admin"}
+                        className="flex items-center gap-2"
+                        activeClassName="bg-accent text-accent-foreground"
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span className="flex-1">{item.title}</span>
+                        {showBadge && !collapsed && (
+                          <Badge variant="destructive" className="h-5 px-1.5 text-[10px]">{auditNewCount}</Badge>
+                        )}
+                        {showBadge && collapsed && (
+                          <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive" aria-label={`${auditNewCount} new`} />
+                        )}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
