@@ -49,7 +49,14 @@ export function useTrustedSources() {
   });
 }
 
-export function useScrapeRuns() {
+export interface UseScrapeRunsOptions {
+  /** Poll interval in ms. Set to false to disable polling. */
+  refetchInterval?: number | false;
+  /** When true, also poll while the browser tab is in the background. */
+  refetchIntervalInBackground?: boolean;
+}
+
+export function useScrapeRuns(options: UseScrapeRunsOptions = {}) {
   return useQuery({
     queryKey: ['scrape_runs'],
     queryFn: async () => {
@@ -61,8 +68,19 @@ export function useScrapeRuns() {
       if (error) throw error;
       return data as ScrapeRun[];
     },
+    refetchInterval: options.refetchInterval,
+    refetchIntervalInBackground: options.refetchIntervalInBackground ?? false,
+    refetchOnWindowFocus: true,
   });
 }
+
+/** A run is considered in-flight while it has no finished_at timestamp. */
+export function isRunInFlight(run: Pick<ScrapeRun, 'finished_at' | 'status'>): boolean {
+  if (run.finished_at) return false;
+  const s = (run.status ?? '').toLowerCase();
+  return s === '' || s === 'running' || s === 'pending' || s === 'queued' || s === 'in_progress';
+}
+
 
 export function useUpsertTrustedSource() {
   const qc = useQueryClient();
