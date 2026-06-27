@@ -8,9 +8,20 @@ const insertSpy = vi.fn();
 const updateSpy = vi.fn();
 const selectMock = vi.fn();
 
+const rpcSpy = vi.fn();
+
 vi.mock('@/integrations/supabase/client', () => {
   return {
     supabase: {
+      rpc: (name: string, args: any) => {
+        rpcSpy(name, args);
+        // Default: no duplicate found, merge no-op
+        if (name === 'find_duplicate_event') {
+          const dupId = (globalThis as any).__duplicateEventId ?? null;
+          return Promise.resolve({ data: dupId, error: null });
+        }
+        return Promise.resolve({ data: null, error: null });
+      },
       from: (table: string) => {
         if (table === 'events') {
           return {
@@ -46,6 +57,7 @@ vi.mock('@/integrations/supabase/client', () => {
     },
   };
 });
+
 
 vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() },
@@ -87,8 +99,11 @@ describe('useApproveSubmission', () => {
     insertSpy.mockClear();
     updateSpy.mockClear();
     selectMock.mockClear();
+    rpcSpy.mockClear();
     (globalThis as any).__events = [];
+    (globalThis as any).__duplicateEventId = null;
   });
+
 
   it('inserts approved submissions with is_verified=true so they appear on the calendar', async () => {
     const { result } = renderHook(() => useApproveSubmission(), { wrapper });
@@ -138,4 +153,22 @@ describe('useApproveSubmission', () => {
       expect.objectContaining({ status: 'approved' })
     );
   });
+
+  it('merges into existing canonical event when a duplicate is detected', async () => {
+    (globalThis as any).__duplicateEventId = 'existing-event-id';
+    const { result } = renderHook(() => useApproveSubmission(), { wrapper });
+
+    result.current.mutate({ submission: sampleSubmission });
+
+    await waitFor(() => expect(updateSpy).toHaveBeenCalledTimes(1));
+
+    // Should call merge_event_source RPC and skip inserting a new event
+    expect(rpcSpy).toHaveBeenCalledWith('find_duplicate_event', expect.any(Object));
+    expect(rpcSpy).toHaveBeenCalledWith(
+      'merge_event_source',
+      expect.objectContaining({ _event_id: 'existing-event-id' })
+    );
+    expect(insertSpy).not.toHaveBeenCalled();
+  });
 });
+

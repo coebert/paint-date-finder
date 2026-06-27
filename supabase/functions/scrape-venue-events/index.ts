@@ -585,32 +585,49 @@ async function runScrape(
         const venueStatus = matchVenue(effectiveVenue);
         if (venueStatus === "unmatched") warnings.push("unknown_venue");
 
-        // Dedupe: skip if same venue+date+type already in events or pending/approved
-        // submissions.
-        const [{ data: existingEvent }, { data: existingSub }] =
-          await Promise.all([
-            supabase
-              .from("events")
-              .select("id")
-              .ilike("venue_name", effectiveVenue)
-              .eq("event_date", c.event_date)
-              .eq("event_type", c.event_type)
-              .limit(1)
-              .maybeSingle(),
-            supabase
-              .from("event_submissions")
-              .select("id")
-              .ilike("venue_name", effectiveVenue)
-              .eq("event_date", c.event_date)
-              .eq("event_type", c.event_type)
-              .in("status", ["pending", "approved"])
-              .limit(1)
-              .maybeSingle(),
-          ]);
-        if (existingEvent || existingSub) {
+        // Dedupe: fuzzy match against existing canonical events
+        // (same venue, overlapping date ±2 days, similar title) and pending
+        // submissions for the same venue+date+type.
+        const [dupRes, { data: existingSub }] = await Promise.all([
+          supabase.rpc("find_duplicate_event", {
+            _venue: effectiveVenue,
+            _date: c.event_date,
+            _title: c.title,
+          }),
+          supabase
+            .from("event_submissions")
+            .select("id")
+            .ilike("venue_name", effectiveVenue)
+            .eq("event_date", c.event_date)
+            .eq("event_type", c.event_type)
+            .in("status", ["pending", "approved"])
+            .limit(1)
+            .maybeSingle(),
+        ]);
+        const duplicateEventId = (dupRes.data as string | null) ?? null;
+
+        if (duplicateEventId) {
+          // Merge new source info into the canonical event and skip insert
+          await supabase.rpc("merge_event_source", {
+            _event_id: duplicateEventId,
+            _source: {
+              source_url: source.url,
+              source_quote: c.source_quote ?? null,
+              description: c.description ?? null,
+              booking_url: c.booking_url ?? null,
+              price_info: c.price_info ?? null,
+              venue_location: c.venue_location ?? null,
+              scraped_by: source.venue_name,
+            },
+          });
           deduped++;
           continue;
         }
+        if (existingSub) {
+          deduped++;
+          continue;
+        }
+
 
         const submitterLabel = sourceType === "facebook_group"
           ? `Auto-scraper (FB group: ${source.venue_name})`
