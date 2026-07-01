@@ -71,6 +71,96 @@
     <priority>0.85</priority>
   </url>
   <url>
+    <loc>https://findawalkon.com/paintball/city/london</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/paintball/city/manchester</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/paintball/city/birmingham</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/paintball/city/glasgow</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/paintball/city/bristol</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/paintball/city/edinburgh</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/paintball/city/liverpool</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/paintball/city/newcastle</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/paintball/city/sheffield</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/paintball/city/leeds</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/paintball/city/nottingham</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/paintball/city/cardiff</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/paintball/city/leicester</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/paintball/city/coventry</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/paintball/city/sunderland</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/paintball/city/derby</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/paintball/city/swansea</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/paintball/city/york</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://findawalkon.com/teams/7469dc59-5488-4e5b-874d-548c95ed564f</loc>
     <lastmod>2026-03-10</lastmod>
     <changefreq>weekly</changefreq>
@@ -599,42 +689,6 @@
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://findawalkon.com/events/e0a77ac8-6643-4a14-983d-5c75c19b730b</loc>
-    <lastmod>2026-02-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/events/cfa3f7c5-2fcc-4173-a591-e4fd2c0b1ce1</loc>
-    <lastmod>2026-06-07</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/events/f03b311d-4dad-40e7-9959-9bb8681e20a3</loc>
-    <lastmod>2026-02-02</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/events/14990f3b-89ec-40dd-b5fa-814a1be4f337</loc>
-    <lastmod>2026-03-12</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/events/793fdc67-9036-4a37-bac3-a2e4311a36c7</loc>
-    <lastmod>2026-06-07</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/events/612f34b6-f5da-46ad-854d-bda5e5a7dd2c</loc>
-    <lastmod>2026-03-12</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://findawalkon.com/events/fe580246-68d8-41a3-bce2-f89353d7c20a</loc>
     <lastmod>2026-03-12</lastmod>
     <changefreq>weekly</changefreq>
@@ -673,6 +727,12 @@
   <url>
     <loc>https://findawalkon.com/events/ee0a56f5-2b1c-47fe-b4b0-7b376f2d8ca8</loc>
     <lastmod>2026-03-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/events/fa0b78f1-5678-4c62-958d-ed0d4126330a</loc>
+    <lastmod>2026-06-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -785,14 +845,14 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://findawalkon.com/events/c0a836e7-c50e-4c77-b5fb-c8b35540ebd3</loc>
-    <lastmod>2026-05-01</lastmod>
+    <loc>https://findawalkon.com/events/9f35f266-9f2e-494e-9717-eabde0de8dfe</loc>
+    <lastmod>2026-02-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://findawalkon.com/events/9f35f266-9f2e-494e-9717-eabde0de8dfe</loc>
-    <lastmod>2026-02-14</lastmod>
+    <loc>https://findawalkon.com/events/c0a836e7-c50e-4c77-b5fb-c8b35540ebd3</loc>
+    <lastmod>2026-06-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -829,6 +889,12 @@
   <url>
     <loc>https://findawalkon.com/events/3ad25dfa-cf30-45bc-9d4f-03d6ab4fba19</loc>
     <lastmod>2026-03-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/events/bcbce062-4ce7-40fc-a3d9-b10a89fa0731</loc>
+    <lastmod>2026-06-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -924,7 +990,7 @@
   </url>
   <url>
     <loc>https://findawalkon.com/events/6ce6ad2c-731a-4087-974f-8ee9a8530326</loc>
-    <lastmod>2026-04-17</lastmod>
+    <lastmod>2026-06-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
