@@ -31,10 +31,14 @@ export function Header({ view, onViewChange, onAddEvent, onSubmitEvent, onImport
               className="w-16 h-16 md:w-20 md:h-20 drop-shadow-lg"
             />
             <div>
-              <h1 className="font-display text-3xl md:text-4xl tracking-wider text-foreground">
+              <div
+                role="heading"
+                aria-level={1}
+                className="font-display text-3xl md:text-4xl tracking-wider text-foreground"
+              >
                 FIND A WALK-ON
                 <span className="sr-only"> — UK paintball events and walk-on days</span>
-              </h1>
+              </div>
               <p className="text-sm text-muted-foreground">
                 Find and book paintball events across the United Kingdom
               </p>
