@@ -5,6 +5,7 @@ import { useRegions } from '@/hooks/useRegions';
 import { PaintballEvent } from '@/types/events';
 import { Header } from '@/components/Header';
 import { FilterBar } from '@/components/FilterBar';
+import { WeekendStrip } from '@/components/WeekendStrip';
 import { EventCalendar } from '@/components/EventCalendar';
 import { EventList } from '@/components/EventList';
 import { EventMap } from '@/components/EventMap';
@@ -260,6 +261,9 @@ export default function Index() {
           onClearAll={clearAll}
         />
 
+        {!isLoading && !error && (
+          <WeekendStrip events={displayedEvents} onEventClick={handleEventClick} />
+        )}
 
 
         {/* Reserve a stable min-height for the dynamic view to avoid CLS
