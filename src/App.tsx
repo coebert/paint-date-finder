@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { AdminRoute } from "./components/AdminRoute";
+import { RouteTransition } from "./components/RouteTransition";
 
 // Public routes — lazy-loaded except the landing page (which is the LCP target).
 const Teams = lazy(() => import("./pages/Teams"));
@@ -78,6 +79,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Suspense fallback={<RouteFallback />}>
+          <RouteTransition>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/reset-password" element={<ResetPassword />} />
@@ -115,6 +117,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </RouteTransition>
         </Suspense>
       </BrowserRouter>
     </TooltipProvider>
