@@ -1,125 +1,26 @@
 /// <reference types="google.maps" />
 import { PaintballEvent } from '@/types/events';
-import { EventTypeBadge } from './EventTypeBadge';
-import { Button } from '@/components/ui/button';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Calendar, ExternalLink, MapPin, Navigation } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { MapPin } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { MarkerClusterer, type Renderer } from '@googlemaps/markerclusterer';
+import { MarkerClusterer } from '@googlemaps/markerclusterer';
 import { VENUE_COORDINATES, type UKRegion } from '@/lib/venueCoordinates';
 import { useVenueDetails } from '@/hooks/useVenueDetails';
+import { DARK_MAP_STYLES, UK_CENTER, UK_ZOOM, loadGoogleMaps } from '@/lib/googleMaps';
+import {
+  buildInfoWindowHtml,
+  clusterRenderer,
+  getMarkerIcon,
+  venuePriority,
+  type VenueGroup,
+} from '@/lib/eventMapMarkers';
+import { MapRegionFilter } from './map/MapRegionFilter';
+import { MapLegend } from './map/MapLegend';
 
 export type { UKRegion };
-
-const REGION_LABELS: Record<UKRegion, string> = {
-  all: 'All UK',
-  scotland: 'Scotland',
-  north: 'North',
-  midlands: 'Midlands',
-  south: 'South',
-  wales: 'Wales',
-};
-
-const UK_CENTER = { lat: 54.5, lng: -3.0 };
-const UK_ZOOM = 6;
-
-// Dark map style aligned with the app's tactical aesthetic.
-const DARK_MAP_STYLES: google.maps.MapTypeStyle[] = [
-  { elementType: 'geometry', stylers: [{ color: '#1f2117' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#1f2117' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#9ca38a' }] },
-  { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#3a3d2c' }] },
-  { featureType: 'administrative.country', elementType: 'geometry.stroke', stylers: [{ color: '#5a5e44' }] },
-  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2a2d20' }] },
-  { featureType: 'road', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0d1a2a' }] },
-  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#3b6fa0' }] },
-  { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#262a1c' }] },
-];
-
-// Themed cluster bubble: olive base, orange when very dense. Size scales with count.
-const clusterRenderer: Renderer = {
-  render: ({ count, position }) => {
-    const g = (window as any).google as typeof google;
-    const size = count < 10 ? 40 : count < 25 ? 48 : count < 50 ? 56 : 64;
-    const fill = count < 10 ? '#8a9a5b' : count < 25 ? '#a8a247' : count < 50 ? '#d97706' : '#c2410c';
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-      <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 2}" fill="${fill}" fill-opacity="0.35"/>
-      <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 8}" fill="${fill}" stroke="#0f1408" stroke-width="2"/>
-    </svg>`;
-    return new g.maps.Marker({
-      position,
-      icon: {
-        url: `data:image/svg+xml;base64,${btoa(svg)}`,
-        scaledSize: new g.maps.Size(size, size),
-        anchor: new g.maps.Point(size / 2, size / 2),
-      },
-      label: {
-        text: String(count),
-        color: '#0f1408',
-        fontSize: '13px',
-        fontWeight: '800',
-      },
-      title: `${count} venues — click to zoom in`,
-      zIndex: 1000 + count,
-    });
-  },
-};
-
-let mapsLoadingPromise: Promise<typeof google> | null = null;
-
-function loadGoogleMaps(): Promise<typeof google> {
-  if (typeof window === 'undefined') return Promise.reject(new Error('SSR'));
-  if ((window as any).google?.maps) return Promise.resolve((window as any).google);
-  if (mapsLoadingPromise) return mapsLoadingPromise;
-
-  const browserKey = import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY as string | undefined;
-  const trackingId = import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_TRACKING_ID as string | undefined;
-  if (!browserKey) return Promise.reject(new Error('Missing Google Maps browser key'));
-
-  mapsLoadingPromise = new Promise((resolve, reject) => {
-    const cbName = `__initGoogleMaps_${Math.random().toString(36).slice(2)}`;
-    (window as any)[cbName] = () => {
-      delete (window as any)[cbName];
-      resolve((window as any).google);
-    };
-
-    const script = document.createElement('script');
-    const params = new URLSearchParams({
-      key: browserKey,
-      loading: 'async',
-      callback: cbName,
-      libraries: 'marker',
-    });
-    if (trackingId) params.set('channel', trackingId);
-    script.src = `https://maps.googleapis.com/maps/api/js?${params.toString()}`;
-    script.async = true;
-    script.defer = true;
-    script.onerror = () => {
-      mapsLoadingPromise = null;
-      reject(new Error('Failed to load Google Maps'));
-    };
-    document.head.appendChild(script);
-  });
-
-  return mapsLoadingPromise;
-}
 
 interface EventMapProps {
   events: PaintballEvent[];
   onEventClick?: (event: PaintballEvent) => void;
-}
-
-interface VenueGroup {
-  name: string;
-  lat: number;
-  lng: number;
-  region: UKRegion;
-  location: string;
-  events: PaintballEvent[];
 }
 
 export function EventMap({ events, onEventClick }: EventMapProps) {
@@ -142,8 +43,9 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
   const venueGroups = useMemo<VenueGroup[]>(() => {
     const byVenue = new Map<string, PaintballEvent[]>();
     for (const e of events) {
-      if (!byVenue.has(e.venue_name)) byVenue.set(e.venue_name, []);
-      byVenue.get(e.venue_name)!.push(e);
+      const list = byVenue.get(e.venue_name);
+      if (list) list.push(e);
+      else byVenue.set(e.venue_name, [e]);
     }
     const groups: VenueGroup[] = [];
     for (const [name, venueEvents] of byVenue) {
@@ -162,7 +64,10 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
   }, [events]);
 
   const filteredGroups = useMemo(
-    () => (selectedRegion === 'all' ? venueGroups : venueGroups.filter(g => g.region === selectedRegion)),
+    () =>
+      selectedRegion === 'all'
+        ? venueGroups
+        : venueGroups.filter((g) => g.region === selectedRegion),
     [venueGroups, selectedRegion],
   );
 
@@ -170,7 +75,7 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
   useEffect(() => {
     let cancelled = false;
     loadGoogleMaps()
-      .then(g => {
+      .then((g) => {
         if (cancelled || !mapContainerRef.current) return;
         const map = new g.maps.Map(mapContainerRef.current, {
           center: UK_CENTER,
@@ -191,7 +96,7 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
         infoWindowRef.current = new g.maps.InfoWindow({ maxWidth: 320 });
         setStatus('ready');
       })
-      .catch(err => {
+      .catch((err) => {
         if (cancelled) return;
         console.error('[EventMap] Google Maps failed to load', err);
         setErrorMsg(err?.message ?? 'Failed to load map');
@@ -200,7 +105,7 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
     return () => {
       cancelled = true;
       clustererRef.current?.clearMarkers();
-      markersRef.current.forEach(m => m.setMap(null));
+      markersRef.current.forEach((m) => m.setMap(null));
       markersRef.current = [];
       infoWindowRef.current?.close();
     };
@@ -209,43 +114,23 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
   // Build / rebuild markers when groups change.
   useEffect(() => {
     if (status !== 'ready' || !mapRef.current) return;
-    const g = (window as any).google as typeof google;
+    const g = (window as unknown as { google: typeof google }).google;
 
     clustererRef.current?.clearMarkers();
-    markersRef.current.forEach(m => m.setMap(null));
+    markersRef.current.forEach((m) => m.setMap(null));
     markersRef.current = [];
 
-    const getMarkerIcon = (priority: number, hovered: boolean) => {
-      const isHighPriority = priority >= 2;
-      const baseSize = isHighPriority ? 44 : 32;
-      const size = hovered ? baseSize + 10 : baseSize;
-      const fill = priority >= 3 ? '#d97706' : priority === 2 ? '#c2410c' : '#8a9a5b';
-      const opacity = hovered ? '0.55' : '0.3';
-      const outlineColor = hovered ? '#f4f1e8' : '#0f1408';
-      const outlineWidth = hovered ? 3 : 2;
-      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-        <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 2}" fill="${fill}" fill-opacity="${opacity}"/>
-        <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 6}" fill="${fill}" stroke="${outlineColor}" stroke-width="${outlineWidth}"/>
-        ${hovered ? `<circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 1}" fill="none" stroke="#f4f1e8" stroke-width="1.5" stroke-opacity="0.6"/>` : ''}
-      </svg>`;
-      return {
-        url: `data:image/svg+xml;base64,${btoa(svg)}`,
-        scaledSize: new g.maps.Size(size, size),
-        anchor: new g.maps.Point(size / 2, size / 2),
-      };
-    };
-
-    const markers = filteredGroups.map(group => {
+    const markers = filteredGroups.map((group) => {
       const priority = venuePriority(group);
       const isHighPriority = priority >= 2;
-      const size = isHighPriority ? 44 : 32;
       const marker = new g.maps.Marker({
         position: { lat: group.lat, lng: group.lng },
         title: `${group.name} — ${group.events.length} event${group.events.length === 1 ? '' : 's'}${isHighPriority ? ' (featured)' : ''}`,
         icon: getMarkerIcon(priority, false),
-        label: group.events.length > 1
-          ? { text: String(group.events.length), color: '#0f1408', fontSize: '11px', fontWeight: '700' }
-          : undefined,
+        label:
+          group.events.length > 1
+            ? { text: String(group.events.length), color: '#0f1408', fontSize: '11px', fontWeight: '700' }
+            : undefined,
         // Higher priority floats above overlapping markers, keeping it clickable.
         zIndex: 100 + priority * 100 + group.events.length,
         optimized: false,
@@ -267,11 +152,11 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
 
         google.maps.event.addListenerOnce(infoWindowRef.current, 'domready', () => {
           const root = document.querySelector('[data-event-map-info]');
-          root?.querySelectorAll<HTMLElement>('[data-event-id]').forEach(el => {
-            el.addEventListener('click', ev => {
+          root?.querySelectorAll<HTMLElement>('[data-event-id]').forEach((el) => {
+            el.addEventListener('click', (ev) => {
               ev.preventDefault();
               const id = el.dataset.eventId;
-              const target = group.events.find(e => e.id === id);
+              const target = group.events.find((e) => e.id === id);
               if (target && onEventClickRef.current) onEventClickRef.current(target);
             });
           });
@@ -295,7 +180,7 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
     // Fit bounds to filtered markers when a region is chosen.
     if (selectedRegion !== 'all' && markers.length > 0) {
       const bounds = new g.maps.LatLngBounds();
-      markers.forEach(m => {
+      markers.forEach((m) => {
         const pos = m.getPosition();
         if (pos) bounds.extend(pos);
       });
@@ -310,65 +195,17 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
 
   return (
     <div className="space-y-6">
-      {/* Region Filter */}
-      <div className="bg-card border border-border/50 rounded-lg p-4">
-        <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-sm font-medium text-muted-foreground">Region:</span>
-          <ToggleGroup
-            type="single"
-            value={selectedRegion}
-            onValueChange={v => v && setSelectedRegion(v as UKRegion)}
-            className="flex-wrap"
-          >
-            {(Object.keys(REGION_LABELS) as UKRegion[]).map(region => (
-              <ToggleGroupItem
-                key={region}
-                value={region}
-                aria-label={`Filter by ${REGION_LABELS[region]}`}
-                className="data-[state=on]:bg-accent data-[state=on]:text-accent-foreground"
-              >
-                {REGION_LABELS[region]}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
-          <span className="ml-auto text-xs text-muted-foreground">
-            {filteredGroups.length} venue{filteredGroups.length === 1 ? '' : 's'} · {totalEvents} event{totalEvents === 1 ? '' : 's'}
-          </span>
-        </div>
-      </div>
+      <MapRegionFilter
+        selectedRegion={selectedRegion}
+        onRegionChange={setSelectedRegion}
+        venueCount={filteredGroups.length}
+        eventCount={totalEvents}
+      />
 
-      {/* Map Container */}
       <div className="bg-card rounded-xl border border-border/50 overflow-hidden relative">
         <div ref={mapContainerRef} className="w-full" style={{ height: '600px' }} />
 
-        {/* Map Legend */}
-        {status === 'ready' && (
-          <div className="absolute bottom-2 left-2 bg-card/90 backdrop-blur-sm border border-border/50 rounded-lg p-3 shadow-lg max-w-[220px]">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Marker Legend</p>
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2">
-                <span className="inline-block rounded-full flex-shrink-0" style={{ width: 14, height: 14, background: '#d97706', opacity: 0.55, border: '2px solid #f4f1e8' }} />
-                <span className="text-[11px] text-foreground">Competition / Tournament</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="inline-block rounded-full flex-shrink-0" style={{ width: 14, height: 14, background: '#c2410c', opacity: 0.55, border: '2px solid #f4f1e8' }} />
-                <span className="text-[11px] text-foreground">Big Game</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="inline-block rounded-full flex-shrink-0" style={{ width: 12, height: 12, background: '#8a9a5b', opacity: 0.3, border: '2px solid #0f1408' }} />
-                <span className="text-[11px] text-foreground">Walk-on / Scenario / Other</span>
-              </div>
-              <div className="flex items-center gap-2 pt-1 border-t border-border/40">
-                <span className="inline-block rounded-full flex-shrink-0 border border-dashed" style={{ width: 14, height: 14, background: 'transparent', borderColor: '#f4f1e8' }} />
-                <span className="text-[11px] text-muted-foreground">Hover to highlight</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center justify-center rounded-full flex-shrink-0 text-[8px] font-bold" style={{ width: 18, height: 18, background: '#a8a247', color: '#0f1408', opacity: 0.6 }}>N</span>
-                <span className="text-[11px] text-muted-foreground">Cluster — click to zoom</span>
-              </div>
-            </div>
-          </div>
-        )}
+        {status === 'ready' && <MapLegend />}
 
         {status === 'loading' && (
           <div className="absolute inset-0 flex items-center justify-center bg-muted/60 backdrop-blur-sm">
@@ -382,7 +219,9 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
           <div className="absolute inset-0 flex items-center justify-center bg-muted/80 p-6 text-center">
             <div className="max-w-sm space-y-2">
               <p className="text-sm font-medium text-foreground">Map unavailable</p>
-              <p className="text-xs text-muted-foreground">{errorMsg ?? 'Google Maps could not be loaded.'}</p>
+              <p className="text-xs text-muted-foreground">
+                {errorMsg ?? 'Google Maps could not be loaded.'}
+              </p>
             </div>
           </div>
         )}
@@ -390,89 +229,3 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
     </div>
   );
 }
-
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
-}
-
-// Higher number = more important. Competitions/tournaments float above walk-ons
-// so they stay clickable when markers overlap inside or at the edge of a cluster.
-const EVENT_TYPE_PRIORITY: Record<string, number> = {
-  competition: 3,
-  tournament: 3,
-  big_game: 2,
-  scenario: 1,
-  mag_fed: 1,
-  speedball: 1,
-  walk_on: 0,
-  other: 0,
-};
-
-function venuePriority(group: VenueGroup): number {
-  let max = 0;
-  for (const e of group.events) {
-    const p = EVENT_TYPE_PRIORITY[e.event_type] ?? 0;
-    if (p > max) max = p;
-  }
-  return max;
-}
-
-function buildInfoWindowHtml(
-  group: VenueGroup,
-  venueDetails: Map<string, { website: string | null }> | undefined,
-): string {
-  const website = venueDetails?.get(group.name)?.website ?? null;
-  const directions = `https://www.google.com/maps/dir/?api=1&destination=${group.lat},${group.lng}`;
-
-  const sorted = [...group.events].sort((a, b) => {
-    const pa = EVENT_TYPE_PRIORITY[a.event_type] ?? 0;
-    const pb = EVENT_TYPE_PRIORITY[b.event_type] ?? 0;
-    if (pa !== pb) return pb - pa;
-    return a.event_date.localeCompare(b.event_date);
-  });
-  const items = sorted.slice(0, 8).map(e => {
-    let dateLabel = e.event_date;
-    try {
-      dateLabel = format(parseISO(e.event_date), 'EEE d MMM yyyy');
-    } catch { /* keep raw */ }
-    const time = e.start_time ? ` · ${e.start_time.slice(0, 5)}` : '';
-    const bookLink = e.booking_url
-      ? `<a href="${escapeHtml(e.booking_url)}" target="_blank" rel="noopener"
-            style="display:inline-block;margin-top:6px;font-size:11px;padding:3px 8px;border-radius:6px;background:#d97706;color:#0f1408;text-decoration:none;font-weight:700">
-            Book ↗
-          </a>`
-      : '';
-    return `
-      <li style="margin:0;padding:8px 0;border-top:1px solid rgba(255,255,255,0.08)">
-        <button data-event-id="${escapeHtml(e.id)}"
-          style="background:none;border:0;padding:0;text-align:left;cursor:pointer;color:inherit;font:inherit;width:100%">
-          <div style="font-weight:600;color:#f4f1e8;font-size:13px;line-height:1.3">${escapeHtml(e.title)}</div>
-          <div style="font-size:11px;color:#b5b09c;margin-top:2px">${escapeHtml(dateLabel)}${escapeHtml(time)}</div>
-        </button>
-        ${bookLink}
-      </li>`;
-  }).join('');
-
-  const more = sorted.length > 8 ? `<div style="font-size:11px;color:#b5b09c;margin-top:6px">+ ${sorted.length - 8} more</div>` : '';
-
-  return `
-    <div data-event-map-info style="font-family:inherit;color:#f4f1e8;min-width:240px;max-width:300px">
-      <div style="font-weight:700;font-size:14px;line-height:1.25;margin-bottom:2px">${escapeHtml(group.name)}</div>
-      <div style="font-size:11px;color:#b5b09c;margin-bottom:8px">${escapeHtml(group.location)}</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
-        <a href="${directions}" target="_blank" rel="noopener"
-          style="font-size:11px;padding:4px 8px;border-radius:6px;background:#8a9a5b;color:#0f1408;text-decoration:none;font-weight:600">
-          Directions
-        </a>
-        ${website ? `<a href="${escapeHtml(website)}" target="_blank" rel="noopener"
-          style="font-size:11px;padding:4px 8px;border-radius:6px;background:rgba(255,255,255,0.08);color:#f4f1e8;text-decoration:none;font-weight:600">
-          Website
-        </a>` : ''}
-      </div>
-      <ul style="list-style:none;margin:0;padding:0">${items}</ul>
-      ${more}
-    </div>`;
-}
-
-// Suppress unused import warnings for icons referenced indirectly during JSX edits.
-void EventTypeBadge; void Button; void Calendar; void ExternalLink; void Navigation;
