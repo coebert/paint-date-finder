@@ -326,13 +326,7 @@ Deno.serve(async (req) => {
     .select("id")
     .single();
   if (runErr || !runRow) {
-    return new Response(
-      JSON.stringify({ error: `Failed to start run: ${runErr?.message}` }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
+    return json({ error: `Failed to start run: ${runErr?.message}` }, { status: 500 });
   }
   const runId = runRow.id as string;
 
@@ -351,17 +345,14 @@ Deno.serve(async (req) => {
     work.catch((e) => console.error("[scrape] background work failed", e));
   }
 
-  return new Response(
-    JSON.stringify({
+  return json(
+    {
       runId,
       status: "running",
       sources_processed: 0,
       candidates_created: 0,
-    }),
-    {
-      status: 202,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
     },
+    { status: 202 },
   );
 });
 
