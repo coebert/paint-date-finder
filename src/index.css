@@ -226,7 +226,22 @@
     0%, 100% { opacity: 1; }
     50% { opacity: 0.8; }
   }
+
+  /* Route change transition — subtle fade + rise. */
+  .route-transition {
+    animation: route-enter var(--dur-med) var(--ease-out-expo);
+  }
+
+  @keyframes route-enter {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .route-transition { animation: none; }
+  }
 }
+
 
 .fullscreen-container:fullscreen {
   background: hsl(var(--background));
