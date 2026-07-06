@@ -230,60 +230,20 @@ export default function Index() {
         onImportFlyer={() => { setSubmitInitialTab('flyer'); setSubmitDialogOpen(true); }}
       />
 
+      <Hero
+        onFindNearMe={() => {
+          const el = document.getElementById('near-me');
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const input = el.querySelector<HTMLInputElement>('input');
+            input?.focus();
+          }
+        }}
+        eventsCount={events?.length ?? 0}
+        venuesCount={venues.length}
+      />
+
       <main className="container mx-auto px-4 py-6 space-y-6">
-        <section className="space-y-2">
-          <h1 className="font-display text-3xl md:text-4xl tracking-wide text-foreground">
-            UK paintball walk-on events &amp; venues
-          </h1>
-          <p className="text-muted-foreground max-w-3xl">
-            Find paintball near you. Browse community-verified .68 caliber walk-on days,
-            scenario games and tournaments across the UK — by date, venue, region or format.
-          </p>
-        </section>
-
-        <section
-          aria-labelledby="ai-summary-heading"
-          data-ai-summary
-          className="rounded-lg border border-border/50 bg-secondary/40 p-4 text-sm text-muted-foreground"
-        >
-          <h2 id="ai-summary-heading" className="text-base font-semibold text-foreground mb-1">
-            About Find A Walk-On
-          </h2>
-          <p>
-            Find A Walk-On is a UK directory of paintball walk-on events and teams. Browse upcoming
-            manually-verified .68 caliber walk-ons by date, region, venue and format (Mag-Fed,
-            Mechanical, Speedball and more), view them on a calendar or map, and discover CPPS
-            League and other UK teams. All events are vetted by the community before listing.
-          </p>
-        </section>
-
-        <section aria-labelledby="regions-heading" className="rounded-lg border border-border/50 bg-card/30 p-4">
-          <h2 id="regions-heading" className="text-base font-semibold text-foreground mb-2">
-            Browse paintball by UK region
-          </h2>
-          <ul className="flex flex-wrap gap-2">
-            {ALL_REGIONS.map((r) => (
-              <li key={r.slug}>
-                <Link
-                  to={`/paintball/${r.slug}`}
-                  className="inline-block rounded-full border border-border/60 bg-background/60 px-3 py-1 text-sm text-foreground hover:border-accent hover:text-accent transition-colors"
-                >
-                  Paintball in {r.name}
-                </Link>
-              </li>
-            ))}
-            <li>
-              <Link
-                to="/paintball"
-                className="inline-block rounded-full border border-accent/60 bg-accent/10 px-3 py-1 text-sm text-accent hover:bg-accent/20 transition-colors"
-              >
-                See all regions →
-              </Link>
-            </li>
-          </ul>
-        </section>
-
-
         <EventTypeChips
           eventType={eventType}
           beginnerOnly={beginnerOnly}
@@ -305,7 +265,10 @@ export default function Index() {
           onClearFilters={handleClearFilters}
         />
 
-        <NearMeFilter location={userLocation} hiddenNoCoords={hiddenNoCoords} />
+        <div id="near-me">
+          <NearMeFilter location={userLocation} hiddenNoCoords={hiddenNoCoords} />
+        </div>
+
 
         {/* Reserve a stable min-height for the dynamic view to avoid CLS
             when skeleton → real content swap, and when switching views. */}
