@@ -278,12 +278,8 @@ Deno.serve(async (req) => {
       (bearer === SERVICE_KEY ||
         (ANON_KEY && bearer === ANON_KEY) ||
         bearer === PROJECT_ANON));
-  if (!bearer && !isCron) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+  if (!bearer && !isCron) return errors.unauthorized();
+
   if (!isCron) {
     try {
       const userClient = createClient(SUPABASE_URL, SERVICE_KEY, {
@@ -296,17 +292,9 @@ Deno.serve(async (req) => {
         _user_id: userId,
         _role: "admin",
       });
-      if (roleErr || !isAdmin) {
-        return new Response(JSON.stringify({ error: "Forbidden" }), {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+      if (roleErr || !isAdmin) return errors.forbidden();
     } catch {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errors.unauthorized();
     }
   } else {
     // Throttle cron-style callers: skip if a run started in the last 5 minutes.
@@ -317,10 +305,7 @@ Deno.serve(async (req) => {
       .limit(1)
       .maybeSingle();
     if (recent) {
-      return new Response(
-        JSON.stringify({ skipped: true, reason: "recent run in progress", runId: recent.id }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return json({ skipped: true, reason: "recent run in progress", runId: recent.id });
     }
   }
 
