@@ -181,11 +181,11 @@ export function EventList({ events, onEdit, userCoords }: EventListProps) {
 
       {/* Event list */}
       {sorted.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="text-6xl mb-4">🎯</div>
-          <h3 className="font-display text-2xl text-foreground mb-2">NO MATCHING EVENTS</h3>
-          <p className="text-muted-foreground">Try a different search term or adjust your filters.</p>
-        </div>
+        <EmptyState
+          icon={<SearchX className="h-7 w-7" aria-hidden />}
+          title="No matching events"
+          description="Try a different search term or adjust your filters."
+        />
       ) : (
         <div className="space-y-8">
           {Object.entries(groupedByMonth).map(([month, monthItems]) => (
