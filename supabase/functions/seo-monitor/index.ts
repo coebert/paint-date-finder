@@ -5,8 +5,8 @@
 //
 // Triggered by pg_cron daily at 06:00 UTC. Also invokable manually by admins.
 
-import { createClient } from "npm:@supabase/supabase-js@2";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { adminClient, authorizeAdminOrCron, readEnv } from "../_shared/supabase.ts";
+import { errors, json, preflight } from "../_shared/http.ts";
 
 const SITE = "https://findawalkon.com/";
 const SITE_ENC = encodeURIComponent(SITE);
@@ -161,53 +161,21 @@ async function sendAlertEmail(
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const pf = preflight(req);
+  if (pf) return pf;
 
+  const env = readEnv();
   const lovableKey = Deno.env.get("LOVABLE_API_KEY");
   const gscKey = Deno.env.get("GOOGLE_SEARCH_CONSOLE_API_KEY");
   const resendKey = Deno.env.get("RESEND_API_KEY");
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
 
-  if (!lovableKey || !gscKey || !resendKey || !supabaseUrl || !serviceKey || !anonKey) {
-    return new Response(JSON.stringify({ error: "Missing required env vars" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+  if (!env || !lovableKey || !gscKey || !resendKey) return errors.missingEnv();
 
-  // Accept either the service-role key (pg_cron) or a signed-in admin user JWT.
-  const authHeader = req.headers.get("Authorization");
-  const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "";
-  let authorized = bearer && bearer === serviceKey;
-
-  if (!authorized && bearer) {
-    const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: `Bearer ${bearer}` } },
-    });
-    const { data: { user } } = await userClient.auth.getUser();
-    if (user) {
-      const admin = createClient(supabaseUrl, serviceKey);
-      const { data: roleRow } = await admin
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .maybeSingle();
-      authorized = !!roleRow;
-    }
-  }
-
-  if (!authorized) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+  const auth = await authorizeAdminOrCron(req, env);
+  if (!auth.ok) return auth.response;
 
   try {
-    const supabase = createClient(supabaseUrl, serviceKey);
+    const supabase = adminClient(env);
 
     // 1) Fetch sitemap status.
     const sitemap = await fetchSitemap(lovableKey, gscKey);
@@ -323,27 +291,18 @@ Deno.serve(async (req) => {
 
     if (insertError) {
       console.error("snapshot insert failed", insertError);
-      return new Response(JSON.stringify({ error: insertError.message }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: insertError.message }, { status: 500 });
     }
 
-    return new Response(
-      JSON.stringify({
-        ok: true,
-        regressions: regressions.length,
-        alert_sent: alertSent,
-        snapshot: snapshotRow,
-      }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return json({
+      ok: true,
+      regressions: regressions.length,
+      alert_sent: alertSent,
+      snapshot: snapshotRow,
+    });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error("seo-monitor error", msg);
-    return new Response(JSON.stringify({ error: msg }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ error: msg }, { status: 500 });
   }
 });

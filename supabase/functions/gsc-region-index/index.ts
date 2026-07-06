@@ -2,8 +2,8 @@
 // Admin-only. Returns per-URL coverage + indexing verdict so the admin dashboard
 // can flag errors / warnings.
 
-import { createClient } from "npm:@supabase/supabase-js@2";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { authorizeAdminOrCron, readEnv } from "../_shared/supabase.ts";
+import { errors, json, preflight } from "../_shared/http.ts";
 
 const SITE = "https://findawalkon.com/";
 const GSC_GATEWAY = "https://connector-gateway.lovable.dev/google_search_console";
@@ -84,47 +84,18 @@ async function inspectUrl(
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const pf = preflight(req);
+  if (pf) return pf;
 
+  const env = readEnv();
   const lovableKey = Deno.env.get("LOVABLE_API_KEY");
   const gscKey = Deno.env.get("GOOGLE_SEARCH_CONSOLE_API_KEY");
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  if (!env || !lovableKey || !gscKey) return errors.missingEnv();
 
-  if (!lovableKey || !gscKey || !supabaseUrl || !serviceKey || !anonKey) {
-    return new Response(JSON.stringify({ error: "Missing required env vars" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
-  // Admin auth.
-  const authHeader = req.headers.get("Authorization");
-  const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "";
-  let authorized = false;
-  if (bearer) {
-    const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: `Bearer ${bearer}` } },
-    });
-    const { data: { user } } = await userClient.auth.getUser();
-    if (user) {
-      const admin = createClient(supabaseUrl, serviceKey);
-      const { data: roleRow } = await admin
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .maybeSingle();
-      authorized = !!roleRow;
-    }
-  }
-  if (!authorized) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+  // Admin-only (no cron path).
+  const auth = await authorizeAdminOrCron(req, env);
+  if (!auth.ok) return auth.response;
+  if (auth.userId === null) return errors.forbidden();
 
   let body: { urls?: Array<{ url: string; label: string }> } = {};
   try {
@@ -134,10 +105,7 @@ Deno.serve(async (req) => {
   }
   const urls = Array.isArray(body.urls) ? body.urls.slice(0, 30) : [];
   if (urls.length === 0) {
-    return new Response(JSON.stringify({ error: "Provide a non-empty `urls` array" }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ error: "Provide a non-empty `urls` array" }, { status: 400 });
   }
 
   const results: InspectResult[] = [];
@@ -165,8 +133,5 @@ Deno.serve(async (req) => {
     results.push(await inspectUrl(lovableKey, gscKey, url, String(label ?? url)));
   }
 
-  return new Response(
-    JSON.stringify({ checkedAt: new Date().toISOString(), results }),
-    { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-  );
+  return json({ checkedAt: new Date().toISOString(), results });
 });

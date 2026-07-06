@@ -1,12 +1,7 @@
 // Scrape trusted venue sources, extract candidate events with Lovable AI,
 // and insert them into event_submissions for admin review.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import { errors, json, preflight } from "../_shared/http.ts";
 
 type Candidate = {
   title: string;
@@ -248,22 +243,13 @@ async function extractCandidates(
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const pf = preflight(req);
+  if (pf) return pf;
 
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
   const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-  if (!SUPABASE_URL || !SERVICE_KEY || !LOVABLE_API_KEY) {
-    return new Response(
-      JSON.stringify({ error: "Missing required environment variables" }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
-  }
+  if (!SUPABASE_URL || !SERVICE_KEY || !LOVABLE_API_KEY) return errors.missingEnv();
 
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 
@@ -292,12 +278,8 @@ Deno.serve(async (req) => {
       (bearer === SERVICE_KEY ||
         (ANON_KEY && bearer === ANON_KEY) ||
         bearer === PROJECT_ANON));
-  if (!bearer && !isCron) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+  if (!bearer && !isCron) return errors.unauthorized();
+
   if (!isCron) {
     try {
       const userClient = createClient(SUPABASE_URL, SERVICE_KEY, {
@@ -310,17 +292,9 @@ Deno.serve(async (req) => {
         _user_id: userId,
         _role: "admin",
       });
-      if (roleErr || !isAdmin) {
-        return new Response(JSON.stringify({ error: "Forbidden" }), {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+      if (roleErr || !isAdmin) return errors.forbidden();
     } catch {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errors.unauthorized();
     }
   } else {
     // Throttle cron-style callers: skip if a run started in the last 5 minutes.
@@ -331,10 +305,7 @@ Deno.serve(async (req) => {
       .limit(1)
       .maybeSingle();
     if (recent) {
-      return new Response(
-        JSON.stringify({ skipped: true, reason: "recent run in progress", runId: recent.id }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return json({ skipped: true, reason: "recent run in progress", runId: recent.id });
     }
   }
 
@@ -355,13 +326,7 @@ Deno.serve(async (req) => {
     .select("id")
     .single();
   if (runErr || !runRow) {
-    return new Response(
-      JSON.stringify({ error: `Failed to start run: ${runErr?.message}` }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
+    return json({ error: `Failed to start run: ${runErr?.message}` }, { status: 500 });
   }
   const runId = runRow.id as string;
 
@@ -380,17 +345,14 @@ Deno.serve(async (req) => {
     work.catch((e) => console.error("[scrape] background work failed", e));
   }
 
-  return new Response(
-    JSON.stringify({
+  return json(
+    {
       runId,
       status: "running",
       sources_processed: 0,
       candidates_created: 0,
-    }),
-    {
-      status: 202,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
     },
+    { status: 202 },
   );
 });
 

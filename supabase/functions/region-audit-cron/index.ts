@@ -2,8 +2,8 @@
 // /paintball/<region> page and stores the run in `region_audit_runs`.
 // Triggered by pg_cron; also callable on demand by admins.
 
-import { createClient } from "npm:@supabase/supabase-js@2";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { adminClient, authorizeAdminOrCron, readEnv } from "../_shared/supabase.ts";
+import { errors, json, preflight } from "../_shared/http.ts";
 
 interface RegionMeta {
   name: string;
@@ -218,42 +218,17 @@ async function runAudit(admin: ReturnType<typeof createClient>) {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const pf = preflight(req);
+  if (pf) return pf;
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-  if (!supabaseUrl || !serviceKey || !anonKey) {
-    return new Response(JSON.stringify({ error: "Missing env vars" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+  const env = readEnv();
+  if (!env) return errors.missingEnv();
 
-  const admin = createClient(supabaseUrl, serviceKey);
+  const auth = await authorizeAdminOrCron(req, env, { allowAnonAsCron: true });
+  if (!auth.ok) return auth.response;
 
-  // Determine trigger source — admin user, cron (no auth), or anyone else.
-  let triggeredBy = "cron";
-  const authHeader = req.headers.get("Authorization");
-  const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "";
-  if (bearer && bearer !== anonKey) {
-    const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: `Bearer ${bearer}` } },
-    });
-    const { data: { user } } = await userClient.auth.getUser();
-    if (!user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    const { data: roleRow } = await admin
-      .from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
-    if (!roleRow) {
-      return new Response(JSON.stringify({ error: "Forbidden" }), {
-        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    triggeredBy = `admin:${user.id}`;
-  }
+  const admin = adminClient(env);
+  const triggeredBy = auth.triggeredBy;
 
   try {
     const result = await runAudit(admin);
@@ -271,19 +246,14 @@ Deno.serve(async (req) => {
       .single();
     if (insErr) throw insErr;
 
-    return new Response(
-      JSON.stringify({
-        runId: (inserted as { id: string }).id,
-        createdAt: (inserted as { created_at: string }).created_at,
-        summary: result.summary,
-        fingerprint: result.fingerprint,
-        triggeredBy,
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
-  } catch (e) {
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : String(e) }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    return json({
+      runId: (inserted as { id: string }).id,
+      createdAt: (inserted as { created_at: string }).created_at,
+      summary: result.summary,
+      fingerprint: result.fingerprint,
+      triggeredBy,
     });
+  } catch (e) {
+    return json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }
 });
