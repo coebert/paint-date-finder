@@ -245,28 +245,19 @@ Deno.serve(async (req) => {
       }
     }
 
-    return new Response(
-      JSON.stringify({
-        ok: true,
-        roster_year: currentRoster.year,
-        results_year: currentResults?.year ?? null,
-        desired: desired.size,
-        inserted,
-        updated,
-        deactivated,
-        history_rows: historyRows,
-        scraped_at: new Date().toISOString(),
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return json({
+      ok: true,
+      roster_year: currentRoster.year,
+      results_year: currentResults?.year ?? null,
+      desired: desired.size,
+      inserted,
+      updated,
+      deactivated,
+      history_rows: historyRows,
+      scraped_at: new Date().toISOString(),
+    });
   } catch (e) {
     console.error("scrape-cpps-standings error", e);
-    return new Response(
-      JSON.stringify({ ok: false, error: (e as Error).message }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
-      },
-    );
+    return json({ ok: false, error: (e as Error).message }, { status: 500 });
   }
 });
