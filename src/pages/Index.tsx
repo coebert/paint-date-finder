@@ -1,9 +1,8 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useState, useCallback, useMemo } from 'react';
 import { RouteHead } from '@/components/RouteHead';
 import { useEvents, useVenues } from '@/hooks/useEvents';
 import { useRegions } from '@/hooks/useRegions';
-import { EventType, PaintballEvent, EVENT_TYPE_LABELS } from '@/types/events';
+import { PaintballEvent } from '@/types/events';
 import { Header } from '@/components/Header';
 import { EventFilters } from '@/components/EventFilters';
 import { EventTypeChips } from '@/components/EventTypeChips';
@@ -24,44 +23,34 @@ import { getVenueCoords, haversineMiles } from '@/lib/geo';
 import { HeroBackground, heroPreload } from '@/components/HeroBackground';
 import { ALL_REGIONS } from '@/lib/regions';
 import { Link } from 'react-router-dom';
+import { useEventFiltersUrl } from '@/hooks/useEventFiltersUrl';
 
 
 export default function Index() {
-  const [showSplash, setShowSplash] = useState(() => !sessionStorage.getItem('splashShown'));
+  const [showSplash, setShowSplash] = useState(
+    () => typeof window !== 'undefined' && !sessionStorage.getItem('splashShown'),
+  );
   const handleSplashComplete = useCallback(() => {
     sessionStorage.setItem('splashShown', '1');
     setShowSplash(false);
   }, []);
-  const [view, setView] = useState<'calendar' | 'list' | 'map'>('calendar');
-  const [searchParams, setSearchParams] = useSearchParams();
 
-  const typeParam = searchParams.get('type');
-  const beginnerParam = searchParams.get('beginner') === '1';
-  const validType = typeParam && (typeParam in EVENT_TYPE_LABELS) ? (typeParam as EventType) : undefined;
+  const {
+    view,
+    eventType,
+    beginnerOnly,
+    venue,
+    region,
+    verifiedOnly,
+    setView,
+    setEventType,
+    setBeginnerOnly,
+    setVenue,
+    setRegion,
+    setVerifiedOnly,
+    clearAll,
+  } = useEventFiltersUrl();
 
-  const eventType = validType;
-  const beginnerOnly = beginnerParam;
-
-  const setEventType = useCallback((t: EventType | undefined) => {
-    setSearchParams((prev) => {
-      const sp = new URLSearchParams(prev);
-      if (t) sp.set('type', t); else sp.delete('type');
-      return sp;
-    }, { replace: true });
-  }, [setSearchParams]);
-
-  const setBeginnerOnly = useCallback((v: boolean) => {
-    setSearchParams((prev) => {
-      const sp = new URLSearchParams(prev);
-      if (v) sp.set('beginner', '1'); else sp.delete('beginner');
-      return sp;
-    }, { replace: true });
-  }, [setSearchParams]);
-
-  const [venue, setVenue] = useState('');
-  const [region, setRegion] = useState('');
-  const [verifiedOnly, setVerifiedOnly] = useState(true);
-  
   // Track page visits
   useVisitTracking();
   
