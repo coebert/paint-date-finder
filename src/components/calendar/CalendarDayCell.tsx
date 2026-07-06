@@ -1,4 +1,4 @@
-import { format, isSameMonth, isToday } from 'date-fns';
+import { format, isSameMonth, isToday, isWeekend } from 'date-fns';
 import { AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EVENT_TYPE_META, PaintballEvent } from '@/types/events';
@@ -25,6 +25,7 @@ export function CalendarDayCell({
   const dateKey = format(day, 'yyyy-MM-dd');
   const isCurrentMonth = isSameMonth(day, currentMonth);
   const isDayToday = isToday(day);
+  const isWknd = isWeekend(day);
   const hasEvents = dayEvents.length > 0;
 
   return (
@@ -33,18 +34,34 @@ export function CalendarDayCell({
       className={cn(
         'calendar-day relative',
         !isCurrentMonth && 'opacity-40',
+        isWknd && isCurrentMonth && !hasEvents && 'is-weekend',
         hasEvents && 'has-events cursor-pointer',
         isDayToday && 'today',
         isExpanded && 'ring-2 ring-accent ring-inset bg-accent/10 z-10',
       )}
     >
-      <span className={cn('text-sm font-medium', isDayToday && 'text-accent')}>
-        {format(day, 'd')}
-      </span>
+      <div className="flex items-center justify-between">
+        <span
+          className={cn(
+            'text-sm font-medium',
+            isDayToday && 'text-accent-foreground bg-accent rounded-full h-5 min-w-5 px-1.5 inline-flex items-center justify-center',
+          )}
+        >
+          {format(day, 'd')}
+        </span>
+        {hasEvents && (
+          <span
+            aria-hidden
+            className="h-1.5 w-1.5 rounded-full bg-primary"
+          />
+        )}
+      </div>
 
       <div className="mt-1 space-y-1">
         {dayEvents.slice(0, 2).map((event) => {
           const meta = EVENT_TYPE_META[event.event_type];
+          const timeLabel = event.start_time ? event.start_time.slice(0, 5) : '';
+          const hint = `${meta.label}${timeLabel ? ' • ' + timeLabel : ''} — ${event.title}`;
           return (
             <button
               key={event.id}
@@ -53,6 +70,8 @@ export function CalendarDayCell({
                 onEventClick?.(event);
               }}
               className="w-full text-left"
+              title={hint}
+              aria-label={hint}
             >
               <div
                 className={cn(
@@ -79,3 +98,4 @@ export function CalendarDayCell({
     </div>
   );
 }
+
