@@ -21,6 +21,7 @@ import { useUserLocation } from '@/hooks/useUserLocation';
 import { NearMeFilter } from '@/components/NearMeFilter';
 import { getVenueCoords, haversineMiles } from '@/lib/geo';
 import { HeroBackground, heroPreload } from '@/components/HeroBackground';
+import { Hero } from '@/components/Hero';
 import { ALL_REGIONS } from '@/lib/regions';
 import { Link } from 'react-router-dom';
 import { useEventFiltersUrl } from '@/hooks/useEventFiltersUrl';
