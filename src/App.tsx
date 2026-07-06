@@ -1,38 +1,75 @@
+import { lazy, Suspense } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import Index from "./pages/Index";
-import Teams from "./pages/Teams";
-import TeamDetail from "./pages/TeamDetail";
-import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import { AdminRoute } from "./components/AdminRoute";
-import AdminOverview from "./pages/admin/AdminOverview";
-import AdminSubmissions from "./pages/admin/AdminSubmissions";
-import AdminEvents from "./pages/admin/AdminEvents";
-import AdminTeams from "./pages/admin/AdminTeams";
-import AdminFlags from "./pages/admin/AdminFlags";
-import AdminScraper from "./pages/admin/AdminScraper";
-import AdminBulkImport from "./pages/admin/AdminBulkImport";
-import AdminVitals from "./pages/admin/AdminVitals";
-import AdminTypography from "./pages/admin/AdminTypography";
-import AdminSEO from "./pages/admin/AdminSEO";
-import FieldLayout from "./pages/FieldLayout";
-import EventDetail from "./pages/EventDetail";
-import LookingForGame from "./pages/LookingForGame";
-import VenueProfile from "./pages/VenueProfile";
-import AdminVenues from "./pages/admin/AdminVenues";
-import AdminPlayerPosts from "./pages/admin/AdminPlayerPosts";
-import AdminRecaps from "./pages/admin/AdminRecaps";
-import RegionsIndex from "./pages/RegionsIndex";
-import RegionPage from "./pages/RegionPage";
-import CityPage from "./pages/CityPage";
-import AdminGscRegions from "./pages/admin/AdminGscRegions";
-import AdminRegionAudit from "./pages/admin/AdminRegionAudit";
 
-const queryClient = new QueryClient();
+// Public routes — lazy-loaded except the landing page (which is the LCP target).
+const Teams = lazy(() => import("./pages/Teams"));
+const TeamDetail = lazy(() => import("./pages/TeamDetail"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const FieldLayout = lazy(() => import("./pages/FieldLayout"));
+const EventDetail = lazy(() => import("./pages/EventDetail"));
+const LookingForGame = lazy(() => import("./pages/LookingForGame"));
+const VenueProfile = lazy(() => import("./pages/VenueProfile"));
+const RegionsIndex = lazy(() => import("./pages/RegionsIndex"));
+const RegionPage = lazy(() => import("./pages/RegionPage"));
+const CityPage = lazy(() => import("./pages/CityPage"));
+
+// Admin routes — split into their own chunk so normal visitors never download them.
+const AdminOverview = lazy(() => import("./pages/admin/AdminOverview"));
+const AdminSubmissions = lazy(() => import("./pages/admin/AdminSubmissions"));
+const AdminEvents = lazy(() => import("./pages/admin/AdminEvents"));
+const AdminTeams = lazy(() => import("./pages/admin/AdminTeams"));
+const AdminFlags = lazy(() => import("./pages/admin/AdminFlags"));
+const AdminScraper = lazy(() => import("./pages/admin/AdminScraper"));
+const AdminBulkImport = lazy(() => import("./pages/admin/AdminBulkImport"));
+const AdminVitals = lazy(() => import("./pages/admin/AdminVitals"));
+const AdminTypography = lazy(() => import("./pages/admin/AdminTypography"));
+const AdminSEO = lazy(() => import("./pages/admin/AdminSEO"));
+const AdminVenues = lazy(() => import("./pages/admin/AdminVenues"));
+const AdminPlayerPosts = lazy(() => import("./pages/admin/AdminPlayerPosts"));
+const AdminRecaps = lazy(() => import("./pages/admin/AdminRecaps"));
+const AdminGscRegions = lazy(() => import("./pages/admin/AdminGscRegions"));
+const AdminRegionAudit = lazy(() => import("./pages/admin/AdminRegionAudit"));
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      gcTime: 5 * 60_000,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+function RouteFallback() {
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <Loader2 className="h-6 w-6 animate-spin text-accent" />
+    </div>
+  );
+}
+
+/**
+ * Wrapper that gates every nested admin route behind AdminRoute + Suspense.
+ * Lets us declare the admin section once instead of repeating <AdminRoute>
+ * on every child <Route>.
+ */
+function AdminSection() {
+  return (
+    <AdminRoute>
+      <Suspense fallback={<RouteFallback />}>
+        <Outlet />
+      </Suspense>
+    </AdminRoute>
+  );
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -40,137 +77,45 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/teams" element={<Teams />} />
-          <Route path="/teams/:id" element={<TeamDetail />} />
-          <Route path="/field-layout" element={<FieldLayout />} />
-          <Route path="/events/:id" element={<EventDetail />} />
-          <Route path="/venues/:slug" element={<VenueProfile />} />
-          <Route path="/looking-for-a-game" element={<LookingForGame />} />
-          <Route path="/paintball" element={<RegionsIndex />} />
-          <Route path="/paintball/city/:slug" element={<CityPage />} />
-          <Route path="/paintball/:slug" element={<RegionPage />} />
-          
-          
-          {/* Admin Routes */}
-          <Route
-            path="/admin"
-            element={
-              <AdminRoute>
-                <AdminOverview />
-              </AdminRoute>
-            }
-          />
-          <Route
-            path="/admin/submissions"
-            element={
-              <AdminRoute>
-                <AdminSubmissions />
-              </AdminRoute>
-            }
-          />
-          <Route
-            path="/admin/events"
-            element={
-              <AdminRoute>
-                <AdminEvents />
-              </AdminRoute>
-            }
-          />
-          <Route
-            path="/admin/teams"
-            element={
-              <AdminRoute>
-                <AdminTeams />
-              </AdminRoute>
-            }
-          />
-          <Route
-            path="/admin/flags"
-            element={
-              <AdminRoute>
-                <AdminFlags />
-              </AdminRoute>
-            }
-          />
-          <Route
-            path="/admin/scraper"
-            element={
-              <AdminRoute>
-                <AdminScraper />
-              </AdminRoute>
-            }
-          />
-          <Route
-            path="/admin/bulk-import"
-            element={
-              <AdminRoute>
-                <AdminBulkImport />
-              </AdminRoute>
-            }
-          />
-          <Route
-            path="/admin/vitals"
-            element={
-              <AdminRoute>
-                <AdminVitals />
-              </AdminRoute>
-            }
-          />
-          <Route
-            path="/admin/typography"
-            element={
-              <AdminRoute>
-                <AdminTypography />
-              </AdminRoute>
-            }
-          />
-          <Route
-            path="/admin/seo"
-            element={
-              <AdminRoute>
-                <AdminSEO />
-              </AdminRoute>
-            }
-          />
-          <Route
-            path="/admin/gsc-regions"
-            element={<AdminRoute><AdminGscRegions /></AdminRoute>}
-          />
-          <Route
-            path="/admin/region-audit"
-            element={<AdminRoute><AdminRegionAudit /></AdminRoute>}
-          />
-          
-          
-          <Route
-            path="/admin/venues"
-            element={<AdminRoute><AdminVenues /></AdminRoute>}
-          />
-          <Route
-            path="/admin/player-posts"
-            element={<AdminRoute><AdminPlayerPosts /></AdminRoute>}
-          />
-          <Route
-            path="/admin/recaps"
-            element={<AdminRoute><AdminRecaps /></AdminRoute>}
-          />
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/teams" element={<Teams />} />
+            <Route path="/teams/:id" element={<TeamDetail />} />
+            <Route path="/field-layout" element={<FieldLayout />} />
+            <Route path="/events/:id" element={<EventDetail />} />
+            <Route path="/venues/:slug" element={<VenueProfile />} />
+            <Route path="/looking-for-a-game" element={<LookingForGame />} />
+            <Route path="/paintball" element={<RegionsIndex />} />
+            <Route path="/paintball/city/:slug" element={<CityPage />} />
+            <Route path="/paintball/:slug" element={<RegionPage />} />
 
-          {/* Legacy route redirect */}
-          <Route
-            path="/submissions"
-            element={
-              <AdminRoute>
-                <AdminSubmissions />
-              </AdminRoute>
-            }
-          />
-          
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+            {/* Admin section — one guard, nested routes below */}
+            <Route element={<AdminSection />}>
+              <Route path="/admin" element={<AdminOverview />} />
+              <Route path="/admin/submissions" element={<AdminSubmissions />} />
+              <Route path="/admin/events" element={<AdminEvents />} />
+              <Route path="/admin/teams" element={<AdminTeams />} />
+              <Route path="/admin/flags" element={<AdminFlags />} />
+              <Route path="/admin/scraper" element={<AdminScraper />} />
+              <Route path="/admin/bulk-import" element={<AdminBulkImport />} />
+              <Route path="/admin/vitals" element={<AdminVitals />} />
+              <Route path="/admin/typography" element={<AdminTypography />} />
+              <Route path="/admin/seo" element={<AdminSEO />} />
+              <Route path="/admin/gsc-regions" element={<AdminGscRegions />} />
+              <Route path="/admin/region-audit" element={<AdminRegionAudit />} />
+              <Route path="/admin/venues" element={<AdminVenues />} />
+              <Route path="/admin/player-posts" element={<AdminPlayerPosts />} />
+              <Route path="/admin/recaps" element={<AdminRecaps />} />
+              {/* Legacy redirect target */}
+              <Route path="/submissions" element={<AdminSubmissions />} />
+            </Route>
+
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
