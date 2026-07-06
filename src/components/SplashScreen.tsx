@@ -322,11 +322,13 @@ function PaintSplat() {
 
 export function SplashScreen({ onComplete }: { onComplete: () => void }) {
   const [phase, setPhase] = useState<Phase>('dot');
+  const [showSkip, setShowSkip] = useState(false);
 
   const stableOnComplete = useCallback(onComplete, [onComplete]);
 
   useEffect(() => {
     const timers = [
+      setTimeout(() => setShowSkip(true), 1000),
       setTimeout(() => setPhase('barrel'), 1600),
       setTimeout(() => setPhase('turn'), 4200),
       setTimeout(() => setPhase('fire'), 4900),
@@ -338,6 +340,13 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
     return () => timers.forEach(clearTimeout);
   }, [stableOnComplete]);
 
+  // Respect users who ask for less motion — skip the whole sequence.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mql = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (mql.matches) stableOnComplete();
+  }, [stableOnComplete]);
+
   if (phase === 'done') {
     return (
       <div className="fixed inset-0 z-[100] pointer-events-none" style={{ animation: 'bond-fade-out 0.4s ease-in forwards' }}>
@@ -345,6 +354,7 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
       </div>
     );
   }
+
 
   return (
     <div
