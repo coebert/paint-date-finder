@@ -35,9 +35,6 @@ export function EventCalendar({ events, onEventClick, userCoords }: EventCalenda
   const { data: flaggedIds } = useFlaggedEventIds();
   const isMobile = useIsMobile();
 
-  if (isMobile) {
-    return <EventAgenda events={events} onEventClick={onEventClick} />;
-  }
 
 
   const eventsByDate = useMemo(() => {
@@ -72,6 +69,11 @@ export function EventCalendar({ events, onEventClick, userCoords }: EventCalenda
   };
 
   const expandedEvents = expandedDate ? eventsByDate.get(expandedDate) ?? [] : [];
+
+  if (isMobile) {
+    return <EventAgenda events={events} onEventClick={onEventClick} />;
+  }
+
 
   return (
     <div className="bg-card border border-border/50 rounded-lg overflow-hidden">
