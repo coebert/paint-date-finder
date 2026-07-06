@@ -4,8 +4,7 @@ import { useEvents, useVenues } from '@/hooks/useEvents';
 import { useRegions } from '@/hooks/useRegions';
 import { PaintballEvent } from '@/types/events';
 import { Header } from '@/components/Header';
-import { EventFilters } from '@/components/EventFilters';
-import { EventTypeChips } from '@/components/EventTypeChips';
+import { FilterBar } from '@/components/FilterBar';
 import { EventCalendar } from '@/components/EventCalendar';
 import { EventList } from '@/components/EventList';
 import { EventMap } from '@/components/EventMap';
@@ -18,7 +17,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle } from 'lucide-react';
 import { useVisitTracking } from '@/hooks/useVisitTracking';
 import { useUserLocation } from '@/hooks/useUserLocation';
-import { NearMeFilter } from '@/components/NearMeFilter';
 import { getVenueCoords, haversineMiles } from '@/lib/geo';
 import { HeroBackground, heroPreload } from '@/components/HeroBackground';
 import { Hero } from '@/components/Hero';
@@ -105,7 +103,7 @@ export default function Index() {
     setDetailDialogOpen(true);
   };
 
-  const handleClearFilters = clearAll;
+  
 
   const eventListJsonLd = useMemo(() => {
     const upcoming = (events ?? [])
@@ -244,30 +242,24 @@ export default function Index() {
       />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
-        <EventTypeChips
+        <FilterBar
           eventType={eventType}
           beginnerOnly={beginnerOnly}
-          onEventTypeChange={setEventType}
-          onBeginnerOnlyChange={setBeginnerOnly}
-        />
-
-        <EventFilters
-          eventType={eventType}
           venue={venue}
           venues={venues}
           region={region}
           regions={regionsData?.regions || []}
           verifiedOnly={verifiedOnly}
+          location={userLocation}
+          hiddenNoCoords={hiddenNoCoords}
           onEventTypeChange={setEventType}
+          onBeginnerOnlyChange={setBeginnerOnly}
           onVenueChange={setVenue}
           onRegionChange={setRegion}
           onVerifiedOnlyChange={setVerifiedOnly}
-          onClearFilters={handleClearFilters}
+          onClearAll={clearAll}
         />
 
-        <div id="near-me">
-          <NearMeFilter location={userLocation} hiddenNoCoords={hiddenNoCoords} />
-        </div>
 
 
         {/* Reserve a stable min-height for the dynamic view to avoid CLS
