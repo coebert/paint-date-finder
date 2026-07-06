@@ -5,8 +5,8 @@
 //
 // Triggered by pg_cron daily at 06:00 UTC. Also invokable manually by admins.
 
-import { createClient } from "npm:@supabase/supabase-js@2";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { adminClient, authorizeAdminOrCron, readEnv } from "../_shared/supabase.ts";
+import { errors, json, preflight } from "../_shared/http.ts";
 
 const SITE = "https://findawalkon.com/";
 const SITE_ENC = encodeURIComponent(SITE);
