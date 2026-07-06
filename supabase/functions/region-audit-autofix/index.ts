@@ -134,10 +134,7 @@ Deno.serve(async (req) => {
 
     const targets = REGIONS.filter((r) => scope.has(r.slug));
     if (targets.length === 0) {
-      return new Response(
-        JSON.stringify({ fixed: 0, message: "No regions need fixing." }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return json({ fixed: 0, message: "No regions need fixing." });
     }
 
     // Cities used by OTHER regions — used to discourage overlap.
@@ -182,13 +179,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    return new Response(
-      JSON.stringify({ fixed: fixed.length, fixedSlugs: fixed, skipped }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return json({ fixed: fixed.length, fixedSlugs: fixed, skipped });
   } catch (e) {
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : String(e) }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }
 });
