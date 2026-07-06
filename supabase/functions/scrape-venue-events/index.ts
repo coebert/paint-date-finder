@@ -1,12 +1,7 @@
 // Scrape trusted venue sources, extract candidate events with Lovable AI,
 // and insert them into event_submissions for admin review.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders, errors, json, preflight } from "../_shared/http.ts";
 
 type Candidate = {
   title: string;
@@ -248,22 +243,13 @@ async function extractCandidates(
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const pf = preflight(req);
+  if (pf) return pf;
 
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
   const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-  if (!SUPABASE_URL || !SERVICE_KEY || !LOVABLE_API_KEY) {
-    return new Response(
-      JSON.stringify({ error: "Missing required environment variables" }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
-  }
+  if (!SUPABASE_URL || !SERVICE_KEY || !LOVABLE_API_KEY) return errors.missingEnv();
 
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 
