@@ -157,7 +157,7 @@
   }
 
   .calendar-day {
-    @apply relative p-2 min-h-[80px] border border-border/50 rounded-sm transition-colors;
+    @apply relative p-2 min-h-[80px] border border-border/60 rounded-sm transition-colors;
   }
 
   .calendar-day:hover {
@@ -165,12 +165,17 @@
   }
 
   .calendar-day.has-events {
-    @apply bg-primary/10;
+    @apply bg-primary/10 border-primary/30;
+  }
+
+  .calendar-day.is-weekend {
+    @apply bg-background/40;
   }
 
   .calendar-day.today {
-    @apply ring-2 ring-accent;
+    @apply border-accent/70 shadow-[inset_0_2px_0_0_hsl(var(--accent))];
   }
+
 }
 
 @layer utilities {
