@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { PaintballEvent } from '@/types/events';
 import { EventCard } from './EventCard';
+import { EmptyState } from './EmptyState';
 import { format, parseISO, isBefore, startOfDay } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import {
@@ -10,9 +11,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, ArrowDownUp } from 'lucide-react';
+import { Search, ArrowDownUp, CalendarX, SearchX } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getVenueCoords, haversineMiles, type LatLng } from '@/lib/geo';
+
 
 interface EventListProps {
   events: PaintballEvent[];
@@ -111,17 +113,18 @@ export function EventList({ events, onEdit, userCoords }: EventListProps) {
 
   if (events.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="text-6xl mb-4">🎯</div>
-        <h3 className="font-display text-2xl text-foreground mb-2">NO EVENTS FOUND</h3>
-        <p className="text-muted-foreground">
-          {hasUserCoords
+      <EmptyState
+        icon={<CalendarX className="h-7 w-7" aria-hidden />}
+        title="No events found"
+        description={
+          hasUserCoords
             ? 'No events within the selected radius. Try a wider radius or clear the location filter.'
-            : 'Try adjusting your filters or check back later for new events.'}
-        </p>
-      </div>
+            : 'Try adjusting your filters or check back later for new events.'
+        }
+      />
     );
   }
+
 
   return (
     <div className="space-y-6">
@@ -178,11 +181,11 @@ export function EventList({ events, onEdit, userCoords }: EventListProps) {
 
       {/* Event list */}
       {sorted.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="text-6xl mb-4">🎯</div>
-          <h3 className="font-display text-2xl text-foreground mb-2">NO MATCHING EVENTS</h3>
-          <p className="text-muted-foreground">Try a different search term or adjust your filters.</p>
-        </div>
+        <EmptyState
+          icon={<SearchX className="h-7 w-7" aria-hidden />}
+          title="No matching events"
+          description="Try a different search term or adjust your filters."
+        />
       ) : (
         <div className="space-y-8">
           {Object.entries(groupedByMonth).map(([month, monthItems]) => (
