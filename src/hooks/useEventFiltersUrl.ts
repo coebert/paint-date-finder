@@ -90,7 +90,15 @@ export function useEventFiltersUrl(): EventFiltersUrlState {
 
   return {
     ...state,
-    setView: useCallback((v) => update('view', v === 'calendar' ? null : v), [update]),
+    setView: useCallback(
+      (v: EventView) => {
+        writeStoredView(v);
+        // Keep the URL clean when the view matches the default so shared
+        // links don't leak per-user preferences.
+        update('view', v === 'calendar' ? null : v);
+      },
+      [update],
+    ),
     setEventType: useCallback((t) => update('type', t ?? null), [update]),
     setBeginnerOnly: useCallback((v) => update('beginner', v ? '1' : null), [update]),
     setVenue: useCallback((v) => update('venue', v || null), [update]),
