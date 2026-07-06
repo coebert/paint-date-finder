@@ -2,8 +2,8 @@
 // region-specific intro + extra city tags + extra prose via Lovable AI, and
 // upserting into `region_content_overrides`. Admin-only.
 
-import { createClient } from "npm:@supabase/supabase-js@2";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { adminClient, authorizeAdminOrCron, readEnv } from "../_shared/supabase.ts";
+import { errors, json, preflight } from "../_shared/http.ts";
 
 interface RegionMeta { name: string; slug: string; intro: string; cities: string[] }
 
@@ -93,43 +93,19 @@ Return STRICT JSON with this shape (no markdown, no commentary):
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const pf = preflight(req);
+  if (pf) return pf;
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  const env = readEnv();
   const aiKey = Deno.env.get("LOVABLE_API_KEY");
-  if (!supabaseUrl || !serviceKey || !anonKey || !aiKey) {
-    return new Response(JSON.stringify({ error: "Missing env vars" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+  if (!env || !aiKey) return errors.missingEnv();
 
-  // Auth: must be a signed-in admin.
-  const authHeader = req.headers.get("Authorization");
-  const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "";
-  if (!bearer || bearer === anonKey) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-  const userClient = createClient(supabaseUrl, anonKey, {
-    global: { headers: { Authorization: `Bearer ${bearer}` } },
-  });
-  const { data: { user } } = await userClient.auth.getUser();
-  if (!user) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-  const admin = createClient(supabaseUrl, serviceKey);
-  const { data: roleRow } = await admin
-    .from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
-  if (!roleRow) {
-    return new Response(JSON.stringify({ error: "Forbidden" }), {
-      status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+  // Admin-only (no cron path).
+  const auth = await authorizeAdminOrCron(req, env);
+  if (!auth.ok) return auth.response;
+  if (auth.userId === null) return errors.forbidden();
+  const admin = adminClient(env);
+  const user = { id: auth.userId };
 
   try {
     // Read latest audit run to know which regions need fixing.
