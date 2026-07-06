@@ -16,6 +16,8 @@ import { CalendarHeader } from './calendar/CalendarHeader';
 import { CalendarDayCell } from './calendar/CalendarDayCell';
 import { CalendarLegend } from './calendar/CalendarLegend';
 import { ExpandedDayPanel } from './calendar/ExpandedDayPanel';
+import { EventAgenda } from './calendar/EventAgenda';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface EventCalendarProps {
   events: PaintballEvent[];
@@ -31,6 +33,12 @@ export function EventCalendar({ events, onEventClick, userCoords }: EventCalenda
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
   const { data: flaggedIds } = useFlaggedEventIds();
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return <EventAgenda events={events} onEventClick={onEventClick} />;
+  }
+
 
   const eventsByDate = useMemo(() => {
     const map = new Map<string, PaintballEvent[]>();
