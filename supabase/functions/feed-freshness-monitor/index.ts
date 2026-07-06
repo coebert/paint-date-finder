@@ -161,22 +161,13 @@ Deno.serve(async (req) => {
 
     if (error) {
       console.error("freshness insert failed", error);
-      return new Response(JSON.stringify({ error: error.message }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: error.message }, { status: 500 });
     }
 
-    return new Response(
-      JSON.stringify({ ok: true, alert_sent: alertSent, ...snapshotRow }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return json({ ok: true, alert_sent: alertSent, ...snapshotRow });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error("feed-freshness-monitor error", msg);
-    return new Response(JSON.stringify({ error: msg }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ error: msg }, { status: 500 });
   }
 });
