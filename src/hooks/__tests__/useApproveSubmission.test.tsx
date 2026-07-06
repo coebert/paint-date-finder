@@ -85,6 +85,7 @@ const sampleSubmission: EventSubmission = {
   booking_url: null,
   price_info: null,
   source_url: null,
+  source_quote: null,
   image_url: null,
   submitter_email: 'a@b.com',
   submitter_name: null,
@@ -92,6 +93,8 @@ const sampleSubmission: EventSubmission = {
   admin_notes: null,
   reviewed_at: null,
   created_at: new Date().toISOString(),
+  sanity_warnings: [],
+  venue_match_status: 'unknown',
 };
 
 describe('useApproveSubmission', () => {

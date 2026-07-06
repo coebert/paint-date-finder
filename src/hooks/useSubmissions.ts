@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { EventSubmission, SubmissionStatus } from '@/types/submissions';
+import { EventSubmission, EventSubmissionInsert, SubmissionStatus } from '@/types/submissions';
 import { normalizeEventUrls } from '@/lib/validation';
 import { toast } from 'sonner';
 
@@ -29,7 +29,7 @@ export function useCreateSubmission() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (submission: Omit<EventSubmission, 'id' | 'created_at' | 'reviewed_at' | 'status' | 'admin_notes'>) => {
+    mutationFn: async (submission: EventSubmissionInsert) => {
       const { data, error } = await supabase
         .from('event_submissions')
         .insert(submission)

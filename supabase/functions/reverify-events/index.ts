@@ -14,8 +14,8 @@
 //
 // Triggered by pg_cron daily; can also be called by an admin from the UI.
 
-import { createClient } from "npm:@supabase/supabase-js@2";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { adminClient, authorizeAdminOrCron, readEnv } from "../_shared/supabase.ts";
+import { errors as httpErr, json, preflight } from "../_shared/http.ts";
 
 const BATCH_SIZE = 80;
 const STALE_REFRESH_HOURS = 20; // skip rows verified within this window
@@ -100,57 +100,18 @@ function quoteFound(quote: string, haystack: string): boolean {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const pf = preflight(req);
+  if (pf) return pf;
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  const env = readEnv();
+  if (!env) return httpErr.missingEnv();
+
+  const auth = await authorizeAdminOrCron(req, env, { allowAnonAsCron: true });
+  if (!auth.ok) return auth.response;
+  const triggeredBy = auth.triggeredBy;
   const firecrawlKey = Deno.env.get("FIRECRAWL_API_KEY");
 
-  if (!supabaseUrl || !serviceKey || !anonKey) {
-    return new Response(JSON.stringify({ error: "Missing env vars" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
-  // Authorize: accept service-role bearer (cron) or admin user JWT.
-  // The cron schedule passes the anon key as bearer; we accept that too
-  // since this function only mutates events.verification_* fields and is
-  // safe to re-trigger.
-  const authHeader = req.headers.get("Authorization");
-  const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "";
-  let authorized = bearer === serviceKey;
-  let triggeredBy = "cron";
-
-  if (!authorized && bearer) {
-    const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: `Bearer ${bearer}` } },
-    });
-    const { data: { user } } = await userClient.auth.getUser();
-    if (user) {
-      const admin = createClient(supabaseUrl, serviceKey);
-      const { data: roleRow } = await admin
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .maybeSingle();
-      if (roleRow) {
-        authorized = true;
-        triggeredBy = `admin:${user.id}`;
-      }
-    }
-  }
-
-  if (!authorized) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
-  const supabase = createClient(supabaseUrl, serviceKey);
+  const supabase = adminClient(env);
 
   // Open a run row.
   const { data: runRow, error: runErr } = await supabase
@@ -159,10 +120,7 @@ Deno.serve(async (req) => {
     .select("id")
     .single();
   if (runErr || !runRow) {
-    return new Response(JSON.stringify({ error: runErr?.message ?? "run insert failed" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ error: runErr?.message ?? "run insert failed" }, { status: 500 });
   }
   const runId = runRow.id;
 
@@ -185,10 +143,7 @@ Deno.serve(async (req) => {
       finished_at: new Date().toISOString(),
       errors: [{ stage: "select", message: selErr.message }],
     }).eq("id", runId);
-    return new Response(JSON.stringify({ error: selErr.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ error: selErr.message }, { status: 500 });
   }
 
   // Cache pages per URL within this run so multiple events from same source
@@ -275,15 +230,12 @@ Deno.serve(async (req) => {
     errors,
   }).eq("id", runId);
 
-  return new Response(
-    JSON.stringify({
-      ok: true,
-      run_id: runId,
-      checked,
-      verified,
-      flagged,
-      errors_count: errors.length,
-    }),
-    { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-  );
+  return json({
+    ok: true,
+    run_id: runId,
+    checked,
+    verified,
+    flagged,
+    errors_count: errors.length,
+  });
 });

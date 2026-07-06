@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { PaintballEvent, EventType } from '@/types/events';
+import { PaintballEvent, PaintballEventInsert, PaintballEventUpdate, EventType } from '@/types/events';
 import { normalizeEventUrls } from '@/lib/validation';
 import { toast } from 'sonner';
 
@@ -95,7 +95,7 @@ export function useUpdateEvent() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<PaintballEvent> }) => {
+    mutationFn: async ({ id, updates }: { id: string; updates: PaintballEventUpdate }) => {
       const { data, error } = await supabase
         .from('events')
         .update(updates)
@@ -120,7 +120,7 @@ export function useCreateEvent() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (event: Omit<PaintballEvent, 'id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (event: PaintballEventInsert) => {
       const { data, error } = await supabase
         .from('events')
         .insert(event)

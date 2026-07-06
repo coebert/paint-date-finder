@@ -98,6 +98,10 @@ const ChartTooltipContent = React.forwardRef<
       indicator?: "line" | "dot" | "dashed";
       nameKey?: string;
       labelKey?: string;
+      // Recharts 3.x removed these from the exported Tooltip props even though
+      // they're still injected at runtime by <Tooltip content={...}>.
+      payload?: any[];
+      label?: any;
     }
 >(
   (
@@ -229,11 +233,13 @@ const ChartLegend = RechartsPrimitive.Legend;
 
 const ChartLegendContent = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<"div"> &
-    Pick<RechartsPrimitive.LegendProps, "payload" | "verticalAlign"> & {
-      hideIcon?: boolean;
-      nameKey?: string;
-    }
+  React.ComponentProps<"div"> & {
+    hideIcon?: boolean;
+    nameKey?: string;
+    // Recharts 3.x LegendProps no longer exposes these publicly.
+    payload?: any[];
+    verticalAlign?: "top" | "middle" | "bottom";
+  }
 >(({ className, hideIcon = false, payload, verticalAlign = "bottom", nameKey }, ref) => {
   const { config } = useChart();
 
