@@ -4,7 +4,7 @@ import { PaintballEvent, PaintballEventInsert, PaintballEventUpdate, EventType }
 import { normalizeEventUrls } from '@/lib/validation';
 import { toast } from 'sonner';
 
-export function useEvents(filters?: {
+export type EventFilters = {
   eventType?: EventType;
   venue?: string;
   startDate?: string;
@@ -12,9 +12,31 @@ export function useEvents(filters?: {
   verifiedOnly?: boolean;
   beginnerOnly?: boolean;
   regionVenues?: string[];
-}) {
+};
+
+/**
+ * Central query-key factory. Keeps every cache read/write/invalidation in
+ * sync so hook consumers can't accidentally miss a shape (e.g. invalidating
+ * `['events']` but writing under `['events', 'list']`).
+ */
+export const eventKeys = {
+  all: ['events'] as const,
+  lists: () => [...eventKeys.all, 'list'] as const,
+  list: (filters?: EventFilters) => [...eventKeys.lists(), filters ?? {}] as const,
+  detail: (id: string | undefined) => [...eventKeys.all, 'byId', id] as const,
+  venues: () => ['events', 'venues'] as const,
+};
+
+/** Invalidate every list cache without touching detail caches unnecessarily. */
+function invalidateAllEventCaches(qc: ReturnType<typeof useQueryClient>, id?: string) {
+  qc.invalidateQueries({ queryKey: eventKeys.lists() });
+  qc.invalidateQueries({ queryKey: eventKeys.venues() });
+  if (id) qc.invalidateQueries({ queryKey: eventKeys.detail(id) });
+}
+
+export function useEvents(filters?: EventFilters) {
   return useQuery({
-    queryKey: ['events', filters],
+    queryKey: eventKeys.list(filters),
     queryFn: async () => {
       let query = supabase
         .from('events')
@@ -59,7 +81,7 @@ export function useEvents(filters?: {
 
 export function useEventById(id: string | undefined) {
   return useQuery({
-    queryKey: ['event', id],
+    queryKey: eventKeys.detail(id),
     enabled: !!id,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -73,20 +95,27 @@ export function useEventById(id: string | undefined) {
   });
 }
 
+/**
+ * Distinct list of venue names for filter dropdowns.
+ *
+ * Sourced from the canonical `venues` table rather than scanning every
+ * event row — this used to fetch N events just to `[...new Set()]` them,
+ * which scaled linearly with event count.
+ */
 export function useVenues() {
   return useQuery({
-    queryKey: ['venues'],
+    queryKey: eventKeys.venues(),
+    // Venues change rarely — keep the list warm for 5 minutes.
+    staleTime: 5 * 60 * 1000,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('events')
-        .select('venue_name')
-        .order('venue_name');
+        .from('venues')
+        .select('name')
+        .order('name');
 
       if (error) throw error;
-      
-      // Get unique venues
-      const uniqueVenues = [...new Set(data.map(e => e.venue_name))];
-      return uniqueVenues;
+      // Defensive dedupe in case duplicate names slip through.
+      return Array.from(new Set((data ?? []).map((v) => v.name).filter(Boolean)));
     },
   });
 }
@@ -106,8 +135,15 @@ export function useUpdateEvent() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['events'] });
+    onSuccess: (data, variables) => {
+      invalidateAllEventCaches(queryClient, variables.id);
+      // Prime the detail cache so the event page reflects the edit instantly.
+      if (data) {
+        queryClient.setQueryData(
+          eventKeys.detail(variables.id),
+          normalizeEventUrls(data as PaintballEvent),
+        );
+      }
       toast.success('Event updated successfully');
     },
     onError: (error) => {
@@ -130,8 +166,8 @@ export function useCreateEvent() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['events'] });
+    onSuccess: (data) => {
+      invalidateAllEventCaches(queryClient, data?.id);
       toast.success('Event created successfully');
     },
     onError: (error) => {
@@ -151,9 +187,11 @@ export function useDeleteEvent() {
         .eq('id', id);
 
       if (error) throw error;
+      return id;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['events'] });
+    onSuccess: (id) => {
+      invalidateAllEventCaches(queryClient, id);
+      queryClient.removeQueries({ queryKey: eventKeys.detail(id) });
       toast.success('Event deleted successfully');
     },
     onError: (error) => {
