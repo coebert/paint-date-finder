@@ -103,7 +103,7 @@ export default function Index() {
     setDetailDialogOpen(true);
   };
 
-  const handleClearFilters = clearAll;
+  
 
   const eventListJsonLd = useMemo(() => {
     const upcoming = (events ?? [])
