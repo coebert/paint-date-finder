@@ -11,8 +11,8 @@
 // stale flags are the same, we skip the email (so admins get one email
 // per incident, not daily noise).
 
-import { createClient } from "npm:@supabase/supabase-js@2";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { adminClient, authorizeAdminOrCron, readEnv } from "../_shared/supabase.ts";
+import { errors, json, preflight } from "../_shared/http.ts";
 
 const SCRAPE_STALE_HOURS = 72;   // 3 days
 const UPDATE_STALE_HOURS = 168;  // 7 days
