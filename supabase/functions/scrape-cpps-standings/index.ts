@@ -12,13 +12,8 @@
 // editorial fields (logo_url, captain_name, website, description, etc.)
 // are never overwritten.
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import { adminClient, authorizeAdminOrCron, readEnv } from "../_shared/supabase.ts";
+import { errors, json, preflight } from "../_shared/http.ts";
 
 const BASE = "https://www.okpb.co.uk";
 const UA =
@@ -71,43 +66,16 @@ async function getJson<T>(path: string): Promise<T> {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const pf = preflight(req);
+  if (pf) return pf;
 
-  // Authorize: service-role bearer (cron) or admin user JWT.
-  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-  const authHeader = req.headers.get("Authorization");
-  const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "";
-  let authorized = bearer === serviceKey;
+  const env = readEnv();
+  if (!env) return errors.missingEnv();
 
-  if (!authorized && bearer && bearer !== anonKey) {
-    const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: `Bearer ${bearer}` } },
-    });
-    const { data: { user } } = await userClient.auth.getUser();
-    if (user) {
-      const admin = createClient(supabaseUrl, serviceKey);
-      const { data: roleRow } = await admin
-        .from("user_roles").select("role")
-        .eq("user_id", user.id).eq("role", "admin").maybeSingle();
-      if (roleRow) authorized = true;
-    }
-  }
+  const auth = await authorizeAdminOrCron(req, env, { allowAnonAsCron: true });
+  if (!auth.ok) return auth.response;
 
-  if (!authorized) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-  );
+  const supabase = adminClient(env);
 
   try {
     const [rosters, results] = await Promise.all([
