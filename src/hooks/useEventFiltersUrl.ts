@@ -57,8 +57,11 @@ export function useEventFiltersUrl(): EventFiltersUrlState {
   const state = useMemo(() => {
     const viewParam = searchParams.get('view');
     const typeParam = searchParams.get('type');
+    // URL wins; when absent, restore the last view the user picked so
+    // switching pages and coming back keeps their preferred layout.
+    const view: EventView = isEventView(viewParam) ? viewParam : readStoredView();
     return {
-      view: isEventView(viewParam) ? viewParam : ('calendar' as EventView),
+      view,
       eventType:
         typeParam && typeParam in EVENT_TYPE_LABELS ? (typeParam as EventType) : undefined,
       beginnerOnly: searchParams.get('beginner') === '1',
@@ -68,6 +71,7 @@ export function useEventFiltersUrl(): EventFiltersUrlState {
       verifiedOnly: searchParams.get('verified') !== '0',
     };
   }, [searchParams]);
+
 
   const update = useCallback(
     (key: string, value: string | null) => {
