@@ -242,30 +242,24 @@ export default function Index() {
       />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
-        <EventTypeChips
+        <FilterBar
           eventType={eventType}
           beginnerOnly={beginnerOnly}
-          onEventTypeChange={setEventType}
-          onBeginnerOnlyChange={setBeginnerOnly}
-        />
-
-        <EventFilters
-          eventType={eventType}
           venue={venue}
           venues={venues}
           region={region}
           regions={regionsData?.regions || []}
           verifiedOnly={verifiedOnly}
+          location={userLocation}
+          hiddenNoCoords={hiddenNoCoords}
           onEventTypeChange={setEventType}
+          onBeginnerOnlyChange={setBeginnerOnly}
           onVenueChange={setVenue}
           onRegionChange={setRegion}
           onVerifiedOnlyChange={setVerifiedOnly}
-          onClearFilters={handleClearFilters}
+          onClearAll={clearAll}
         />
 
-        <div id="near-me">
-          <NearMeFilter location={userLocation} hiddenNoCoords={hiddenNoCoords} />
-        </div>
 
 
         {/* Reserve a stable min-height for the dynamic view to avoid CLS
