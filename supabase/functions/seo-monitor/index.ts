@@ -291,27 +291,18 @@ Deno.serve(async (req) => {
 
     if (insertError) {
       console.error("snapshot insert failed", insertError);
-      return new Response(JSON.stringify({ error: insertError.message }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: insertError.message }, { status: 500 });
     }
 
-    return new Response(
-      JSON.stringify({
-        ok: true,
-        regressions: regressions.length,
-        alert_sent: alertSent,
-        snapshot: snapshotRow,
-      }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return json({
+      ok: true,
+      regressions: regressions.length,
+      alert_sent: alertSent,
+      snapshot: snapshotRow,
+    });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error("seo-monitor error", msg);
-    return new Response(JSON.stringify({ error: msg }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ error: msg }, { status: 500 });
   }
 });
