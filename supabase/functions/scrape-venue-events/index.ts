@@ -1,7 +1,7 @@
 // Scrape trusted venue sources, extract candidate events with Lovable AI,
 // and insert them into event_submissions for admin review.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { corsHeaders, errors, json, preflight } from "../_shared/http.ts";
+import { errors, json, preflight } from "../_shared/http.ts";
 
 type Candidate = {
   title: string;
