@@ -322,11 +322,13 @@ function PaintSplat() {
 
 export function SplashScreen({ onComplete }: { onComplete: () => void }) {
   const [phase, setPhase] = useState<Phase>('dot');
+  const [showSkip, setShowSkip] = useState(false);
 
   const stableOnComplete = useCallback(onComplete, [onComplete]);
 
   useEffect(() => {
     const timers = [
+      setTimeout(() => setShowSkip(true), 1000),
       setTimeout(() => setPhase('barrel'), 1600),
       setTimeout(() => setPhase('turn'), 4200),
       setTimeout(() => setPhase('fire'), 4900),
@@ -338,6 +340,13 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
     return () => timers.forEach(clearTimeout);
   }, [stableOnComplete]);
 
+  // Respect users who ask for less motion — skip the whole sequence.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mql = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (mql.matches) stableOnComplete();
+  }, [stableOnComplete]);
+
   if (phase === 'done') {
     return (
       <div className="fixed inset-0 z-[100] pointer-events-none" style={{ animation: 'bond-fade-out 0.4s ease-in forwards' }}>
@@ -346,13 +355,30 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
     );
   }
 
+
   return (
     <div
       className="fixed inset-0 z-[100] overflow-hidden bg-black"
+      role="dialog"
+      aria-label="Intro animation"
       style={{
         animation: phase === 'fire' ? 'camera-shake 0.35s ease-out' : undefined,
       }}
     >
+      {/* Skip button — appears after 1s so keyboard/mouse users
+          aren't held hostage by the intro on repeat visits. */}
+      {showSkip && phase !== 'collapse' && (
+        <button
+          type="button"
+          onClick={stableOnComplete}
+          className="fixed top-4 right-4 z-[101] min-h-11 min-w-11 rounded-full border border-white/30 bg-black/60 px-4 py-2 text-xs font-medium tracking-wider uppercase text-white/90 backdrop-blur transition-colors hover:border-accent hover:text-accent focus-visible:outline-none"
+          aria-label="Skip intro animation"
+        >
+          Skip intro
+        </button>
+      )}
+
+
       {/* ─── Phase 1: White tracking dot ─── */}
       {phase === 'dot' && (
         <div className="absolute inset-0 flex items-center justify-center">

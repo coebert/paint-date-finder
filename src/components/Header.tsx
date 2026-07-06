@@ -193,7 +193,7 @@ export function Header({
                   variant="ghost"
                   size="icon"
                   asChild
-                  className="text-muted-foreground hover:text-foreground min-h-9 min-w-9"
+                  className="text-muted-foreground hover:text-foreground min-h-11 min-w-11"
                 >
                   <Link to="/admin" aria-label="Admin dashboard">
                     <Settings className="h-4 w-4" />

@@ -4,8 +4,30 @@ import { EventType, EVENT_TYPE_LABELS } from '@/types/events';
 
 export type EventView = 'calendar' | 'list' | 'map';
 
+const VIEW_STORAGE_KEY = 'faw:last-view';
+
 const isEventView = (v: string | null): v is EventView =>
   v === 'calendar' || v === 'list' || v === 'map';
+
+function readStoredView(): EventView {
+  if (typeof window === 'undefined') return 'calendar';
+  try {
+    const raw = localStorage.getItem(VIEW_STORAGE_KEY);
+    return isEventView(raw) ? raw : 'calendar';
+  } catch {
+    return 'calendar';
+  }
+}
+
+function writeStoredView(v: EventView) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(VIEW_STORAGE_KEY, v);
+  } catch {
+    // ignore quota / private mode
+  }
+}
+
 
 export interface EventFiltersUrlState {
   view: EventView;
@@ -35,8 +57,11 @@ export function useEventFiltersUrl(): EventFiltersUrlState {
   const state = useMemo(() => {
     const viewParam = searchParams.get('view');
     const typeParam = searchParams.get('type');
+    // URL wins; when absent, restore the last view the user picked so
+    // switching pages and coming back keeps their preferred layout.
+    const view: EventView = isEventView(viewParam) ? viewParam : readStoredView();
     return {
-      view: isEventView(viewParam) ? viewParam : ('calendar' as EventView),
+      view,
       eventType:
         typeParam && typeParam in EVENT_TYPE_LABELS ? (typeParam as EventType) : undefined,
       beginnerOnly: searchParams.get('beginner') === '1',
@@ -46,6 +71,7 @@ export function useEventFiltersUrl(): EventFiltersUrlState {
       verifiedOnly: searchParams.get('verified') !== '0',
     };
   }, [searchParams]);
+
 
   const update = useCallback(
     (key: string, value: string | null) => {
@@ -64,7 +90,15 @@ export function useEventFiltersUrl(): EventFiltersUrlState {
 
   return {
     ...state,
-    setView: useCallback((v) => update('view', v === 'calendar' ? null : v), [update]),
+    setView: useCallback(
+      (v: EventView) => {
+        writeStoredView(v);
+        // Keep the URL clean when the view matches the default so shared
+        // links don't leak per-user preferences.
+        update('view', v === 'calendar' ? null : v);
+      },
+      [update],
+    ),
     setEventType: useCallback((t) => update('type', t ?? null), [update]),
     setBeginnerOnly: useCallback((v) => update('beginner', v ? '1' : null), [update]),
     setVenue: useCallback((v) => update('venue', v || null), [update]),
