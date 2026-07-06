@@ -93,9 +93,9 @@ const sampleSubmission: EventSubmission = {
   admin_notes: null,
   reviewed_at: null,
   created_at: new Date().toISOString(),
-  sanity_warnings: null,
-  venue_match_status: null,
-} as EventSubmission;
+  sanity_warnings: [],
+  venue_match_status: 'unknown',
+};
 
 describe('useApproveSubmission', () => {
   beforeEach(() => {
