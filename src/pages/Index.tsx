@@ -104,13 +104,7 @@ export default function Index() {
     setDetailDialogOpen(true);
   };
 
-  const handleClearFilters = () => {
-    setEventType(undefined);
-    setBeginnerOnly(false);
-    setVenue('');
-    setRegion('');
-    setVerifiedOnly(false);
-  };
+  const handleClearFilters = clearAll;
 
   const eventListJsonLd = useMemo(() => {
     const upcoming = (events ?? [])
