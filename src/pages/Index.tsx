@@ -312,7 +312,50 @@ export default function Index() {
             Showing {events.length} events across {venues.length} venues
           </div>
         )}
+
+        <section aria-labelledby="regions-heading" className="rounded-lg border border-border/50 bg-card/40 p-5 backdrop-blur-sm">
+          <h2 id="regions-heading" className="font-display text-2xl tracking-wide text-foreground mb-3">
+            Browse paintball by UK region
+          </h2>
+          <ul className="flex flex-wrap gap-2">
+            {ALL_REGIONS.map((r) => (
+              <li key={r.slug}>
+                <Link
+                  to={`/paintball/${r.slug}`}
+                  className="inline-block rounded-full border border-border/60 bg-background/60 px-3 py-1.5 text-sm text-foreground hover:border-accent hover:text-accent transition-colors"
+                >
+                  Paintball in {r.name}
+                </Link>
+              </li>
+            ))}
+            <li>
+              <Link
+                to="/paintball"
+                className="inline-block rounded-full border border-accent/60 bg-accent/10 px-3 py-1.5 text-sm text-accent hover:bg-accent/20 transition-colors"
+              >
+                See all regions →
+              </Link>
+            </li>
+          </ul>
+        </section>
+
+        <section
+          aria-labelledby="ai-summary-heading"
+          data-ai-summary
+          className="rounded-lg border border-border/50 bg-secondary/40 p-5 text-sm text-muted-foreground backdrop-blur-sm"
+        >
+          <h2 id="ai-summary-heading" className="font-display text-xl tracking-wide text-foreground mb-2">
+            About Find A Walk-On
+          </h2>
+          <p>
+            Find A Walk-On is a UK directory of paintball walk-on events and teams. Browse upcoming
+            manually-verified .68 caliber walk-ons by date, region, venue and format (Mag-Fed,
+            Mechanical, Speedball and more), view them on a calendar or map, and discover CPPS
+            League and other UK teams. All events are vetted by the community before listing.
+          </p>
+        </section>
       </main>
+
 
       <EventEditDialog
         event={editingEvent}
