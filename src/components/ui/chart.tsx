@@ -98,6 +98,10 @@ const ChartTooltipContent = React.forwardRef<
       indicator?: "line" | "dot" | "dashed";
       nameKey?: string;
       labelKey?: string;
+      // Recharts 3.x removed these from the exported Tooltip props even though
+      // they're still injected at runtime by <Tooltip content={...}>.
+      payload?: any[];
+      label?: any;
     }
 >(
   (
