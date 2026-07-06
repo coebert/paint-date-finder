@@ -39,15 +39,30 @@
 
     --radius: 0.5rem;
 
-    /* Event type colors */
-    --event-walk-on: 120 40% 40%;
-    --event-big-game: 25 95% 53%;
-    --event-competition: 200 80% 50%;
-    --event-tournament: 280 70% 55%;
-    --event-speedball: 340 80% 55%;
-    --event-scenario: 45 90% 50%;
-    --event-mag-fed: 160 60% 40%;
-    --event-other: 220 10% 50%;
+    /* Layered surfaces — pair with foreground for consistent contrast.
+       surface-1 = base card, 2 = raised card / sticky bar, 3 = popover. */
+    --surface-1: 220 15% 12%;
+    --surface-2: 220 14% 15%;
+    --surface-3: 220 14% 18%;
+
+    /* Event type colors — hues spaced ≥30° apart for legibility on the
+       calendar legend and colour-coded pills. */
+    --event-walk-on: 120 40% 40%;      /* green */
+    --event-big-game: 25 95% 53%;       /* orange (accent) */
+    --event-competition: 200 80% 50%;   /* cyan */
+    --event-tournament: 280 70% 55%;    /* purple */
+    --event-speedball: 340 80% 55%;     /* magenta */
+    --event-scenario: 55 90% 55%;       /* gold */
+    --event-mag-fed: 160 60% 40%;       /* teal */
+    --event-other: 220 10% 50%;         /* neutral */
+
+    /* Motion tokens — reuse across transitions/animations so tempo stays
+       consistent as the app grows. */
+    --dur-fast: 120ms;
+    --dur-med: 220ms;
+    --dur-slow: 380ms;
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
 
     --sidebar-background: 220 15% 10%;
     --sidebar-foreground: 45 20% 95%;
@@ -58,6 +73,7 @@
     --sidebar-border: 220 10% 22%;
     --sidebar-ring: 25 95% 53%;
   }
+
 
   .dark {
     --background: 220 15% 8%;
@@ -95,16 +111,35 @@
     @apply border-border;
   }
 
+  /* Consistent, brand-flavoured focus ring across every interactive
+     element — replaces the browser default and Radix's per-primitive
+     rings so keyboard users always see the same accent halo. */
+  *:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--accent));
+    border-radius: var(--radius);
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', sans-serif;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  /* Display-scale headlines only — h3 downwards fall back to Inter so
+     copy-heavy sections stay readable. Anything that needs the Bebas
+     stencil look explicitly opts in with `.font-display`. */
+  h1, h2, .font-display {
     font-family: 'Bebas Neue', sans-serif;
     letter-spacing: 0.05em;
   }
+
+  h3, h4, h5, h6 {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
 }
+
 
 @layer components {
   .tactical-gradient {
