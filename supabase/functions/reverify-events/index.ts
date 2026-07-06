@@ -15,7 +15,7 @@
 // Triggered by pg_cron daily; can also be called by an admin from the UI.
 
 import { adminClient, authorizeAdminOrCron, readEnv } from "../_shared/supabase.ts";
-import { errors, json, preflight } from "../_shared/http.ts";
+import { errors as httpErr, json, preflight } from "../_shared/http.ts";
 
 const BATCH_SIZE = 80;
 const STALE_REFRESH_HOURS = 20; // skip rows verified within this window
@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
   if (pf) return pf;
 
   const env = readEnv();
-  if (!env) return errors.missingEnv();
+  if (!env) return httpErr.missingEnv();
 
   const auth = await authorizeAdminOrCron(req, env, { allowAnonAsCron: true });
   if (!auth.ok) return auth.response;
@@ -119,10 +119,7 @@ Deno.serve(async (req) => {
     .select("id")
     .single();
   if (runErr || !runRow) {
-    return new Response(JSON.stringify({ error: runErr?.message ?? "run insert failed" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ error: runErr?.message ?? "run insert failed" }, { status: 500 });
   }
   const runId = runRow.id;
 
@@ -145,10 +142,7 @@ Deno.serve(async (req) => {
       finished_at: new Date().toISOString(),
       errors: [{ stage: "select", message: selErr.message }],
     }).eq("id", runId);
-    return new Response(JSON.stringify({ error: selErr.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ error: selErr.message }, { status: 500 });
   }
 
   // Cache pages per URL within this run so multiple events from same source
@@ -235,15 +229,12 @@ Deno.serve(async (req) => {
     errors,
   }).eq("id", runId);
 
-  return new Response(
-    JSON.stringify({
-      ok: true,
-      run_id: runId,
-      checked,
-      verified,
-      flagged,
-      errors_count: errors.length,
-    }),
-    { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-  );
+  return json({
+    ok: true,
+    run_id: runId,
+    checked,
+    verified,
+    flagged,
+    errors_count: errors.length,
+  });
 });
