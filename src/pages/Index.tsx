@@ -325,11 +325,6 @@ export default function Index() {
                 <EventCalendar
                   events={displayedEvents}
                   onEventClick={handleEventClick}
-                  eventType={eventType}
-                  venue={venue}
-                  venues={venues}
-                  onEventTypeChange={setEventType}
-                  onVenueChange={setVenue}
                   userCoords={userCoords}
                 />
               )}

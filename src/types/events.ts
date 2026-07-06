@@ -14,24 +14,87 @@ export type PaintballEvent = Database['public']['Tables']['events']['Row'];
 export type PaintballEventInsert = Database['public']['Tables']['events']['Insert'];
 export type PaintballEventUpdate = Database['public']['Tables']['events']['Update'];
 
-export const EVENT_TYPE_LABELS: Record<EventType, string> = {
-  walk_on: 'Walk-On',
-  big_game: 'Big Game',
-  competition: 'Competition',
-  tournament: 'Tournament',
-  speedball: 'Speedball',
-  scenario: 'Scenario',
-  mag_fed: 'Mag-Fed',
-  other: 'Other',
+/**
+ * Per-type presentation metadata. Every calendar cell, badge, legend and
+ * chart pulls from this single object so a colour change or new type stays
+ * consistent across the whole app.
+ *
+ * `cellText` is the *paired* foreground for `cellBg` — encode the contrast
+ * decision alongside the background so we can't accidentally break WCAG
+ * by swapping one without the other.
+ */
+export const EVENT_TYPE_META: Record<
+  EventType,
+  { label: string; badgeClass: string; cellBg: string; cellText: string; swatch: string }
+> = {
+  walk_on: {
+    label: 'Walk-On',
+    badgeClass: 'event-badge-walk-on',
+    cellBg: 'bg-event-walk-on/80',
+    cellText: 'text-white',
+    swatch: 'bg-event-walk-on',
+  },
+  big_game: {
+    label: 'Big Game',
+    badgeClass: 'event-badge-big-game',
+    cellBg: 'bg-event-big-game/80',
+    cellText: 'text-black',
+    swatch: 'bg-event-big-game',
+  },
+  competition: {
+    label: 'Competition',
+    badgeClass: 'event-badge-competition',
+    cellBg: 'bg-event-competition/80',
+    cellText: 'text-white',
+    swatch: 'bg-event-competition',
+  },
+  tournament: {
+    label: 'Tournament',
+    badgeClass: 'event-badge-tournament',
+    cellBg: 'bg-event-tournament/80',
+    cellText: 'text-white',
+    swatch: 'bg-event-tournament',
+  },
+  speedball: {
+    label: 'Speedball',
+    badgeClass: 'event-badge-speedball',
+    cellBg: 'bg-event-speedball/80',
+    cellText: 'text-white',
+    swatch: 'bg-event-speedball',
+  },
+  scenario: {
+    label: 'Scenario',
+    badgeClass: 'event-badge-scenario',
+    cellBg: 'bg-event-scenario/80',
+    cellText: 'text-black',
+    swatch: 'bg-event-scenario',
+  },
+  mag_fed: {
+    label: 'Mag-Fed',
+    badgeClass: 'event-badge-mag-fed',
+    cellBg: 'bg-event-mag-fed/80',
+    cellText: 'text-white',
+    swatch: 'bg-event-mag-fed',
+  },
+  other: {
+    label: 'Other',
+    badgeClass: 'event-badge-other',
+    cellBg: 'bg-event-other/80',
+    cellText: 'text-white',
+    swatch: 'bg-event-other',
+  },
 };
 
-export const EVENT_TYPE_COLORS: Record<EventType, string> = {
-  walk_on: 'event-badge-walk-on',
-  big_game: 'event-badge-big-game',
-  competition: 'event-badge-competition',
-  tournament: 'event-badge-tournament',
-  speedball: 'event-badge-speedball',
-  scenario: 'event-badge-scenario',
-  mag_fed: 'event-badge-mag-fed',
-  other: 'event-badge-other',
-};
+/** @deprecated Use `EVENT_TYPE_META[type].label`. Kept for external callers. */
+export const EVENT_TYPE_LABELS: Record<EventType, string> = Object.fromEntries(
+  (Object.entries(EVENT_TYPE_META) as [EventType, (typeof EVENT_TYPE_META)[EventType]][]).map(
+    ([k, v]) => [k, v.label],
+  ),
+) as Record<EventType, string>;
+
+/** @deprecated Use `EVENT_TYPE_META[type].badgeClass`. */
+export const EVENT_TYPE_COLORS: Record<EventType, string> = Object.fromEntries(
+  (Object.entries(EVENT_TYPE_META) as [EventType, (typeof EVENT_TYPE_META)[EventType]][]).map(
+    ([k, v]) => [k, v.badgeClass],
+  ),
+) as Record<EventType, string>;
