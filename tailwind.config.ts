@@ -51,6 +51,11 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        surface: {
+          1: "hsl(var(--surface-1))",
+          2: "hsl(var(--surface-2))",
+          3: "hsl(var(--surface-3))",
+        },
         event: {
           "walk-on": "hsl(var(--event-walk-on))",
           "big-game": "hsl(var(--event-big-game))",
@@ -71,6 +76,15 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+      },
+      transitionDuration: {
+        fast: "var(--dur-fast)",
+        med: "var(--dur-med)",
+        slow: "var(--dur-slow)",
+      },
+      transitionTimingFunction: {
+        "out-expo": "var(--ease-out-expo)",
+        standard: "var(--ease-standard)",
       },
       borderRadius: {
         lg: "var(--radius)",
