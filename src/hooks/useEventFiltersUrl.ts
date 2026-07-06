@@ -4,8 +4,30 @@ import { EventType, EVENT_TYPE_LABELS } from '@/types/events';
 
 export type EventView = 'calendar' | 'list' | 'map';
 
+const VIEW_STORAGE_KEY = 'faw:last-view';
+
 const isEventView = (v: string | null): v is EventView =>
   v === 'calendar' || v === 'list' || v === 'map';
+
+function readStoredView(): EventView {
+  if (typeof window === 'undefined') return 'calendar';
+  try {
+    const raw = localStorage.getItem(VIEW_STORAGE_KEY);
+    return isEventView(raw) ? raw : 'calendar';
+  } catch {
+    return 'calendar';
+  }
+}
+
+function writeStoredView(v: EventView) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(VIEW_STORAGE_KEY, v);
+  } catch {
+    // ignore quota / private mode
+  }
+}
+
 
 export interface EventFiltersUrlState {
   view: EventView;
