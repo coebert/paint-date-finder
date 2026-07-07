@@ -224,7 +224,7 @@ Deno.serve(async (req) => {
   const env = readEnv();
   if (!env) return errors.missingEnv();
 
-  const auth = await authorizeAdminOrCron(req, env, { allowAnonAsCron: true });
+  const auth = await authorizeAdminOrCron(req, env);
   if (!auth.ok) return auth.response;
 
   const admin = adminClient(env);
