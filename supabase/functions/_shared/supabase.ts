@@ -48,25 +48,26 @@ export type AuthResult =
  *
  * @param opts.cronSecretEnv — optional env var name for a dedicated cron
  *   secret; if set and header matches, request is admitted as cron.
- * @param opts.allowAnonAsCron — if true, the project anon/publishable key
- *   is also accepted as a cron bearer (needed when pg_cron uses it).
+ *   Defaults to SCRAPE_CRON_SECRET when unset.
+ *
+ * Note: the public anon/publishable key is NEVER accepted as authorization.
+ * Cron callers must present either the service-role key or the shared
+ * x-cron-secret header.
  */
 export async function authorizeAdminOrCron(
   req: Request,
   env: SharedEnv,
-  opts: { cronSecretEnv?: string; allowAnonAsCron?: boolean } = {},
+  opts: { cronSecretEnv?: string } = {},
 ): Promise<AuthResult> {
   const authHeader = req.headers.get("Authorization");
   const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "";
 
   // Cron paths.
-  const cronSecret = opts.cronSecretEnv ? Deno.env.get(opts.cronSecretEnv) ?? "" : "";
+  const cronSecretEnvName = opts.cronSecretEnv ?? "SCRAPE_CRON_SECRET";
+  const cronSecret = Deno.env.get(cronSecretEnvName) ?? "";
   const cronHeader = req.headers.get("x-cron-secret") ?? "";
   const isCronBySecret = !!cronSecret && cronHeader === cronSecret;
-  const isCronByBearer =
-    !!bearer &&
-    (bearer === env.serviceKey ||
-      (opts.allowAnonAsCron && !!env.anonKey && bearer === env.anonKey));
+  const isCronByBearer = !!bearer && bearer === env.serviceKey;
   if (isCronBySecret || isCronByBearer) {
     return { ok: true, triggeredBy: "cron", userId: null };
   }
