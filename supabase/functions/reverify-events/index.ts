@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
   const env = readEnv();
   if (!env) return httpErr.missingEnv();
 
-  const auth = await authorizeAdminOrCron(req, env, { allowAnonAsCron: true });
+  const auth = await authorizeAdminOrCron(req, env);
   if (!auth.ok) return auth.response;
   const triggeredBy = auth.triggeredBy;
   const firecrawlKey = Deno.env.get("FIRECRAWL_API_KEY");
