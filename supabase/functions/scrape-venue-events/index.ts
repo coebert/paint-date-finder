@@ -262,22 +262,12 @@ Deno.serve(async (req) => {
   const authHeader = req.headers.get("Authorization");
   const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "";
   const cronSecretHeader = req.headers.get("x-cron-secret") ?? "";
-  const ANON_KEY =
-    Deno.env.get("SUPABASE_ANON_KEY") ??
-    Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ??
-    "";
   const CRON_SECRET = Deno.env.get("SCRAPE_CRON_SECRET") ?? "";
-  // Hard-coded fallback to the project's publishable anon key — required when
-  // neither SUPABASE_ANON_KEY nor SUPABASE_PUBLISHABLE_KEY are present in the
-  // edge runtime env (Lovable Cloud doesn't always inject them).
-  const PROJECT_ANON =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzaWJ5cnVlanVtY3BsZHV0eXFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NzYxMjksImV4cCI6MjA4NTQ1MjEyOX0.H4HKzKQuWePZRG6mSCp3rN-vQdMq7PkD9U-28GIdheE";
+  // Cron authentication accepts ONLY the service-role key or the shared
+  // x-cron-secret. The public anon/publishable key is never accepted.
   const isCron =
     (CRON_SECRET && cronSecretHeader === CRON_SECRET) ||
-    (bearer &&
-      (bearer === SERVICE_KEY ||
-        (ANON_KEY && bearer === ANON_KEY) ||
-        bearer === PROJECT_ANON));
+    (bearer && bearer === SERVICE_KEY);
   if (!bearer && !isCron) return errors.unauthorized();
 
   if (!isCron) {
