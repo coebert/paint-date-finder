@@ -91,7 +91,7 @@ export default function Submissions() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <RouteHead
         title="Event submissions"
         description="Review pending paintball event submissions for the Find A Walk-On UK directory: approve, reject, or follow up on community-suggested walk-on events."

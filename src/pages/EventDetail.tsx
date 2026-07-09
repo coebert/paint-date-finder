@@ -27,7 +27,7 @@ export default function EventDetail() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-dvh bg-background">
         <div className="container mx-auto px-4 py-6 max-w-3xl">
           <Skeleton className="h-8 w-32 mb-4" />
           <Skeleton className="h-64 w-full" />
@@ -45,7 +45,7 @@ export default function EventDetail() {
           robots="noindex,follow"
           path={`/events/${id ?? ''}`}
         />
-        <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="min-h-dvh bg-background flex items-center justify-center">
           <div className="text-center">
             <Calendar className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
             <h1 className="text-xl font-display text-foreground mb-2">Event not found</h1>
@@ -233,7 +233,7 @@ export default function EventDetail() {
         <script type="application/ld+json">{JSON.stringify(breadcrumbSchema)}</script>
       </RouteHead>
 
-      <div className="min-h-screen bg-background">
+      <div className="min-h-dvh bg-background">
         <header className="tactical-gradient border-b border-border/50">
           <div className="container mx-auto px-4 py-6 max-w-3xl">
             <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-foreground mb-4 -ml-2">

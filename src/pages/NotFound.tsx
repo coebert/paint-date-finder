@@ -2,7 +2,7 @@ import { RouteHead } from "@/components/RouteHead";
 
 const NotFound = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted">
+    <div className="flex min-h-dvh items-center justify-center bg-muted">
       <RouteHead
         title="Page not found (404)"
         description="The page you're looking for doesn't exist on Find A Walk-On. Head back to the homepage to browse UK paintball walk-on events and teams."

@@ -194,7 +194,7 @@ export default function FieldLayout() {
         description="Design and explore paintball field layouts in 2D and 3D. CPPS, NXL and custom presets — annotate, compare and share."
         path="/field-layout"
       />
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       {/* Header */}
       <header className="tactical-gradient border-b border-border/50">
         <div className="container mx-auto px-4 py-4">
