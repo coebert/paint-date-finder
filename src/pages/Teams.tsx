@@ -188,7 +188,7 @@ export default function Teams() {
           <script type="application/ld+json">{JSON.stringify(teamsListJsonLd)}</script>
         )}
       </RouteHead>
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <header className="tactical-gradient border-b border-border/50">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center gap-3 mb-4">

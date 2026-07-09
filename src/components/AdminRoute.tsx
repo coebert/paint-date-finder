@@ -16,7 +16,7 @@ export function AdminRoute({ children }: AdminRouteProps) {
   // Show loading while checking auth
   if (authLoading || (user && adminLoading)) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-dvh bg-background flex items-center justify-center">
         <div className="text-center space-y-4">
           <Loader2 className="h-8 w-8 animate-spin text-accent mx-auto" />
           <p className="text-muted-foreground">Checking permissions...</p>
@@ -33,7 +33,7 @@ export function AdminRoute({ children }: AdminRouteProps) {
   // Show access denied if not admin
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-dvh bg-background flex items-center justify-center">
         <div className="text-center space-y-4 max-w-md px-4">
           <div className="w-16 h-16 rounded-full bg-destructive/20 flex items-center justify-center mx-auto">
             <ShieldX className="h-8 w-8 text-destructive" />

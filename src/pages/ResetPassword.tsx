@@ -244,7 +244,7 @@ export default function ResetPassword() {
     return (
       <>
         <ResetPasswordHead />
-        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="min-h-dvh bg-background flex items-center justify-center p-4">
           <Card className="w-full max-w-md bg-card border-border">
             <CardContent className="pt-6">
               <div className="flex items-center justify-center">
@@ -262,7 +262,7 @@ export default function ResetPassword() {
     return (
       <>
         <ResetPasswordHead />
-        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="min-h-dvh bg-background flex items-center justify-center p-4">
           <Card className="w-full max-w-md bg-card border-border">
             <CardContent className="pt-6">
               <div className="flex flex-col items-center gap-4">
@@ -289,7 +289,7 @@ export default function ResetPassword() {
     return (
       <>
         <ResetPasswordHead />
-        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="min-h-dvh bg-background flex items-center justify-center p-4">
           <Card className="w-full max-w-md bg-card border-border">
             <CardContent className="pt-6">
               <div className="flex flex-col items-center gap-4">
@@ -309,7 +309,7 @@ export default function ResetPassword() {
   return (
     <>
       <ResetPasswordHead />
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-dvh bg-background flex items-center justify-center p-4">
         <Card className="w-full max-w-md bg-card border-border">
         <CardHeader>
           <h1 className="font-display text-2xl tracking-wide leading-none">SET NEW PASSWORD</h1>

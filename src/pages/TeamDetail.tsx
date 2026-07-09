@@ -42,7 +42,7 @@ export default function TeamDetail() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-dvh bg-background">
         <div className="container mx-auto px-4 py-6">
           <Skeleton className="h-64 w-full bg-card" />
         </div>
@@ -52,7 +52,7 @@ export default function TeamDetail() {
 
   if (!team) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-dvh bg-background flex items-center justify-center">
         <div className="text-center">
           <Users className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
           <h2 className="text-xl font-display text-foreground mb-2">Team not found</h2>
@@ -87,7 +87,7 @@ export default function TeamDetail() {
       >
         <script type="application/ld+json">{JSON.stringify(teamJsonLd)}</script>
       </RouteHead>
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       {/* Hero Header */}
       <header className="tactical-gradient border-b border-border/50">
         <div className="container mx-auto px-4 py-6">

@@ -192,7 +192,7 @@ export default function Index() {
 
 
   return (
-    <div className="min-h-screen bg-background relative">
+    <div className="min-h-dvh bg-background relative">
       <RouteHead
         title="Find A Walk-On | UK Paintball Events & Walk-On Days"
         titleFull

@@ -121,7 +121,7 @@ export default function CityPage() {
         <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
       </RouteHead>
 
-      <div className="min-h-screen bg-background">
+      <div className="min-h-dvh bg-background">
         <header className="tactical-gradient border-b border-border/50">
           <div className="container mx-auto px-4 py-6 max-w-4xl">
             <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-foreground mb-4 -ml-2">

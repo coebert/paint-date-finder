@@ -40,7 +40,7 @@ export function AdminLayout({ children, title, description }: AdminLayoutProps) 
         path={location.pathname}
         robots="noindex,nofollow"
       />
-      <div className="min-h-screen flex w-full bg-background">
+      <div className="min-h-dvh flex w-full bg-background">
         <AdminSidebar />
         <SidebarInset className="flex-1">
           <header className="flex h-16 shrink-0 items-center gap-2 border-b border-border/50 px-4">
