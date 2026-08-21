@@ -5,6 +5,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
 import { VENUE_COORDINATES, type UKRegion } from '@/lib/venueCoordinates';
 import { useVenueDetails } from '@/hooks/useVenueDetails';
+import { useVenueGeo } from '@/hooks/useVenueGeo';
+import { normalizeVenueName } from '@/lib/venueGeo';
 import { DARK_MAP_STYLES, UK_CENTER, UK_ZOOM, loadGoogleMaps } from '@/lib/googleMaps';
 import {
   buildInfoWindowHtml,
