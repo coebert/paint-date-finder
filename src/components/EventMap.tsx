@@ -42,6 +42,8 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
     onEventClickRef.current = onEventClick;
   }, [onEventClick]);
 
+  const resolveCoords = useVenueGeo();
+
   const venueGroups = useMemo<VenueGroup[]>(() => {
     const byVenue = new Map<string, PaintballEvent[]>();
     for (const e of events) {
@@ -51,19 +53,20 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
     }
     const groups: VenueGroup[] = [];
     for (const [name, venueEvents] of byVenue) {
-      const coords = VENUE_COORDINATES[name];
+      const coords = resolveCoords(name);
       if (!coords) continue;
+      const meta = curatedMeta(name);
       groups.push({
         name,
         lat: coords.lat,
         lng: coords.lng,
-        region: coords.region,
-        location: coords.location,
+        region: meta?.region ?? regionForCoords(coords.lat, coords.lng),
+        location: meta?.location ?? venueDetails?.get(name)?.location ?? '',
         events: venueEvents,
       });
     }
     return groups;
-  }, [events]);
+  }, [events, resolveCoords, venueDetails]);
 
   const filteredGroups = useMemo(
     () =>
