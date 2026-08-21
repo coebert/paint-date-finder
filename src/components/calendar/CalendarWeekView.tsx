@@ -31,7 +31,7 @@ export function CalendarWeekView({
           <div
             key={dateKey}
             className={cn(
-              'min-h-[8rem] p-2 sm:min-h-[22rem]',
+              'min-h-[6rem] p-2 sm:min-h-[16rem]',
               isWeekend(day) && 'bg-secondary/20',
               isDayToday && 'bg-accent/5',
             )}
