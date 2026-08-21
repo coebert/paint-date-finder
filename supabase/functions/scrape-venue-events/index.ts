@@ -274,9 +274,14 @@ Deno.serve(async (req) => {
   const authHeader = req.headers.get("Authorization");
   const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "";
   const cronSecretHeader = req.headers.get("x-cron-secret") ?? "";
-  const CRON_SECRET = Deno.env.get("SCRAPE_CRON_SECRET") ?? "";
+  // Either shared scheduler secret is accepted (CRON_SECRET is the one wired
+  // into the pg_cron schedule; SCRAPE_CRON_SECRET is kept for manual callers).
+  const cronSecrets = [
+    Deno.env.get("CRON_SECRET") ?? "",
+    Deno.env.get("SCRAPE_CRON_SECRET") ?? "",
+  ].filter(Boolean);
   const isCron =
-    (CRON_SECRET && cronSecretHeader === CRON_SECRET) ||
+    (!!cronSecretHeader && cronSecrets.includes(cronSecretHeader)) ||
     (bearer && bearer === SERVICE_KEY);
   if (!bearer && !isCron) return errors.unauthorized();
 
