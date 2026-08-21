@@ -224,12 +224,11 @@ async function extractCandidates(
     },
   );
 
-  if (res.status === 429) throw new Error("AI rate limit exceeded (429)");
-  if (res.status === 402) throw new Error("AI credits exhausted (402)");
   if (!res.ok) {
-    const t = await res.text();
-    throw new Error(`AI gateway ${res.status}: ${t}`);
+    const t = res.status >= 400 && res.status < 500 ? await res.text() : "";
+    throw new AiGatewayError(res.status, `AI gateway ${res.status}: ${t.slice(0, 300)}`);
   }
+
 
   const data = await res.json();
   const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
