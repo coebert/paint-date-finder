@@ -24,6 +24,8 @@ export function ExpandedDayPanel({
   onClose,
   onEventClick,
 }: ExpandedDayPanelProps) {
+  const resolveVenueCoords = useVenueGeo();
+
   return (
     <div className="border-t border-border/50 bg-secondary/30 animate-in slide-in-from-top-2 duration-200">
       <div className="p-4">
