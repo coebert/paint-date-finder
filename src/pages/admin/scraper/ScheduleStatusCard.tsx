@@ -1,2 +1,102 @@
 import { formatDistanceToNow } from 'date-fns';
-import { AlarmClock, CircleСheckIconPlaceholder } from 'lucide-react';
+import { AlarmClock, CheckCircle2, Loader2, PauseCircle, PlayCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { useResumeScrapeJob, useScrapeJobState } from '@/hooks/useScraper';
+
+function relative(iso: string | null | undefined) {
+  if (!iso) return 'never';
+  return formatDistanceToNow(new Date(iso), { addSuffix: true });
+}
+
+/**
+ * Status of the scheduled (background) scraper job: when it last ran, whether
+ * a run is currently holding the lease, and whether the circuit breaker has
+ * paused it (AI credits exhausted or blocked by workspace policy).
+ */
+export function ScheduleStatusCard() {
+  const { data: job, isLoading } = useScrapeJobState({ refetchInterval: 30000 });
+  const resume = useResumeScrapeJob();
+
+  const running = !!job?.lease_expires_at && new Date(job.lease_expires_at) > new Date();
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <CardTitle className="flex items-center gap-2">
+            <AlarmClock className="h-4 w-4 text-accent" aria-hidden />
+            Automatic schedule
+          </CardTitle>
+          <CardDescription>
+            Runs daily at 05:10 UK time, scraping a small batch of the least-recently
+            checked sources so every source is refreshed in rotation.
+          </CardDescription>
+        </div>
+        {job?.paused ? (
+          <Button
+            size="sm"
+            onClick={() => resume.mutate()}
+            disabled={resume.isPending}
+            className="min-h-11"
+          >
+            {resume.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <PlayCircle className="mr-2 h-4 w-4" />
+            )}
+            Resume job
+          </Button>
+        ) : null}
+      </CardHeader>
+      <CardContent className="space-y-3 text-sm">
+        {isLoading ? (
+          <p className="text-muted-foreground">Loading schedule status…</p>
+        ) : (
+          <>
+            <div className="flex flex-wrap items-center gap-2">
+              {job?.paused ? (
+                <Badge variant="destructive" className="gap-1">
+                  <PauseCircle className="h-3 w-3" aria-hidden />
+                  Paused
+                  {job.paused_kind ? ` (${job.paused_kind.replace('_', ' ')})` : ''}
+                </Badge>
+              ) : running ? (
+                <Badge variant="secondary" className="gap-1">
+                  <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+                  Run in progress
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="gap-1">
+                  <CheckCircle2 className="h-3 w-3" aria-hidden />
+                  Scheduled
+                </Badge>
+              )}
+              <span className="text-muted-foreground">
+                Last started {relative(job?.last_run_at)} · last finished{' '}
+                {relative(job?.last_finished_at)}
+              </span>
+            </div>
+
+            {job?.paused ? (
+              <p className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-foreground">
+                The scheduled scraper stopped itself {relative(job.paused_at)}:{' '}
+                <span className="font-medium">{job.pause_reason || 'unknown reason'}</span>.
+                {job.paused_kind === 'credits'
+                  ? ' Top up AI credits (or lift the workspace limit), then resume — a single test source is retried on each scheduled run until it succeeds.'
+                  : ' It will retry automatically on the next scheduled run.'}
+              </p>
+            ) : null}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
