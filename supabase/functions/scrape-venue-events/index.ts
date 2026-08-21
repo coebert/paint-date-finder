@@ -703,13 +703,36 @@ async function runScrape(
         last_error_message: lastErrorMessage,
       })
       .eq("id", source.id);
+
+    if (breaker) {
+      console.error(
+        `[scrape] circuit breaker tripped (${breaker.kind}) — halting run`,
+      );
+      break;
+    }
   }
 
-  const status = errors.length === 0
+  // Park the job (checked by every entry point) or clear a pause that a
+  // successful probe just proved recovered.
+  if (breaker) {
+    await supabase.rpc("job_pause", {
+      _job: JOB_NAME,
+      _kind: breaker.kind,
+      _reason: breaker.reason,
+    });
+  } else if (opts.isProbe && processed > 0) {
+    console.log("[scrape] probe succeeded — clearing paused state");
+    await supabase.rpc("job_resume", { _job: JOB_NAME });
+  }
+
+  const status = breaker
+    ? "failed"
+    : errors.length === 0
     ? "success"
     : candidatesCreated > 0 || processed > errors.length
     ? "partial"
     : "failed";
+
 
   await supabase
     .from("scrape_runs")
