@@ -379,10 +379,17 @@ async function runScrape(
   opts: { batchSize: number; isProbe: boolean; leaseOwner: string | null },
 ) {
 
+  // Bounded work per run: take the least-recently-scraped active sources so
+  // successive scheduled runs rotate through the whole list. `last_scraped_at`
+  // is written per source below, which makes progress idempotent — a re-run
+  // picks up where the previous one stopped instead of redoing finished work.
   const { data: sources, error: srcErr } = await supabase
     .from("trusted_venue_sources")
-    .select("id, venue_name, url, source_type")
-    .eq("is_active", true);
+    .select("id, venue_name, url, source_type, last_scraped_at")
+    .eq("is_active", true)
+    .order("last_scraped_at", { ascending: true, nullsFirst: true })
+    .limit(opts.batchSize);
+
 
   if (srcErr) {
     await supabase
