@@ -439,8 +439,14 @@ async function runScrape(
     return d.toISOString().slice(0, 10);
   })();
 
+  // Circuit-breaker state. Set on a terminal (402/403) or repeated 429 AI
+  // gateway failure; stops the run and parks the job.
+  let breaker: { kind: "credits" | "rate_limit"; reason: string } | null = null;
+  let rateLimitHits = 0;
+
   for (const source of sources ?? []) {
     processed++;
+
     let sourceStatus = "ok";
     const t0 = Date.now();
     let textLen = 0;
