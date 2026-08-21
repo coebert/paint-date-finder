@@ -333,6 +333,48 @@ export type Database = {
         }
         Relationships: []
       }
+      job_state: {
+        Row: {
+          created_at: string
+          job_name: string
+          last_finished_at: string | null
+          last_run_at: string | null
+          lease_expires_at: string | null
+          lease_owner: string | null
+          pause_reason: string | null
+          paused: boolean
+          paused_at: string | null
+          paused_kind: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          job_name: string
+          last_finished_at?: string | null
+          last_run_at?: string | null
+          lease_expires_at?: string | null
+          lease_owner?: string | null
+          pause_reason?: string | null
+          paused?: boolean
+          paused_at?: string | null
+          paused_kind?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          job_name?: string
+          last_finished_at?: string | null
+          last_run_at?: string | null
+          lease_expires_at?: string | null
+          lease_owner?: string | null
+          pause_reason?: string | null
+          paused?: boolean
+          paused_at?: string | null
+          paused_kind?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       player_seeking_posts: {
         Row: {
           contact_email: string
@@ -1022,6 +1064,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      job_begin: {
+        Args: { _job: string; _ttl_seconds?: number }
+        Returns: Json
+      }
+      job_end: { Args: { _job: string; _owner: string }; Returns: boolean }
+      job_pause: {
+        Args: { _job: string; _kind: string; _reason: string }
+        Returns: boolean
+      }
+      job_resume: { Args: { _job: string }; Returns: boolean }
       merge_event_source: {
         Args: { _event_id: string; _source: Json }
         Returns: undefined
