@@ -657,7 +657,19 @@ async function runScrape(
         `[scrape] source="${source.venue_name}" ERROR ${msg}`,
       );
       errors.push({ source: source.url, message: msg });
+
+      // Circuit breaker: AI gateway denials/limits halt the whole job, not
+      // just this source.
+      if (e instanceof AiGatewayError) {
+        if (e.status === 402 || e.status === 403) {
+          breaker = { kind: "credits", reason: msg };
+        } else if (e.status === 429) {
+          rateLimitHits++;
+          if (rateLimitHits >= 2) breaker = { kind: "rate_limit", reason: msg };
+        }
+      }
     }
+
 
     const elapsed = Date.now() - t0;
     console.log(
