@@ -25,6 +25,25 @@ interface EventMapProps {
   onEventClick?: (event: PaintballEvent) => void;
 }
 
+const CURATED_BY_NORM = new Map(
+  Object.entries(VENUE_COORDINATES).map(([name, coord]) => [normalizeVenueName(name), coord]),
+);
+
+function curatedMeta(name: string) {
+  return VENUE_COORDINATES[name] ?? CURATED_BY_NORM.get(normalizeVenueName(name));
+}
+
+/** Rough region banding so DB-sourced venues still work with the region filter. */
+function regionForCoords(lat: number, lng: number): UKRegion {
+  if (lat >= 55) return 'scotland';
+  if (lng <= -3.0 && lat < 53.5) return 'wales';
+  if (lat >= 53.2) return 'north';
+  if (lat >= 52.0) return 'midlands';
+  return 'south';
+}
+
+
+
 export function EventMap({ events, onEventClick }: EventMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
