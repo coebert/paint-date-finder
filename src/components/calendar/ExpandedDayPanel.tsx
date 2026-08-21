@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { EventTypeBadge } from '@/components/EventTypeBadge';
 import { PaintballEvent } from '@/types/events';
 import { cn } from '@/lib/utils';
-import { getVenueCoords, haversineMiles, type LatLng } from '@/lib/geo';
+import { haversineMiles, type LatLng } from '@/lib/geo';
+import { useVenueGeo } from '@/hooks/useVenueGeo';
 
 interface ExpandedDayPanelProps {
   date: string;
@@ -75,7 +76,7 @@ export function ExpandedDayPanel({
                 {event.venue_name}
                 {userCoords &&
                   (() => {
-                    const vc = getVenueCoords(event.venue_name);
+                    const vc = resolveVenueCoords(event.venue_name);
                     if (!vc) return null;
                     const d = Math.round(haversineMiles(userCoords, vc));
                     return <span className="text-accent"> · {d} mi away</span>;

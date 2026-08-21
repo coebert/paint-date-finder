@@ -13,7 +13,8 @@ import {
 } from '@/components/ui/select';
 import { Search, ArrowDownUp, CalendarX, SearchX } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getVenueCoords, haversineMiles, type LatLng } from '@/lib/geo';
+import { haversineMiles, type LatLng } from '@/lib/geo';
+import { useVenueGeo } from '@/hooks/useVenueGeo';
 
 
 interface EventListProps {
@@ -28,6 +29,7 @@ export function EventList({ events, onEdit, userCoords }: EventListProps) {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('date-asc');
   const [showPast, setShowPast] = useState(false);
+  const resolveVenueCoords = useVenueGeo();
 
   const today = startOfDay(new Date());
   const hasUserCoords = !!userCoords;
@@ -46,11 +48,11 @@ export function EventList({ events, onEdit, userCoords }: EventListProps) {
   const decorated = useMemo(() => {
     return events.map((event) => {
       if (!userCoords) return { event, distance: undefined as number | undefined };
-      const venueCoords = getVenueCoords(event.venue_name);
+      const venueCoords = resolveVenueCoords(event.venue_name);
       if (!venueCoords) return { event, distance: undefined };
       return { event, distance: haversineMiles(userCoords, venueCoords) };
     });
-  }, [events, userCoords]);
+  }, [events, userCoords, resolveVenueCoords]);
 
   const term = search.trim().toLowerCase();
 
