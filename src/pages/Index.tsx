@@ -18,7 +18,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle } from 'lucide-react';
 import { useVisitTracking } from '@/hooks/useVisitTracking';
 import { useUserLocation } from '@/hooks/useUserLocation';
-import { getVenueCoords, haversineMiles } from '@/lib/geo';
+import { haversineMiles } from '@/lib/geo';
+import { useVenueGeo } from '@/hooks/useVenueGeo';
 import { HeroBackground, heroPreload } from '@/components/HeroBackground';
 import { Hero } from '@/components/Hero';
 import { ALL_REGIONS } from '@/lib/regions';
@@ -77,6 +78,7 @@ export default function Index() {
 
   const userLocation = useUserLocation(25);
   const { coords: userCoords, radiusMiles } = userLocation;
+  const resolveVenueCoordsFor = useVenueGeo();
 
   // Apply radius filter at the page level so calendar/list/map all share it.
   const { displayedEvents, hiddenNoCoords } = useMemo(() => {
@@ -84,7 +86,7 @@ export default function Index() {
     if (!userCoords) return { displayedEvents: list, hiddenNoCoords: 0 };
     let hidden = 0;
     const kept = list.filter((e) => {
-      const vc = getVenueCoords(e.venue_name);
+      const vc = resolveVenueCoordsFor(e.venue_name);
       if (!vc) {
         hidden += 1;
         return false;
@@ -92,7 +94,7 @@ export default function Index() {
       return haversineMiles(userCoords, vc) <= radiusMiles;
     });
     return { displayedEvents: kept, hiddenNoCoords: hidden };
-  }, [events, userCoords, radiusMiles]);
+  }, [events, userCoords, radiusMiles, resolveVenueCoordsFor]);
 
   const handleEdit = (event: PaintballEvent) => {
     setEditingEvent(event);

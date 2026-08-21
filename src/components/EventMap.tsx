@@ -5,6 +5,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
 import { VENUE_COORDINATES, type UKRegion } from '@/lib/venueCoordinates';
 import { useVenueDetails } from '@/hooks/useVenueDetails';
+import { useVenueGeo } from '@/hooks/useVenueGeo';
+import { normalizeVenueName } from '@/lib/venueGeo';
 import { DARK_MAP_STYLES, UK_CENTER, UK_ZOOM, loadGoogleMaps } from '@/lib/googleMaps';
 import {
   buildInfoWindowHtml,
@@ -23,6 +25,25 @@ interface EventMapProps {
   onEventClick?: (event: PaintballEvent) => void;
 }
 
+const CURATED_BY_NORM = new Map(
+  Object.entries(VENUE_COORDINATES).map(([name, coord]) => [normalizeVenueName(name), coord]),
+);
+
+function curatedMeta(name: string) {
+  return VENUE_COORDINATES[name] ?? CURATED_BY_NORM.get(normalizeVenueName(name));
+}
+
+/** Rough region banding so DB-sourced venues still work with the region filter. */
+function regionForCoords(lat: number, lng: number): UKRegion {
+  if (lat >= 55) return 'scotland';
+  if (lng <= -3.0 && lat < 53.5) return 'wales';
+  if (lat >= 53.2) return 'north';
+  if (lat >= 52.0) return 'midlands';
+  return 'south';
+}
+
+
+
 export function EventMap({ events, onEventClick }: EventMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -40,6 +61,8 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
     onEventClickRef.current = onEventClick;
   }, [onEventClick]);
 
+  const resolveCoords = useVenueGeo();
+
   const venueGroups = useMemo<VenueGroup[]>(() => {
     const byVenue = new Map<string, PaintballEvent[]>();
     for (const e of events) {
@@ -49,19 +72,20 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
     }
     const groups: VenueGroup[] = [];
     for (const [name, venueEvents] of byVenue) {
-      const coords = VENUE_COORDINATES[name];
+      const coords = resolveCoords(name);
       if (!coords) continue;
+      const meta = curatedMeta(name);
       groups.push({
         name,
         lat: coords.lat,
         lng: coords.lng,
-        region: coords.region,
-        location: coords.location,
+        region: meta?.region ?? regionForCoords(coords.lat, coords.lng),
+        location: meta?.location ?? venueDetails?.get(name)?.location ?? '',
         events: venueEvents,
       });
     }
     return groups;
-  }, [events]);
+  }, [events, resolveCoords, venueDetails]);
 
   const filteredGroups = useMemo(
     () =>

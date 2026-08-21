@@ -58,4 +58,27 @@ export const VENUE_COORDINATES: Record<string, VenueCoord> = {
   'Delta Force Paintball Cardiff': { lat: 51.4816, lng: -3.1791, location: 'Cardiff', region: 'wales' },
   'Planet Paintball': { lat: 51.750, lng: -3.380, location: 'Wales', region: 'wales' },
   'Wales Paintball': { lat: 51.4816, lng: -3.1791, location: 'Cardiff', region: 'wales' },
+
+  // Additional venues appearing in the events feed (approximate town-level
+  // coordinates — good enough for regional grouping and radius filtering).
+  'Outpost Paintball': { lat: 53.028, lng: -1.386, location: 'Derbyshire', region: 'midlands' },
+  'Bristol Activity Centre': { lat: 51.4545, lng: -2.5879, location: 'Bristol', region: 'south' },
+  'Go Ballistic Bristol': { lat: 51.4545, lng: -2.5879, location: 'Bristol', region: 'south' },
+  'Go Ballistic Manchester': { lat: 53.4808, lng: -2.2426, location: 'Manchester', region: 'north' },
+  'Paintball HQ': { lat: 52.4862, lng: -1.8904, location: 'Birmingham', region: 'midlands' },
+  'Epic Paintball Birmingham': { lat: 52.4862, lng: -1.8904, location: 'Birmingham', region: 'midlands' },
+  'National Paintball Fields': { lat: 52.591105, lng: -1.780036, location: 'Sutton Coldfield', region: 'midlands' },
+  'Powerplay Paintball Wakefield': { lat: 53.6833, lng: -1.4977, location: 'Wakefield', region: 'north' },
+  'UK Paintball Leeds': { lat: 53.8008, lng: -1.5491, location: 'Leeds', region: 'north' },
+  'Skirmish Paintball Leeds': { lat: 53.8008, lng: -1.5491, location: 'Leeds', region: 'north' },
+  'Skirmish Nottingham': { lat: 52.9548, lng: -1.1581, location: 'Nottingham', region: 'midlands' },
+  'Messingham Paintball': { lat: 53.5083, lng: -0.6533, location: 'Messingham, Lincolnshire', region: 'north' },
+  'Messingham Paintball Challenge': { lat: 53.5083, lng: -0.6533, location: 'Messingham, Lincolnshire', region: 'north' },
+  'Ancaster Leisure': { lat: 52.9822, lng: -0.5386, location: 'Ancaster, Lincolnshire', region: 'midlands' },
+  'NXL UK': { lat: 52.591105, lng: -1.780036, location: 'Sutton Coldfield', region: 'midlands' },
+  'Warped Sports': { lat: 53.7960, lng: -1.7594, location: 'Bradford', region: 'north' },
+  'Battle Grounds Adventure Activities': { lat: 51.8787, lng: -0.4200, location: 'Luton, Bedfordshire', region: 'south' },
+  'Paintball South': { lat: 50.9097, lng: -1.4044, location: 'Southampton, Hampshire', region: 'south' },
+  'Splatoon Paintball & Airsoft': { lat: 53.4084, lng: -2.9916, location: 'Liverpool', region: 'north' },
+  'BZ Paintball': { lat: 51.391, lng: 0.235, location: 'Kent', region: 'south' },
 };
