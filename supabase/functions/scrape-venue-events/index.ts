@@ -224,12 +224,11 @@ async function extractCandidates(
     },
   );
 
-  if (res.status === 429) throw new Error("AI rate limit exceeded (429)");
-  if (res.status === 402) throw new Error("AI credits exhausted (402)");
   if (!res.ok) {
-    const t = await res.text();
-    throw new Error(`AI gateway ${res.status}: ${t}`);
+    const t = res.status >= 400 && res.status < 500 ? await res.text() : "";
+    throw new AiGatewayError(res.status, `AI gateway ${res.status}: ${t.slice(0, 300)}`);
   }
+
 
   const data = await res.json();
   const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
@@ -241,6 +240,22 @@ async function extractCandidates(
     return [];
   }
 }
+
+/** Thrown for any non-2xx Lovable AI Gateway response, carrying the status. */
+class AiGatewayError extends Error {
+  constructor(public status: number, message: string) {
+    super(message);
+    this.name = "AiGatewayError";
+  }
+}
+
+/** Background-job identity used for the lease / paused state in job_state. */
+const JOB_NAME = "scrape-venue-events";
+/** Max sources processed per run (cron). Keeps every run bounded. */
+const CRON_BATCH_SIZE = 6;
+const MAX_BATCH_SIZE = 25;
+/** Lease TTL — long enough for a full batch, short enough to self-heal. */
+const LEASE_TTL_SECONDS = 900;
 
 Deno.serve(async (req) => {
   const pf = preflight(req);
@@ -254,19 +269,19 @@ Deno.serve(async (req) => {
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 
   // Admin-only: this endpoint runs paid scrape jobs.
-  // Cron callers authenticate with the service-role key, a dedicated
-  // SCRAPE_CRON_SECRET (preferred), or — as a fallback — the project anon
-  // key, which is what pg_cron's net.http_post sends when no other secret is
-  // wired into the scheduled SQL. We additionally throttle cron callers to
-  // one run per 5 minutes so a leaked anon key can't burn AI credits.
+  // Cron authentication accepts ONLY the service-role key or the shared
+  // x-cron-secret. The public anon/publishable key is never accepted.
   const authHeader = req.headers.get("Authorization");
   const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "";
   const cronSecretHeader = req.headers.get("x-cron-secret") ?? "";
-  const CRON_SECRET = Deno.env.get("SCRAPE_CRON_SECRET") ?? "";
-  // Cron authentication accepts ONLY the service-role key or the shared
-  // x-cron-secret. The public anon/publishable key is never accepted.
+  // Either shared scheduler secret is accepted (CRON_SECRET is the one wired
+  // into the pg_cron schedule; SCRAPE_CRON_SECRET is kept for manual callers).
+  const cronSecrets = [
+    Deno.env.get("CRON_SECRET") ?? "",
+    Deno.env.get("SCRAPE_CRON_SECRET") ?? "",
+  ].filter(Boolean);
   const isCron =
-    (CRON_SECRET && cronSecretHeader === CRON_SECRET) ||
+    (!!cronSecretHeader && cronSecrets.includes(cronSecretHeader)) ||
     (bearer && bearer === SERVICE_KEY);
   if (!bearer && !isCron) return errors.unauthorized();
 
@@ -286,46 +301,59 @@ Deno.serve(async (req) => {
     } catch {
       return errors.unauthorized();
     }
-  } else {
-    // Throttle cron-style callers: skip if a run started in the last 5 minutes.
-    const { data: recent } = await supabase
-      .from("scrape_runs")
-      .select("id, started_at")
-      .gt("started_at", new Date(Date.now() - 5 * 60 * 1000).toISOString())
-      .limit(1)
-      .maybeSingle();
-    if (recent) {
-      return json({ skipped: true, reason: "recent run in progress", runId: recent.id });
-    }
   }
 
   let triggeredBy = "cron";
-  try {
-    if (req.method === "POST") {
-      const body = await req.json().catch(() => ({}));
-      if (body?.triggeredBy === "manual") triggeredBy = "manual";
+  let requestedLimit: number | null = null;
+  if (req.method === "POST") {
+    const body = await req.json().catch(() => ({})) as Record<string, unknown>;
+    if (body?.triggeredBy === "manual") triggeredBy = "manual";
+    if (typeof body?.limit === "number" && Number.isFinite(body.limit)) {
+      requestedLimit = Math.max(1, Math.min(MAX_BATCH_SIZE, Math.floor(body.limit)));
     }
-  } catch {
-    // ignore
   }
+
+  // Single-flight lease + paused-state guard. A concurrent run exits here, and
+  // a job paused on 402/403 only gets a single probe source until it recovers.
+  const { data: begin, error: beginErr } = await supabase.rpc("job_begin", {
+    _job: JOB_NAME,
+    _ttl_seconds: LEASE_TTL_SECONDS,
+  });
+  if (beginErr) {
+    return json({ error: `Failed to acquire job lease: ${beginErr.message}` }, { status: 500 });
+  }
+  const beginStatus = (begin as { status?: string } | null)?.status ?? "ok";
+  if (beginStatus === "locked") {
+    return json({
+      skipped: true,
+      reason: "another scrape run is already in progress",
+    });
+  }
+  const leaseOwner = (begin as { owner?: string }).owner ?? null;
+  const isProbe = beginStatus === "probe";
+  const batchSize = isProbe ? 1 : (requestedLimit ?? CRON_BATCH_SIZE);
 
   // Create run row
   const { data: runRow, error: runErr } = await supabase
     .from("scrape_runs")
-    .insert({ triggered_by: triggeredBy })
+    .insert({ triggered_by: isProbe ? `${triggeredBy}:probe` : triggeredBy })
     .select("id")
     .single();
   if (runErr || !runRow) {
+    await supabase.rpc("job_end", { _job: JOB_NAME, _owner: leaseOwner });
     return json({ error: `Failed to start run: ${runErr?.message}` }, { status: 500 });
   }
   const runId = runRow.id as string;
 
   // Run the (potentially long) scrape work in the background so that the
   // client gets an immediate 202 and can poll `scrape_runs` for completion.
-  // Without this, Facebook group sources that go through Firecrawl + Lovable
-  // AI can keep the request open long enough that the browser/client thinks
-  // the app has locked up.
-  const work = runScrape(supabase, runId, LOVABLE_API_KEY);
+  const work = runScrape(supabase, runId, LOVABLE_API_KEY, {
+    batchSize,
+    isProbe,
+    leaseOwner,
+  }).finally(async () => {
+    await supabase.rpc("job_end", { _job: JOB_NAME, _owner: leaseOwner });
+  });
   // @ts-ignore — EdgeRuntime is provided by the Deno deploy edge runtime.
   if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) {
     // @ts-ignore
@@ -339,6 +367,8 @@ Deno.serve(async (req) => {
     {
       runId,
       status: "running",
+      probe: isProbe,
+      batch_size: batchSize,
       sources_processed: 0,
       candidates_created: 0,
     },
@@ -351,11 +381,20 @@ async function runScrape(
   supabase: any,
   runId: string,
   LOVABLE_API_KEY: string,
+  opts: { batchSize: number; isProbe: boolean; leaseOwner: string | null },
 ) {
+
+  // Bounded work per run: take the least-recently-scraped active sources so
+  // successive scheduled runs rotate through the whole list. `last_scraped_at`
+  // is written per source below, which makes progress idempotent — a re-run
+  // picks up where the previous one stopped instead of redoing finished work.
   const { data: sources, error: srcErr } = await supabase
     .from("trusted_venue_sources")
-    .select("id, venue_name, url, source_type")
-    .eq("is_active", true);
+    .select("id, venue_name, url, source_type, last_scraped_at")
+    .eq("is_active", true)
+    .order("last_scraped_at", { ascending: true, nullsFirst: true })
+    .limit(opts.batchSize);
+
 
   if (srcErr) {
     await supabase
@@ -405,8 +444,14 @@ async function runScrape(
     return d.toISOString().slice(0, 10);
   })();
 
+  // Circuit-breaker state. Set on a terminal (402/403) or repeated 429 AI
+  // gateway failure; stops the run and parks the job.
+  let breaker: { kind: "credits" | "rate_limit"; reason: string } | null = null;
+  let rateLimitHits = 0;
+
   for (const source of sources ?? []) {
     processed++;
+
     let sourceStatus = "ok";
     const t0 = Date.now();
     let textLen = 0;
@@ -623,7 +668,19 @@ async function runScrape(
         `[scrape] source="${source.venue_name}" ERROR ${msg}`,
       );
       errors.push({ source: source.url, message: msg });
+
+      // Circuit breaker: AI gateway denials/limits halt the whole job, not
+      // just this source.
+      if (e instanceof AiGatewayError) {
+        if (e.status === 402 || e.status === 403) {
+          breaker = { kind: "credits", reason: msg };
+        } else if (e.status === 429) {
+          rateLimitHits++;
+          if (rateLimitHits >= 2) breaker = { kind: "rate_limit", reason: msg };
+        }
+      }
     }
+
 
     const elapsed = Date.now() - t0;
     console.log(
@@ -651,13 +708,36 @@ async function runScrape(
         last_error_message: lastErrorMessage,
       })
       .eq("id", source.id);
+
+    if (breaker) {
+      console.error(
+        `[scrape] circuit breaker tripped (${breaker.kind}) — halting run`,
+      );
+      break;
+    }
   }
 
-  const status = errors.length === 0
+  // Park the job (checked by every entry point) or clear a pause that a
+  // successful probe just proved recovered.
+  if (breaker) {
+    await supabase.rpc("job_pause", {
+      _job: JOB_NAME,
+      _kind: breaker.kind,
+      _reason: breaker.reason,
+    });
+  } else if (opts.isProbe && processed > 0) {
+    console.log("[scrape] probe succeeded — clearing paused state");
+    await supabase.rpc("job_resume", { _job: JOB_NAME });
+  }
+
+  const status = breaker
+    ? "failed"
+    : errors.length === 0
     ? "success"
     : candidatesCreated > 0 || processed > errors.length
     ? "partial"
     : "failed";
+
 
   await supabase
     .from("scrape_runs")

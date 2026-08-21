@@ -214,3 +214,50 @@ export function useRunScrape() {
     },
   });
 }
+
+/** Background-job control row for the automatic scraper. */
+export interface JobState {
+  job_name: string;
+  paused: boolean;
+  paused_kind: string | null;
+  pause_reason: string | null;
+  paused_at: string | null;
+  lease_expires_at: string | null;
+  last_run_at: string | null;
+  last_finished_at: string | null;
+}
+
+export const SCRAPE_JOB_NAME = 'scrape-venue-events';
+
+/** Reads the scheduled scraper's job state (admin-only via RLS). */
+export function useScrapeJobState(options: { refetchInterval?: number | false } = {}) {
+  return useQuery({
+    queryKey: ['job_state', SCRAPE_JOB_NAME],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('job_state')
+        .select('*')
+        .eq('job_name', SCRAPE_JOB_NAME)
+        .maybeSingle();
+      if (error) throw error;
+      return (data as JobState | null) ?? null;
+    },
+    refetchInterval: options.refetchInterval ?? 30000,
+  });
+}
+
+/** Clears a paused (circuit-broken) scheduled scraper so it resumes next run. */
+export function useResumeScrapeJob() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('job_resume', { _job: SCRAPE_JOB_NAME });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['job_state', SCRAPE_JOB_NAME] });
+      toast.success('Scheduled scraper resumed');
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
