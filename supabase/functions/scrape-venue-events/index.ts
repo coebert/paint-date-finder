@@ -410,19 +410,35 @@ async function runScrape(
   supabase: any,
   runId: string,
   LOVABLE_API_KEY: string,
-  opts: { batchSize: number; isProbe: boolean; leaseOwner: string | null },
+  opts: {
+    batchSize: number;
+    isProbe: boolean;
+    leaseOwner: string | null;
+    /** Backfill mode: only sources last scraped before this ISO timestamp. */
+    backfillCutoff?: string | null;
+  },
 ) {
 
   // Bounded work per run: take the least-recently-scraped active sources so
   // successive scheduled runs rotate through the whole list. `last_scraped_at`
   // is written per source below, which makes progress idempotent — a re-run
   // picks up where the previous one stopped instead of redoing finished work.
-  const { data: sources, error: srcErr } = await supabase
+  // In backfill mode we narrow to sources missed within the lookback window;
+  // sources already checked inside it are skipped, and the per-candidate
+  // dedupe below keeps existing events/submissions from being duplicated.
+  let query = supabase
     .from("trusted_venue_sources")
     .select("id, venue_name, url, source_type, last_scraped_at")
-    .eq("is_active", true)
+    .eq("is_active", true);
+  if (opts.backfillCutoff) {
+    query = query.or(
+      `last_scraped_at.is.null,last_scraped_at.lt.${opts.backfillCutoff}`,
+    );
+  }
+  const { data: sources, error: srcErr } = await query
     .order("last_scraped_at", { ascending: true, nullsFirst: true })
     .limit(opts.batchSize);
+
 
 
   if (srcErr) {
