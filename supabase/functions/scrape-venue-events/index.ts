@@ -344,12 +344,25 @@ Deno.serve(async (req) => {
   }
   const leaseOwner = (begin as { owner?: string }).owner ?? null;
   const isProbe = beginStatus === "probe";
-  const batchSize = isProbe ? 1 : (requestedLimit ?? CRON_BATCH_SIZE);
+  // A probe run stays at one source even in backfill mode.
+  const isBackfill = !isProbe && backfillDays !== null;
+  const batchSize = isProbe
+    ? 1
+    : (requestedLimit ?? (isBackfill ? BACKFILL_BATCH_SIZE : CRON_BATCH_SIZE));
+  // Sources whose last successful check is older than this were "missed".
+  const backfillCutoff = isBackfill
+    ? new Date(Date.now() - backfillDays! * 86_400_000).toISOString()
+    : null;
 
   // Create run row
+  const runLabel = isProbe
+    ? `${triggeredBy}:probe`
+    : isBackfill
+    ? `${triggeredBy}:backfill:${backfillDays}d`
+    : triggeredBy;
   const { data: runRow, error: runErr } = await supabase
     .from("scrape_runs")
-    .insert({ triggered_by: isProbe ? `${triggeredBy}:probe` : triggeredBy })
+    .insert({ triggered_by: runLabel })
     .select("id")
     .single();
   if (runErr || !runRow) {
@@ -364,6 +377,7 @@ Deno.serve(async (req) => {
     batchSize,
     isProbe,
     leaseOwner,
+    backfillCutoff,
   }).finally(async () => {
     await supabase.rpc("job_end", { _job: JOB_NAME, _owner: leaseOwner });
   });
@@ -381,12 +395,14 @@ Deno.serve(async (req) => {
       runId,
       status: "running",
       probe: isProbe,
+      backfill: isBackfill ? { days: backfillDays, cutoff: backfillCutoff } : null,
       batch_size: batchSize,
       sources_processed: 0,
       candidates_created: 0,
     },
     { status: 202 },
   );
+
 });
 
 async function runScrape(
