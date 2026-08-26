@@ -305,13 +305,21 @@ Deno.serve(async (req) => {
 
   let triggeredBy = "cron";
   let requestedLimit: number | null = null;
+  // Backfill mode: re-scrape every active source that has been missed for the
+  // last N days (never scraped, or last scraped before the cutoff).
+  let backfillDays: number | null = null;
   if (req.method === "POST") {
     const body = await req.json().catch(() => ({})) as Record<string, unknown>;
     if (body?.triggeredBy === "manual") triggeredBy = "manual";
     if (typeof body?.limit === "number" && Number.isFinite(body.limit)) {
       requestedLimit = Math.max(1, Math.min(MAX_BATCH_SIZE, Math.floor(body.limit)));
     }
+    const rawDays = body?.backfillDays ?? (body?.mode === "backfill" ? 7 : undefined);
+    if (typeof rawDays === "number" && Number.isFinite(rawDays)) {
+      backfillDays = Math.max(1, Math.min(MAX_BACKFILL_DAYS, Math.floor(rawDays)));
+    }
   }
+
 
   // Single-flight lease + paused-state guard. A concurrent run exits here, and
   // a job paused on 402/403 only gets a single probe source until it recovers.
