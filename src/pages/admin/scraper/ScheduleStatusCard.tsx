@@ -114,6 +114,49 @@ export function ScheduleStatusCard() {
                   : ' It will retry automatically on the next scheduled run.'}
               </p>
             ) : null}
+
+            <div className="rounded-md border border-border/60 bg-muted/30 p-3">
+              <p className="flex items-center gap-2 font-medium">
+                <History className="h-4 w-4 text-accent" aria-hidden />
+                Catch up on missed runs
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Re-scrapes every active source that hasn't been checked in the chosen
+                window and adds anything new to the calendar. Events and pending
+                submissions that already exist are merged, never duplicated.
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Select value={backfillDays} onValueChange={setBackfillDays}>
+                  <SelectTrigger className="h-11 w-[150px]" aria-label="Backfill window">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BACKFILL_DAY_OPTIONS.map((d) => (
+                      <SelectItem key={d} value={d}>
+                        Last {d} {d === '1' ? 'day' : 'days'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="min-h-11"
+                  disabled={runScrape.isPending || running}
+                  onClick={() =>
+                    runScrape.mutate({ backfillDays: Number(backfillDays) })
+                  }
+                >
+                  {runScrape.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <History className="mr-2 h-4 w-4" />
+                  )}
+                  Run backfill
+                </Button>
+              </div>
+            </div>
+
           </>
         )}
       </CardContent>
