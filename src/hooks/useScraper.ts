@@ -166,7 +166,8 @@ export interface RunScrapeOptions {
 export function useRunScrape() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (options: RunScrapeOptions = {}) => {
+    mutationFn: async (vars: RunScrapeOptions | void) => {
+      const options: RunScrapeOptions = vars ?? {};
       const { data, error } = await supabase.functions.invoke(
         'scrape-venue-events',
         {
