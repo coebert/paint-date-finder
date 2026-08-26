@@ -1,5 +1,13 @@
+import { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { AlarmClock, CheckCircle2, Loader2, PauseCircle, PlayCircle } from 'lucide-react';
+import {
+  AlarmClock,
+  CheckCircle2,
+  History,
+  Loader2,
+  PauseCircle,
+  PlayCircle,
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,12 +17,21 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { useResumeScrapeJob, useScrapeJobState } from '@/hooks/useScraper';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useResumeScrapeJob, useRunScrape, useScrapeJobState } from '@/hooks/useScraper';
 
 function relative(iso: string | null | undefined) {
   if (!iso) return 'never';
   return formatDistanceToNow(new Date(iso), { addSuffix: true });
 }
+
+const BACKFILL_DAY_OPTIONS = ['1', '3', '7', '14', '30'];
 
 /**
  * Status of the scheduled (background) scraper job: when it last ran, whether
@@ -24,8 +41,11 @@ function relative(iso: string | null | undefined) {
 export function ScheduleStatusCard() {
   const { data: job, isLoading } = useScrapeJobState({ refetchInterval: 30000 });
   const resume = useResumeScrapeJob();
+  const runScrape = useRunScrape();
+  const [backfillDays, setBackfillDays] = useState('7');
 
   const running = !!job?.lease_expires_at && new Date(job.lease_expires_at) > new Date();
+
 
   return (
     <Card>
