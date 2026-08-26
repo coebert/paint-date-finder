@@ -254,6 +254,11 @@ const JOB_NAME = "scrape-venue-events";
 /** Max sources processed per run (cron). Keeps every run bounded. */
 const CRON_BATCH_SIZE = 6;
 const MAX_BATCH_SIZE = 25;
+/** Backfill lookback ceiling (days). */
+const MAX_BACKFILL_DAYS = 90;
+/** Sources per run in backfill mode — larger, still bounded. */
+const BACKFILL_BATCH_SIZE = 12;
+
 /** Lease TTL — long enough for a full batch, short enough to self-heal. */
 const LEASE_TTL_SECONDS = 900;
 
@@ -305,13 +310,21 @@ Deno.serve(async (req) => {
 
   let triggeredBy = "cron";
   let requestedLimit: number | null = null;
+  // Backfill mode: re-scrape every active source that has been missed for the
+  // last N days (never scraped, or last scraped before the cutoff).
+  let backfillDays: number | null = null;
   if (req.method === "POST") {
     const body = await req.json().catch(() => ({})) as Record<string, unknown>;
     if (body?.triggeredBy === "manual") triggeredBy = "manual";
     if (typeof body?.limit === "number" && Number.isFinite(body.limit)) {
       requestedLimit = Math.max(1, Math.min(MAX_BATCH_SIZE, Math.floor(body.limit)));
     }
+    const rawDays = body?.backfillDays ?? (body?.mode === "backfill" ? 7 : undefined);
+    if (typeof rawDays === "number" && Number.isFinite(rawDays)) {
+      backfillDays = Math.max(1, Math.min(MAX_BACKFILL_DAYS, Math.floor(rawDays)));
+    }
   }
+
 
   // Single-flight lease + paused-state guard. A concurrent run exits here, and
   // a job paused on 402/403 only gets a single probe source until it recovers.
@@ -331,12 +344,25 @@ Deno.serve(async (req) => {
   }
   const leaseOwner = (begin as { owner?: string }).owner ?? null;
   const isProbe = beginStatus === "probe";
-  const batchSize = isProbe ? 1 : (requestedLimit ?? CRON_BATCH_SIZE);
+  // A probe run stays at one source even in backfill mode.
+  const isBackfill = !isProbe && backfillDays !== null;
+  const batchSize = isProbe
+    ? 1
+    : (requestedLimit ?? (isBackfill ? BACKFILL_BATCH_SIZE : CRON_BATCH_SIZE));
+  // Sources whose last successful check is older than this were "missed".
+  const backfillCutoff = isBackfill
+    ? new Date(Date.now() - backfillDays! * 86_400_000).toISOString()
+    : null;
 
   // Create run row
+  const runLabel = isProbe
+    ? `${triggeredBy}:probe`
+    : isBackfill
+    ? `${triggeredBy}:backfill:${backfillDays}d`
+    : triggeredBy;
   const { data: runRow, error: runErr } = await supabase
     .from("scrape_runs")
-    .insert({ triggered_by: isProbe ? `${triggeredBy}:probe` : triggeredBy })
+    .insert({ triggered_by: runLabel })
     .select("id")
     .single();
   if (runErr || !runRow) {
@@ -351,6 +377,7 @@ Deno.serve(async (req) => {
     batchSize,
     isProbe,
     leaseOwner,
+    backfillCutoff,
   }).finally(async () => {
     await supabase.rpc("job_end", { _job: JOB_NAME, _owner: leaseOwner });
   });
@@ -368,12 +395,14 @@ Deno.serve(async (req) => {
       runId,
       status: "running",
       probe: isProbe,
+      backfill: isBackfill ? { days: backfillDays, cutoff: backfillCutoff } : null,
       batch_size: batchSize,
       sources_processed: 0,
       candidates_created: 0,
     },
     { status: 202 },
   );
+
 });
 
 async function runScrape(
@@ -381,19 +410,35 @@ async function runScrape(
   supabase: any,
   runId: string,
   LOVABLE_API_KEY: string,
-  opts: { batchSize: number; isProbe: boolean; leaseOwner: string | null },
+  opts: {
+    batchSize: number;
+    isProbe: boolean;
+    leaseOwner: string | null;
+    /** Backfill mode: only sources last scraped before this ISO timestamp. */
+    backfillCutoff?: string | null;
+  },
 ) {
 
   // Bounded work per run: take the least-recently-scraped active sources so
   // successive scheduled runs rotate through the whole list. `last_scraped_at`
   // is written per source below, which makes progress idempotent — a re-run
   // picks up where the previous one stopped instead of redoing finished work.
-  const { data: sources, error: srcErr } = await supabase
+  // In backfill mode we narrow to sources missed within the lookback window;
+  // sources already checked inside it are skipped, and the per-candidate
+  // dedupe below keeps existing events/submissions from being duplicated.
+  let query = supabase
     .from("trusted_venue_sources")
     .select("id, venue_name, url, source_type, last_scraped_at")
-    .eq("is_active", true)
+    .eq("is_active", true);
+  if (opts.backfillCutoff) {
+    query = query.or(
+      `last_scraped_at.is.null,last_scraped_at.lt.${opts.backfillCutoff}`,
+    );
+  }
+  const { data: sources, error: srcErr } = await query
     .order("last_scraped_at", { ascending: true, nullsFirst: true })
     .limit(opts.batchSize);
+
 
 
   if (srcErr) {
