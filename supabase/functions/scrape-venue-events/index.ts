@@ -254,6 +254,11 @@ const JOB_NAME = "scrape-venue-events";
 /** Max sources processed per run (cron). Keeps every run bounded. */
 const CRON_BATCH_SIZE = 6;
 const MAX_BATCH_SIZE = 25;
+/** Backfill lookback ceiling (days). */
+const MAX_BACKFILL_DAYS = 90;
+/** Sources per run in backfill mode — larger, still bounded. */
+const BACKFILL_BATCH_SIZE = 12;
+
 /** Lease TTL — long enough for a full batch, short enough to self-heal. */
 const LEASE_TTL_SECONDS = 900;
 
