@@ -158,16 +158,29 @@ export function useDeleteTrustedSource() {
   });
 }
 
+export interface RunScrapeOptions {
+  /** Backfill mode: re-scrape sources missed in the last N days. */
+  backfillDays?: number;
+}
+
 export function useRunScrape() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async () => {
+    mutationFn: async (options: RunScrapeOptions = {}) => {
       const { data, error } = await supabase.functions.invoke(
         'scrape-venue-events',
-        { body: { triggeredBy: 'manual' } },
+        {
+          body: {
+            triggeredBy: 'manual',
+            ...(options.backfillDays
+              ? { mode: 'backfill', backfillDays: options.backfillDays }
+              : {}),
+          },
+        },
       );
       if (error) throw error;
       const runId = (data as { runId?: string })?.runId;
+
       if (!runId) {
         return {
           sources_processed: 0,
