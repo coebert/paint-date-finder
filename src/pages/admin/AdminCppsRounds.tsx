@@ -137,14 +137,11 @@ export default function AdminCppsRounds() {
   };
 
   return (
-    <AdminLayout>
+    <AdminLayout title="CPPS Rounds" description="Manually add CPPS round dates to the calendar.">
       <div className="p-6 max-w-4xl space-y-6">
         <header>
-          <h1 className="font-display text-2xl tracking-wide flex items-center gap-2">
-            <Trophy className="h-6 w-6 text-accent" aria-hidden />
-            CPPS Rounds
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
+            <Trophy className="h-4 w-4 text-accent" aria-hidden />
             Enter round dates by hand so the calendar, list and CPPS tracker stay current even when
             the auto-scraper is out of credits.
           </p>
