@@ -1,4 +1,4 @@
-import { BarChart3, Calendar, FileText, Flag, Home, Radar, Settings, Users, Layers, Activity, Type, Search, MapPin, UserSearch, Camera, Globe, ClipboardCheck } from "lucide-react";
+import { BarChart3, Calendar, FileText, Flag, Home, Radar, Settings, Users, Layers, Activity, Type, Search, MapPin, UserSearch, Camera, Globe, ClipboardCheck, Trophy } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useLatestRegionAuditRun } from "@/pages/admin/AdminRegionAudit";
@@ -32,6 +32,7 @@ const menuItems = [
   { title: "Player Posts", url: "/admin/player-posts", icon: UserSearch },
   { title: "Flags", url: "/admin/flags", icon: Flag },
   { title: "Teams", url: "/admin/teams", icon: Users },
+  { title: "CPPS Rounds", url: "/admin/cpps-rounds", icon: Trophy },
   { title: "Auto-Scraper", url: "/admin/scraper", icon: Radar },
   { title: "Web Vitals", url: "/admin/vitals", icon: Activity },
   { title: "SEO Monitor", url: "/admin/seo", icon: Search },

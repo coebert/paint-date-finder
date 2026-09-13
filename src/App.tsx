@@ -39,6 +39,7 @@ const AdminPlayerPosts = lazy(() => import("./pages/admin/AdminPlayerPosts"));
 const AdminRecaps = lazy(() => import("./pages/admin/AdminRecaps"));
 const AdminGscRegions = lazy(() => import("./pages/admin/AdminGscRegions"));
 const AdminRegionAudit = lazy(() => import("./pages/admin/AdminRegionAudit"));
+const AdminCppsRounds = lazy(() => import("./pages/admin/AdminCppsRounds"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -110,6 +111,7 @@ const App = () => (
               <Route path="/admin/gsc-regions" element={<AdminGscRegions />} />
               <Route path="/admin/region-audit" element={<AdminRegionAudit />} />
               <Route path="/admin/venues" element={<AdminVenues />} />
+              <Route path="/admin/cpps-rounds" element={<AdminCppsRounds />} />
               <Route path="/admin/player-posts" element={<AdminPlayerPosts />} />
               <Route path="/admin/recaps" element={<AdminRecaps />} />
               {/* Legacy redirect target */}
