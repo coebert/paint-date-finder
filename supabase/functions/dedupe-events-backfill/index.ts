@@ -34,6 +34,43 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const dryRun: boolean = body?.dryRun === true;
 
+    // Single-flight: a real (non-dry) pass deletes rows, so never let two
+    // overlapping runs scan and merge the same events.
+    let leaseOwner: string | null = null;
+    if (!dryRun) {
+      const { data: lease } = await admin.rpc("job_begin", {
+        _job: "dedupe-events-backfill",
+        _ttl_seconds: 900,
+      });
+      const status = (lease as { status?: string } | null)?.status;
+      if (status === "locked") {
+        return json(
+          { error: "A duplicate cleanup is already running. Try again shortly." },
+          { status: 409 },
+        );
+      }
+      leaseOwner = (lease as { owner?: string } | null)?.owner ?? null;
+    }
+
+    try {
+      return await runBackfill(admin, dryRun);
+    } finally {
+      if (leaseOwner) {
+        await admin.rpc("job_end", {
+          _job: "dedupe-events-backfill",
+          _owner: leaseOwner,
+        });
+      }
+    }
+  } catch (e) {
+    return json({ error: (e as Error).message }, { status: 500 });
+  }
+});
+
+// deno-lint-ignore no-explicit-any
+async function runBackfill(admin: any, dryRun: boolean): Promise<Response> {
+  {
+
     // Load all events ordered oldest-first; older events become canonical.
     const { data: events, error: eventsErr } = await admin
       .from("events")
