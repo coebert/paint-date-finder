@@ -118,11 +118,9 @@ function RoundCard({ round, index }: { round: CppsRound; index: number }) {
 }
 
 function StandingsTable({
-  division,
   teams,
   myTeamId,
 }: {
-  division: string;
   teams: Team[];
   myTeamId: string | null;
 }) {
@@ -338,7 +336,6 @@ export default function CppsRounds() {
                 {divisions.map((div) => (
                   <TabsContent key={div} value={div} className="mt-4">
                     <StandingsTable
-                      division={div}
                       teams={teamsByDivision.get(div) ?? []}
                       myTeamId={myTeamId}
                     />
