@@ -662,6 +662,14 @@ Deno.serve(async (req) => {
     `[flyer] kind=${body.kind} user=${userId ?? "anon"} src=${body.sourceUrl ?? "-"}`,
   );
 
+  // Record the attempt for the hourly quota above (best-effort).
+  await admin
+    .from("flyer_extraction_log")
+    .insert({ user_id: userId, kind: String(body.kind) })
+    .then(undefined, (e: unknown) =>
+      console.error("[flyer] usage log failed", e)
+    );
+
   // Per-stage timings, returned to the client to refine its ETA model.
   const t0 = Date.now();
   const timings: Record<string, number> = {};
