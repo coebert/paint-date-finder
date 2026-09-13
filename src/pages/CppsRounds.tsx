@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { format, isSameMonth, isSameYear } from 'date-fns';
+import { format, isSameMonth, isSameYear, parseISO } from 'date-fns';
 import { CalendarDays, MapPin, Trophy, Star, ExternalLink, Ticket } from 'lucide-react';
 import { RouteHead } from '@/components/RouteHead';
 import { Header } from '@/components/Header';
@@ -116,8 +116,6 @@ function RoundCard({ round, index }: { round: CppsRound; index: number }) {
     </li>
   );
 }
-
-import { parseISO } from 'date-fns';
 
 function StandingsTable({
   division,

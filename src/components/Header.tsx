@@ -12,6 +12,7 @@ import {
   Sparkles,
   UserSearch,
   Menu,
+  Trophy,
 } from 'lucide-react';
 import { HeroLogo } from '@/components/HeroLogo';
 import { Button } from '@/components/ui/button';
