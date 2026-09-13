@@ -751,8 +751,10 @@ async function runScrape(
 
       // Circuit breaker: AI gateway denials/limits halt the whole job, not
       // just this source.
-      if (e instanceof AiGatewayError) {
-        if (e.status === 402 || e.status === 403) {
+      // Upstream credit/policy denials or repeated rate limits (AI gateway or
+      // Firecrawl) halt the whole job rather than burning the batch.
+      if (e instanceof AiGatewayError || e instanceof FirecrawlError) {
+        if (e.status === 401 || e.status === 402 || e.status === 403) {
           breaker = { kind: "credits", reason: msg };
         } else if (e.status === 429) {
           rateLimitHits++;
