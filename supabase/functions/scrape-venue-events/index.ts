@@ -75,7 +75,10 @@ async function fetchViaFirecrawl(
   });
   if (!res.ok) {
     const t = await res.text();
-    throw new Error(`Firecrawl ${res.status}: ${t.slice(0, 200)}`);
+    throw new FirecrawlError(
+      res.status,
+      `Firecrawl ${res.status}: ${t.slice(0, 200)}`,
+    );
   }
   const data = await res.json();
   const md: string = data?.data?.markdown ?? data?.markdown ?? "";
@@ -247,6 +250,36 @@ class AiGatewayError extends Error {
     super(message);
     this.name = "AiGatewayError";
   }
+}
+
+/** Thrown for any non-2xx Firecrawl response, carrying the status. */
+class FirecrawlError extends Error {
+  constructor(public status: number, message: string) {
+    super(message);
+    this.name = "FirecrawlError";
+  }
+}
+
+/** Loose venue-name comparison so near-identical names dedupe correctly. */
+function venueTokens(name: string): Set<string> {
+  return new Set(
+    name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter((w) => w.length > 2 && !["the", "and", "ltd", "paintball", "park", "centre", "center"].includes(w)),
+  );
+}
+
+function venueNamesMatch(a: string, b: string): boolean {
+  const ta = venueTokens(a);
+  const tb = venueTokens(b);
+  if (ta.size === 0 || tb.size === 0) {
+    return a.trim().toLowerCase() === b.trim().toLowerCase();
+  }
+  let shared = 0;
+  for (const t of ta) if (tb.has(t)) shared++;
+  return shared / Math.min(ta.size, tb.size) >= 0.6;
 }
 
 /** Background-job identity used for the lease / paused state in job_state. */
