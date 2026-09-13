@@ -25,6 +25,7 @@ import { Hero } from '@/components/Hero';
 import { ALL_REGIONS } from '@/lib/regions';
 import { Link } from 'react-router-dom';
 import { useEventFiltersUrl } from '@/hooks/useEventFiltersUrl';
+import { parseISO, startOfDay } from 'date-fns';
 
 
 export default function Index() {
@@ -109,8 +110,9 @@ export default function Index() {
   
 
   const eventListJsonLd = useMemo(() => {
+    const today = startOfDay(new Date());
     const upcoming = (events ?? [])
-      .filter((e) => new Date(e.event_date) >= new Date())
+      .filter((e) => startOfDay(parseISO(e.event_date)) >= today)
       .slice(0, 20);
     if (upcoming.length === 0) return null;
     return {
@@ -305,9 +307,10 @@ export default function Index() {
         </div>
 
         {/* Stats footer */}
-        {events && events.length > 0 && (
+        {displayedEvents.length > 0 && (
           <div className="text-center text-muted-foreground text-sm py-4 border-t border-border/50">
-            Showing {events.length} events across {venues.length} venues
+            Showing {displayedEvents.length} event{displayedEvents.length === 1 ? '' : 's'}
+            {userCoords ? ` within ${radiusMiles} miles` : ` across ${venues.length} venues`}
           </div>
         )}
 

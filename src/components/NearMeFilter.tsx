@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -42,16 +42,22 @@ export function NearMeFilter({ location, hiddenNoCoords = 0 }: NearMeFilterProps
 
   const radiusActive = !!coords;
 
+  // Guards against a slow earlier lookup resolving after a newer one.
+  const geocodeSeq = useRef(0);
+
   const runGeocode = async (q: string) => {
+    const seq = ++geocodeSeq.current;
     setPlaceStatus('loading');
     setPlaceError(null);
     setSuggestions([]);
     try {
       const result = await geocodeUK(q);
+      if (seq !== geocodeSeq.current) return;
       setManualLocation(result.coords, result.label);
       setPlaceStatus('idle');
       setPlaceQuery('');
     } catch (err) {
+      if (seq !== geocodeSeq.current) return;
       setPlaceStatus('error');
       if (err instanceof GeocodeError) {
         setPlaceError(err.message);

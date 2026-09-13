@@ -118,12 +118,12 @@ export function FilterBar(props: FilterBarProps) {
     location.radiusMiles,
     location.source,
     location.label,
+    location.clear,
     onEventTypeChange,
     onBeginnerOnlyChange,
     onRegionChange,
     onVenueChange,
     onVerifiedOnlyChange,
-    location,
   ]);
 
   const triggerClass =
