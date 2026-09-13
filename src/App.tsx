@@ -21,6 +21,7 @@ const VenueProfile = lazy(() => import("./pages/VenueProfile"));
 const RegionsIndex = lazy(() => import("./pages/RegionsIndex"));
 const RegionPage = lazy(() => import("./pages/RegionPage"));
 const CityPage = lazy(() => import("./pages/CityPage"));
+const CppsRounds = lazy(() => import("./pages/CppsRounds"));
 
 // Admin routes — split into their own chunk so normal visitors never download them.
 const AdminOverview = lazy(() => import("./pages/admin/AdminOverview"));
@@ -84,6 +85,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/teams" element={<Teams />} />
+            <Route path="/cpps" element={<CppsRounds />} />
             <Route path="/teams/:id" element={<TeamDetail />} />
             <Route path="/field-layout" element={<FieldLayout />} />
             <Route path="/events/:id" element={<EventDetail />} />

@@ -46,6 +46,7 @@ interface HeaderProps {
 
 const NAV = [
   { to: '/teams', label: 'Teams', icon: Users },
+  { to: '/cpps', label: 'CPPS', icon: Trophy },
   { to: '/looking-for-a-game', label: 'Looking for a Game', icon: UserSearch },
   { to: '/field-layout', label: 'Field Layout', icon: LayoutGrid },
 ] as const;
