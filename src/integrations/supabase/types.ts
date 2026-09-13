@@ -297,6 +297,27 @@ export type Database = {
         }
         Relationships: []
       }
+      flyer_extraction_log: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       freshness_snapshots: {
         Row: {
           alert_sent: boolean
