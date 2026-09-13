@@ -145,7 +145,5 @@ async function runBackfill(admin: any, dryRun: boolean): Promise<Response> {
       merged: dryRun ? 0 : merges.length,
       sample: merges.slice(0, 20),
     });
-  } catch (e) {
-    return json({ error: (e as Error).message }, { status: 500 });
   }
-});
+}
