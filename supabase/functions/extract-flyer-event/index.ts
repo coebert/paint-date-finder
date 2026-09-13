@@ -608,6 +608,39 @@ Deno.serve(async (req) => {
     );
   }
 
+  // Per-user hourly quota on these paid AI / Firecrawl calls. Admins are
+  // exempt (bulk flyer imports); everyone else gets a sane ceiling.
+  const admin = createClient(SUPABASE_URL, SERVICE_KEY);
+  const HOURLY_LIMIT = 15;
+  try {
+    const { data: isAdmin } = await admin.rpc("has_role", {
+      _user_id: userId,
+      _role: "admin",
+    });
+    if (!isAdmin) {
+      const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const { count } = await admin
+        .from("flyer_extraction_log")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .gte("created_at", since);
+      if ((count ?? 0) >= HOURLY_LIMIT) {
+        return new Response(
+          JSON.stringify({
+            error:
+              `Rate limit reached (${HOURLY_LIMIT} flyer extractions per hour). Please try again later.`,
+          }),
+          {
+            status: 429,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+    }
+  } catch (e) {
+    console.error("[flyer] rate-limit check failed", e);
+  }
+
   let body: RequestBody;
   try {
     body = await req.json();
