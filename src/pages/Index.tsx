@@ -215,8 +215,7 @@ export default function Index() {
       <HeroBackground />
       <div className="fixed inset-0 z-0 bg-background/35" />
       <div className="relative z-10">
-      {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
-      <Header 
+      <Header
         view={view} 
         onViewChange={setView} 
         onAddEvent={() => setAddDialogOpen(true)}
