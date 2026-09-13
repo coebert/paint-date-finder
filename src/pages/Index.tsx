@@ -13,7 +13,6 @@ import { EventEditDialog } from '@/components/EventEditDialog';
 import { AddEventDialog } from '@/components/AddEventDialog';
 import { EventDetailDialog } from '@/components/EventDetailDialog';
 import { SubmitEventDialog } from '@/components/SubmitEventDialog';
-import { SplashScreen } from '@/components/SplashScreen';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle } from 'lucide-react';
 import { useVisitTracking } from '@/hooks/useVisitTracking';
@@ -29,14 +28,6 @@ import { parseISO, startOfDay } from 'date-fns';
 
 
 export default function Index() {
-  const [showSplash, setShowSplash] = useState(
-    () => typeof window !== 'undefined' && !sessionStorage.getItem('splashShown'),
-  );
-  const handleSplashComplete = useCallback(() => {
-    sessionStorage.setItem('splashShown', '1');
-    setShowSplash(false);
-  }, []);
-
   const {
     view,
     eventType,
