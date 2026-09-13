@@ -31,15 +31,35 @@ type SourceType = "venue" | "facebook_group";
 
 const SCRAPER_EMAIL = "scraper@findawalkon.local";
 
+/** Only http(s) URLs are storable (DB check constraints); everything else -> null. */
+function httpUrlOrNull(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return /^https?:\/\/\S+$/i.test(trimmed) ? trimmed : null;
+}
+
+const BROWSER_UA =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
+
 async function fetchPageText(url: string): Promise<string> {
-  const res = await fetch(url, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (compatible; FindAWalkOnBot/1.0; +https://findawalkon.app)",
-      Accept: "text/html,application/xhtml+xml",
-    },
-    redirect: "follow",
-  });
+  const attempt = (ua: string) =>
+    fetch(url, {
+      headers: {
+        "User-Agent": ua,
+        Accept: "text/html,application/xhtml+xml,text/calendar,text/plain;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-GB,en;q=0.9",
+      },
+      redirect: "follow",
+    });
+
+  let res = await attempt(
+    "Mozilla/5.0 (compatible; FindAWalkOnBot/1.0; +https://findawalkon.app)",
+  );
+  // Some hosts (Cloudflare early-data 425, bot filters 403/429) reject the bot UA
+  // but serve the same page to a normal browser UA. Retry once before failing.
+  if (!res.ok && [403, 425, 429, 503].includes(res.status)) {
+    res = await attempt(BROWSER_UA);
+  }
   if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${url}`);
   const html = await res.text();
   // Strip scripts/styles, then tags, collapse whitespace. Cap at 30k chars.
