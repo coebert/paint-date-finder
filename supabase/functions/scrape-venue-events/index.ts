@@ -661,9 +661,10 @@ async function runScrape(
         if (venueStatus === "unmatched") warnings.push("unknown_venue");
 
         // Dedupe: fuzzy match against existing canonical events
-        // (same venue, overlapping date ±2 days, similar title) and pending
-        // submissions for the same venue+date+type.
-        const [dupRes, { data: existingSub }] = await Promise.all([
+        // (same venue, overlapping date ±2 days, similar title) and against
+        // pending/approved submissions for the same date+type, comparing venue
+        // names loosely so punctuation/spelling drift still dedupes.
+        const [dupRes, { data: sameDaySubs }] = await Promise.all([
           supabase.rpc("find_duplicate_event", {
             _venue: effectiveVenue,
             _date: c.event_date,
@@ -671,15 +672,16 @@ async function runScrape(
           }),
           supabase
             .from("event_submissions")
-            .select("id")
-            .ilike("venue_name", effectiveVenue)
+            .select("id, venue_name")
             .eq("event_date", c.event_date)
             .eq("event_type", c.event_type)
             .in("status", ["pending", "approved"])
-            .limit(1)
-            .maybeSingle(),
+            .limit(50),
         ]);
         const duplicateEventId = (dupRes.data as string | null) ?? null;
+        const existingSub = (sameDaySubs ?? []).find((s) =>
+          venueNamesMatch(s.venue_name ?? "", effectiveVenue)
+        ) ?? null;
 
         if (duplicateEventId) {
           // Merge new source info into the canonical event and skip insert
