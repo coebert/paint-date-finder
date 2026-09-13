@@ -141,7 +141,10 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
     const g = (window as unknown as { google: typeof google }).google;
 
     clustererRef.current?.clearMarkers();
-    markersRef.current.forEach((m) => m.setMap(null));
+    markersRef.current.forEach((m) => {
+      g.maps.event.clearInstanceListeners(m);
+      m.setMap(null);
+    });
     markersRef.current = [];
 
     const markers = filteredGroups.map((group) => {
