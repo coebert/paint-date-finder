@@ -172,6 +172,13 @@ function RoundCard({
               );
             })}
           </ul>
+          {results.length > 0 ? (
+            <RoundResults results={results} />
+          ) : round.isPast ? (
+            <p className="mt-3 border-t border-border/40 pt-3 text-xs text-muted-foreground">
+              Results not recorded yet.
+            </p>
+          ) : null}
         </CardContent>
       </Card>
     </li>
@@ -425,7 +432,12 @@ export default function CppsRounds() {
             ) : rounds && rounds.length > 0 ? (
               <ol>
                 {rounds.map((r, i) => (
-                  <RoundCard key={r.round} round={r} index={i} />
+                  <RoundCard
+                    key={r.round}
+                    round={r}
+                    index={i}
+                    results={resultsByRound.get(r.round) ?? []}
+                  />
                 ))}
               </ol>
             ) : (
