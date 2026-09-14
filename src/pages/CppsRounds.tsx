@@ -18,8 +18,19 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { divisionColors, sortDivisions, type CppsRound } from '@/lib/cpps';
+import {
+  divisionColors,
+  groupResultsByRound,
+  indexResultsByTeam,
+  lookupTeamRound,
+  roundsWithResults,
+  sortDivisions,
+  type CppsRound,
+  type CppsRoundResult,
+  type TeamRoundResult,
+} from '@/lib/cpps';
 import { useCppsRounds } from '@/hooks/useCppsRounds';
+import { useCppsResults } from '@/hooks/useCppsResults';
 import { useTeams, type Team } from '@/hooks/useTeams';
 import { StandingsHistoryCard } from '@/components/StandingsHistoryCard';
 
@@ -122,9 +133,13 @@ function RoundCard({ round, index }: { round: CppsRound; index: number }) {
 function StandingsTable({
   teams,
   myTeamId,
+  playedRounds,
+  resultIndex,
 }: {
   teams: Team[];
   myTeamId: string | null;
+  playedRounds: number[];
+  resultIndex: Map<string, Map<number, TeamRoundResult>>;
 }) {
   return (
     <div className="overflow-x-auto rounded-lg border border-border/50">
@@ -133,6 +148,11 @@ function StandingsTable({
           <tr className="border-b border-border/50 bg-secondary/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
             <th className="px-3 py-2 w-10">#</th>
             <th className="px-3 py-2">Team</th>
+            {playedRounds.map((r) => (
+              <th key={r} className="px-2 py-2 text-right whitespace-nowrap" title={`Round ${r}`}>
+                R{r}
+              </th>
+            ))}
             <th className="px-3 py-2 text-right">Points</th>
           </tr>
         </thead>
@@ -160,7 +180,32 @@ function StandingsTable({
                     {isMine && <Star className="h-3.5 w-3.5 fill-accent" aria-label="My team" />}
                   </Link>
                 </td>
-                <td className="px-3 py-2 text-right tabular-nums">{team.points}</td>
+                {playedRounds.map((r) => {
+                  const res = lookupTeamRound(resultIndex, team.name, r);
+                  return (
+                    <td key={r} className="px-2 py-2 text-right tabular-nums whitespace-nowrap">
+                      {res ? (
+                        <span
+                          title={
+                            res.position
+                              ? `Round ${r}: finished ${res.position}, ${res.points} pts`
+                              : `Round ${r}: ${res.points} pts`
+                          }
+                        >
+                          {res.points}
+                          {res.position && (
+                            <span className="ml-1 text-[11px] text-muted-foreground">
+                              ({res.position})
+                            </span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground/50">—</span>
+                      )}
+                    </td>
+                  );
+                })}
+                <td className="px-3 py-2 text-right tabular-nums font-semibold">{team.points}</td>
               </tr>
             );
           })}
