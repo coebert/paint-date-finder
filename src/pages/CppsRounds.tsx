@@ -207,6 +207,11 @@ export default function CppsRounds() {
 
   const loading = roundsLoading || teamsLoading;
 
+  const navigate = useNavigate();
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
+  const [submitInitialTab, setSubmitInitialTab] = useState<'flyer' | 'manual'>('flyer');
+
   return (
     <div className="min-h-dvh bg-background">
       <RouteHead
