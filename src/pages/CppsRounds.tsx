@@ -48,7 +48,55 @@ function formatRoundDates(round: CppsRound): string {
   return `${format(startDate, 'd MMM yyyy')} – ${format(endDate, 'd MMM yyyy')}`;
 }
 
-function RoundCard({ round, index }: { round: CppsRound; index: number }) {
+function RoundResults({ results }: { results: CppsRoundResult[] }) {
+  const byDivision = new Map<string, CppsRoundResult[]>();
+  for (const r of results) {
+    const list = byDivision.get(r.division) ?? [];
+    list.push(r);
+    byDivision.set(r.division, list);
+  }
+  const divisions = sortDivisions([...byDivision.keys()]);
+
+  return (
+    <div className="mt-3 space-y-3 border-t border-border/40 pt-3">
+      <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        Results
+      </h4>
+      {divisions.map((div) => (
+        <div key={div} className="space-y-1.5">
+          <Badge
+            variant="outline"
+            className={cn('text-[11px]', divisionColors[div] ?? 'bg-muted text-muted-foreground')}
+          >
+            {div}
+          </Badge>
+          <ol className="divide-y divide-border/30">
+            {(byDivision.get(div) ?? []).map((r) => (
+              <li key={r.id} className="flex items-baseline gap-2 py-1.5 text-sm">
+                <span className="w-6 shrink-0 tabular-nums text-muted-foreground">
+                  {r.position ?? '–'}
+                </span>
+                <span className="font-medium text-foreground">{r.team_name}</span>
+                {r.notes && <span className="text-xs text-muted-foreground">{r.notes}</span>}
+                <span className="ml-auto tabular-nums text-muted-foreground">{r.points} pts</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RoundCard({
+  round,
+  index,
+  results,
+}: {
+  round: CppsRound;
+  index: number;
+  results: CppsRoundResult[];
+}) {
   return (
     <li className="relative pl-8 pb-8 last:pb-0">
       {/* Timeline rail */}
@@ -218,6 +266,7 @@ function StandingsTable({
 export default function CppsRounds() {
   const { data: rounds, isLoading: roundsLoading } = useCppsRounds();
   const { data: teams, isLoading: teamsLoading } = useTeams({ league: 'CPPS' });
+  const { data: results, isLoading: resultsLoading } = useCppsResults();
 
   const [myTeamId, setMyTeamId] = useState<string | null>(() => {
     try {
@@ -250,7 +299,11 @@ export default function CppsRounds() {
     [teams, myTeamId],
   );
 
-  const loading = roundsLoading || teamsLoading;
+  const resultIndex = useMemo(() => indexResultsByTeam(results ?? []), [results]);
+  const playedRounds = useMemo(() => roundsWithResults(results ?? []), [results]);
+  const resultsByRound = useMemo(() => groupResultsByRound(results ?? []), [results]);
+
+  const loading = roundsLoading || teamsLoading || resultsLoading;
 
   const navigate = useNavigate();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -403,6 +456,8 @@ export default function CppsRounds() {
                     <StandingsTable
                       teams={teamsByDivision.get(div) ?? []}
                       myTeamId={myTeamId}
+                      playedRounds={playedRounds}
+                      resultIndex={resultIndex}
                     />
                   </TabsContent>
                 ))}
