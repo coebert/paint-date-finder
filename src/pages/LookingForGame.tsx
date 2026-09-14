@@ -188,8 +188,12 @@ export default function LookingForGame() {
                       <p className="text-xs text-accent">{EVENT_TYPE_LABELS[p.event_type as EventType]}</p>
                     )}
                     {p.notes && <p className="text-sm text-muted-foreground whitespace-pre-line">{p.notes}</p>}
+                    <Button variant="outline" size="sm" className="gap-1 min-h-11 w-full"
+                      onClick={() => setReplyTo({ id: p.id, name: p.player_name })}>
+                      <Mail className="h-4 w-4" /> Reply
+                    </Button>
                     <p className="text-xs text-muted-foreground italic">
-                      Contact details are kept private — moderators will pass on responses.
+                      Their email stays private — we pass your message on for them.
                     </p>
                   </CardContent>
                 </Card>
