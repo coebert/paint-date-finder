@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.snapshot_cpps_standings_on_round() FROM PUBLIC, anon, authenticated;
