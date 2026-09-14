@@ -492,6 +492,7 @@ Deno.serve(async (req) => {
       history_rows: historyRows,
       seasons_synced: seasonsSynced,
       result_rows: resultRows,
+      dates_added: datesAdded,
       scraped_at: new Date().toISOString(),
     });
   } catch (e) {
