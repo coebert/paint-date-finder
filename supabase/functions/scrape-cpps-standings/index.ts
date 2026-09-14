@@ -315,6 +315,72 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ---- Per-round results ------------------------------------------------
+    // The results feed carries each team's round-by-round position and points
+    // for every season it publishes, so the tracker no longer needs manual
+    // entry. We refresh whole (season, round, division) blocks so withdrawn
+    // teams disappear, carrying over any admin-written notes.
+    const { data: refreshedTeams } = await supabase
+      .from("teams")
+      .select("id,name")
+      .eq("league", "CPPS");
+    const teamIdByName = new Map<string, string>();
+    for (const t of refreshedTeams ?? []) teamIdByName.set(t.name.toLowerCase(), t.id);
+
+    const seasonsAvailable = results
+      .filter((y) => /^\d{4}$/.test(y.year))
+      .sort((a, b) => Number(b.year) - Number(a.year));
+    const seasonsToSync = requestedSeasons
+      ? seasonsAvailable.filter((y) => requestedSeasons.includes(y.year))
+      : seasonsAvailable.slice(0, seasonDepth);
+
+    let resultRows = 0;
+    const seasonsSynced: string[] = [];
+
+    for (const year of seasonsToSync) {
+      const rows = roundRowsForSeason(year, teamIdByName);
+      if (!rows.length) continue;
+
+      // Keep notes typed in by an admin.
+      const { data: priorNotes } = await supabase
+        .from("cpps_round_results")
+        .select("round,team_name,notes")
+        .eq("season", year.year)
+        .not("notes", "is", null);
+      const noteByKey = new Map<string, string>();
+      for (const p of priorNotes ?? []) {
+        if (p.notes) noteByKey.set(`${p.round}|${p.team_name.toLowerCase()}`, p.notes);
+      }
+      for (const r of rows) {
+        r.notes = noteByKey.get(`${r.round}|${r.team_name.toLowerCase()}`) ?? null;
+      }
+
+      const byRound = new Map<number, RoundResultRow[]>();
+      for (const r of rows) {
+        const list = byRound.get(r.round) ?? [];
+        list.push(r);
+        byRound.set(r.round, list);
+      }
+
+      for (const [round, roundRows] of byRound) {
+        const divisions = [...new Set(roundRows.map((r) => r.division))];
+        const { error: delErr } = await supabase
+          .from("cpps_round_results")
+          .delete()
+          .eq("season", year.year)
+          .eq("round", round)
+          .in("division", divisions);
+        if (delErr) throw delErr;
+
+        const { error: insErr } = await supabase
+          .from("cpps_round_results")
+          .insert(roundRows);
+        if (insErr) throw insErr;
+        resultRows += roundRows.length;
+      }
+      seasonsSynced.push(year.year);
+    }
+
     return json({
       ok: true,
       roster_year: currentRoster.year,
@@ -324,6 +390,8 @@ Deno.serve(async (req) => {
       updated,
       deactivated,
       history_rows: historyRows,
+      seasons_synced: seasonsSynced,
+      result_rows: resultRows,
       scraped_at: new Date().toISOString(),
     });
   } catch (e) {
