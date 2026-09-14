@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { SubmitEventDialog } from '@/components/SubmitEventDialog';
+import { AddEventDialog } from '@/components/AddEventDialog';
 import { format, isSameMonth, isSameYear, parseISO } from 'date-fns';
 import { CalendarDays, MapPin, Trophy, Star, ExternalLink, Ticket } from 'lucide-react';
 import { RouteHead } from '@/components/RouteHead';
