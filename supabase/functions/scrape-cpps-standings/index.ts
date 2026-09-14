@@ -363,20 +363,24 @@ Deno.serve(async (req) => {
       }
 
       for (const [round, roundRows] of byRound) {
-        const divisions = [...new Set(roundRows.map((r) => r.division))];
+        // One row per team per round: a team can appear in more than one
+        // division block across a season, so keep the first entry.
+        const deduped = [...new Map(
+          roundRows.map((r) => [r.team_name.toLowerCase(), r]),
+        ).values()];
+
         const { error: delErr } = await supabase
           .from("cpps_round_results")
           .delete()
           .eq("season", year.year)
-          .eq("round", round)
-          .in("division", divisions);
+          .eq("round", round);
         if (delErr) throw delErr;
 
         const { error: insErr } = await supabase
           .from("cpps_round_results")
-          .insert(roundRows);
+          .insert(deduped);
         if (insErr) throw insErr;
-        resultRows += roundRows.length;
+        resultRows += deduped.length;
       }
       seasonsSynced.push(year.year);
     }
