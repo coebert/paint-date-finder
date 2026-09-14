@@ -19,18 +19,21 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import {
+  computeSeasonStandings,
   divisionColors,
   groupResultsByRound,
   indexResultsByTeam,
   lookupTeamRound,
   roundsWithResults,
+  seasonsFromRounds,
   sortDivisions,
   type CppsRound,
   type CppsRoundResult,
+  type SeasonStanding,
   type TeamRoundResult,
 } from '@/lib/cpps';
 import { useCppsRounds } from '@/hooks/useCppsRounds';
-import { useCppsResults } from '@/hooks/useCppsResults';
+import { useCppsResults, CPPS_CURRENT_SEASON } from '@/hooks/useCppsResults';
 import { useTeams, type Team } from '@/hooks/useTeams';
 import { StandingsHistoryCard } from '@/components/StandingsHistoryCard';
 
@@ -306,7 +309,8 @@ function ArchiveStandingsTable({ standings }: { standings: SeasonStanding[] }) {
 export default function CppsRounds() {
   const { data: rounds, isLoading: roundsLoading } = useCppsRounds();
   const { data: teams, isLoading: teamsLoading } = useTeams({ league: 'CPPS' });
-  const { data: results, isLoading: resultsLoading } = useCppsResults();
+  const [season, setSeason] = useState<string>(CPPS_CURRENT_SEASON);
+  const { data: results, isLoading: resultsLoading } = useCppsResults(season);
 
   const [myTeamId, setMyTeamId] = useState<string | null>(() => {
     try {
@@ -340,7 +344,6 @@ export default function CppsRounds() {
   );
 
   const seasons = useMemo(() => seasonsFromRounds(rounds ?? []), [rounds]);
-  const [season, setSeason] = useState<string>(CPPS_CURRENT_SEASON);
   // Fall back to the newest season in the calendar if the current one is empty.
   useEffect(() => {
     if (seasons.length > 0 && !seasons.includes(season)) setSeason(seasons[0]);
