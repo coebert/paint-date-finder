@@ -132,10 +132,25 @@ Deno.serve(async (req) => {
 
   const supabase = adminClient(env);
 
+  // Optional body: { seasons?: string[], seasonDepth?: number }
+  let body: { seasons?: unknown; seasonDepth?: unknown } = {};
+  try {
+    if (req.method === "POST") body = await req.json();
+  } catch {
+    body = {};
+  }
+  const requestedSeasons = Array.isArray(body.seasons)
+    ? body.seasons.filter((s): s is string => typeof s === "string" && /^\d{4}$/.test(s))
+    : null;
+  const seasonDepth = typeof body.seasonDepth === "number" &&
+      body.seasonDepth >= 1 && body.seasonDepth <= 20
+    ? Math.floor(body.seasonDepth)
+    : DEFAULT_SEASON_DEPTH;
+
   try {
     const [rosters, results] = await Promise.all([
       getJson<RosterYear[]>("/cpps/rest/team"),
-      getJson<ResultsYear[]>("/cpps/rest/results/"),
+      getJson<ResultsYear[]>("/cpps/rest/results"),
     ]);
 
     const currentRoster = rosters.find((y) =>
