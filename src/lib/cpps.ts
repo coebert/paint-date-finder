@@ -26,6 +26,14 @@ export interface CppsRound {
   isNext: boolean;
 }
 
+/** localStorage key holding the id of the team the visitor tracks. */
+export const CPPS_MY_TEAM_KEY = 'cpps:my-team';
+
+/** True when an event looks like a CPPS series round. */
+export function isCppsRoundEvent(title: string): boolean {
+  return /\bcpps\b/i.test(title) && parseRoundNumber(title) !== null;
+}
+
 /** Extract the round number from titles like "CPPS Round 5 — Day 1". */
 export function parseRoundNumber(title: string): number | null {
   const m = /\bround\s*(\d+)\b/i.exec(title);
