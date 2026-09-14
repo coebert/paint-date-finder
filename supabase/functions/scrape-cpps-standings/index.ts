@@ -68,6 +68,40 @@ interface ResultsYear {
 // How many seasons of per-round results to sync by default (newest first).
 const DEFAULT_SEASON_DEPTH = 3;
 
+const CPPS_VENUE = "CPPS Paintball";
+
+interface FeedEvent {
+  name: string;
+  startDate?: string | null;
+  eventDays?: string[] | null;
+}
+interface EventsYear {
+  year: string;
+  events: FeedEvent[];
+}
+
+const MONTHS: Record<string, number> = {
+  jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6,
+  jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12,
+};
+
+/** "CPPS Round 3 - Eclipse Open" → 3 */
+function parseRoundNumber(title: string): number | null {
+  const m = title?.match(/round\s*(\d+)/i);
+  return m ? Number(m[1]) : null;
+}
+
+/** "17th August" + "2025" → "2025-08-17" */
+function parseFeedDay(day: string, year: string): string | null {
+  const m = day?.trim().match(/^(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+)/);
+  if (!m) return null;
+  const month = MONTHS[m[2].slice(0, 3).toLowerCase()];
+  if (!month) return null;
+  const d = Number(m[1]);
+  if (d < 1 || d > 31) return null;
+  return `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
 interface RoundResultRow {
   season: string;
   round: number;
