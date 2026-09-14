@@ -221,10 +221,23 @@ export default function CppsRounds() {
       />
       <Header
         view="calendar"
-        onViewChange={() => {}}
-        onAddEvent={() => {}}
-        onSubmitEvent={() => {}}
-        onImportFlyer={() => {}}
+        onViewChange={(v) => navigate(v === 'calendar' ? '/' : `/?view=${v}`)}
+        onAddEvent={() => setAddDialogOpen(true)}
+        onSubmitEvent={() => {
+          setSubmitInitialTab('manual');
+          setSubmitDialogOpen(true);
+        }}
+        onImportFlyer={() => {
+          setSubmitInitialTab('flyer');
+          setSubmitDialogOpen(true);
+        }}
+      />
+
+      <AddEventDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
+      <SubmitEventDialog
+        open={submitDialogOpen}
+        onOpenChange={setSubmitDialogOpen}
+        initialTab={submitInitialTab}
       />
 
       <main className="container mx-auto px-4 py-8 max-w-5xl">
