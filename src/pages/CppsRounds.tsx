@@ -20,6 +20,7 @@ import {
 import { cn } from '@/lib/utils';
 import {
   computeSeasonStandings,
+  CPPS_MY_TEAM_KEY,
   divisionColors,
   groupResultsByRound,
   indexResultsByTeam,
@@ -37,7 +38,7 @@ import { useCppsResults, CPPS_CURRENT_SEASON } from '@/hooks/useCppsResults';
 import { useTeams, type Team } from '@/hooks/useTeams';
 import { StandingsHistoryCard } from '@/components/StandingsHistoryCard';
 
-const MY_TEAM_KEY = 'cpps:my-team';
+const MY_TEAM_KEY = CPPS_MY_TEAM_KEY;
 
 function formatRoundDates(round: CppsRound): string {
   const { startDate, endDate } = round;

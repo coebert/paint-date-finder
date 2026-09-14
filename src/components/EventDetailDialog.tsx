@@ -18,6 +18,7 @@ import { useVenueDetails } from '@/hooks/useVenueDetails';
 import { useIsAdmin } from '@/hooks/useAuth';
 import { useFlaggedEventIds, useWithdrawFlag, getStoredFlagForEvent } from '@/hooks/useEventFlags';
 import { EventSourceBadge } from './EventSourceBadge';
+import { CppsRoundStandings } from './CppsRoundStandings';
 
 interface EventDetailDialogProps {
   event: PaintballEvent | null;
@@ -217,6 +218,8 @@ export function EventDetailDialog({ event, open, onOpenChange, onEdit }: EventDe
               <p className="text-muted-foreground text-sm">{event.description}</p>
             </div>
           )}
+
+          <CppsRoundStandings title={event.title} eventDate={event.event_date} />
 
           <EventSourceBadge sourceUrl={event.source_url} />
 

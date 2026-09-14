@@ -8,6 +8,7 @@ import {
 import { RouteHead } from '@/components/RouteHead';
 import { EventTypeBadge } from '@/components/EventTypeBadge';
 import { EventSourceBadge } from '@/components/EventSourceBadge';
+import { CppsRoundStandings } from '@/components/CppsRoundStandings';
 import { FlagEventDialog } from '@/components/FlagEventDialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -325,6 +326,8 @@ export default function EventDetail() {
               <p className="text-muted-foreground whitespace-pre-line">{event.description}</p>
             </section>
           )}
+
+          <CppsRoundStandings title={event.title} eventDate={event.event_date} />
 
           <EventSourceBadge sourceUrl={event.source_url} />
 
