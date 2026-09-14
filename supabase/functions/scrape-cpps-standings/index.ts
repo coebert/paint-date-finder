@@ -44,11 +44,17 @@ interface RosterYear {
   division: RosterDivision[];
 }
 
+interface ResultsRound {
+  position: number | null;
+  points: number | null;
+  division: string | null;
+}
 interface ResultsTeam {
   id: number;
   name: string;
   position: number | null;
   score: number | null;
+  rounds?: ResultsRound[] | null;
 }
 interface ResultsDivision {
   title: string;
@@ -57,6 +63,55 @@ interface ResultsDivision {
 interface ResultsYear {
   year: string;
   division: ResultsDivision[];
+}
+
+// How many seasons of per-round results to sync by default (newest first).
+const DEFAULT_SEASON_DEPTH = 3;
+
+interface RoundResultRow {
+  season: string;
+  round: number;
+  division: string;
+  team_id: string | null;
+  team_name: string;
+  position: number | null;
+  points: number;
+  notes: string | null;
+}
+
+// Turn one season of the results feed into per-round rows. Each team's
+// `rounds` array is ordered by round number, so index + 1 is the round.
+function roundRowsForSeason(
+  year: ResultsYear,
+  teamIdByName: Map<string, string>,
+): RoundResultRow[] {
+  const rows: RoundResultRow[] = [];
+  for (const div of year.division) {
+    const fallbackDivision = normalizeDivision(div.title);
+    for (const team of div.row) {
+      if (!team?.name) continue;
+      const rounds = team.rounds ?? [];
+      rounds.forEach((r, i) => {
+        if (r == null) return;
+        // Rounds not yet played come back as nulls — skip them.
+        if (r.position == null && r.points == null) return;
+        const division = (r.division ? normalizeDivision(r.division) : null) ??
+          fallbackDivision;
+        if (!division) return;
+        rows.push({
+          season: year.year,
+          round: i + 1,
+          division,
+          team_id: teamIdByName.get(team.name.toLowerCase()) ?? null,
+          team_name: team.name,
+          position: r.position ?? null,
+          points: typeof r.points === "number" ? r.points : 0,
+          notes: null,
+        });
+      });
+    }
+  }
+  return rows;
 }
 
 async function getJson<T>(path: string): Promise<T> {
