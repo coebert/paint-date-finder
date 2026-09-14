@@ -385,6 +385,68 @@ Deno.serve(async (req) => {
       seasonsSynced.push(year.year);
     }
 
+    // ---- Round dates ------------------------------------------------------
+    // The events feed lists each round's playing days per season, so the
+    // tracker and calendar can show the seasons whose results we just synced.
+    let datesAdded = 0;
+    try {
+      const eventFeed = await getJson<EventsYear[]>("/cpps/rest/events");
+      const wanted = new Set(seasonsSynced);
+
+      const { data: existingCpps } = await supabase
+        .from("events")
+        .select("event_date")
+        .eq("venue_name", CPPS_VENUE);
+      const takenDates = new Set((existingCpps ?? []).map((e) => e.event_date));
+
+      const rows: Record<string, unknown>[] = [];
+      for (const year of eventFeed) {
+        if (!wanted.has(year.year)) continue;
+        for (const ev of year.events ?? []) {
+          const round = parseRoundNumber(ev.name);
+          if (round === null) continue;
+          const days = (ev.eventDays ?? [])
+            .map((d) => parseFeedDay(d, year.year))
+            .filter((d): d is string => !!d);
+          const dates = days.length
+            ? [...new Set(days)].sort()
+            : ev.startDate
+            ? [ev.startDate.slice(0, 10)]
+            : [];
+          const missing = dates.filter((d) => !takenDates.has(d));
+          missing.forEach((date, i) => {
+            takenDates.add(date);
+            rows.push({
+              title: dates.length > 1
+                ? `CPPS Round ${round} — Day ${dates.indexOf(date) + 1}`
+                : `CPPS Round ${round}`,
+              description: ev.name && ev.name !== `CPPS Round ${round}` ? ev.name : null,
+              event_type: "tournament",
+              venue_name: CPPS_VENUE,
+              venue_location: "Penkridge, Staffordshire",
+              event_date: date,
+              start_time: "08:00",
+              end_time: "18:00",
+              booking_url: "https://www.okpb.co.uk/booking",
+              is_verified: true,
+              verification_status: "verified",
+              source_url: `${BASE}/`,
+              source_quote: "CPPS season schedule (okpb.co.uk)",
+            });
+          });
+        }
+      }
+
+      for (let i = 0; i < rows.length; i += 100) {
+        const chunk = rows.slice(i, i + 100);
+        const { error } = await supabase.from("events").insert(chunk);
+        if (error) throw error;
+        datesAdded += chunk.length;
+      }
+    } catch (e) {
+      console.error("round date backfill failed", e);
+    }
+
     return json({
       ok: true,
       roster_year: currentRoster.year,
