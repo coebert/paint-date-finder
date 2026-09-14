@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { eventKeys } from '@/hooks/useEvents';
 import { useCppsRounds } from '@/hooks/useCppsRounds';
+import { RoundResultsCard } from '@/pages/admin/cpps/RoundResultsCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -265,6 +266,8 @@ export default function AdminCppsRounds() {
             </form>
           </CardContent>
         </Card>
+
+        <RoundResultsCard />
 
         <Card className="bg-card border-border/50">
           <CardHeader>
