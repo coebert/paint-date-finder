@@ -64,6 +64,78 @@ export function groupCppsRounds(events: CppsEvent[], today: Date = startOfDay(ne
   return rounds;
 }
 
+/** A single team's result for one CPPS round. */
+export interface CppsRoundResult {
+  id: string;
+  season: string;
+  round: number;
+  division: string;
+  team_id: string | null;
+  team_name: string;
+  position: number | null;
+  points: number;
+  notes: string | null;
+}
+
+export interface TeamRoundResult {
+  position: number | null;
+  points: number;
+}
+
+const teamKey = (name: string) => name.trim().toLowerCase();
+
+/**
+ * Index results by team (case-insensitive name) then round, so a standings
+ * table can render a points column per played round.
+ */
+export function indexResultsByTeam(
+  results: CppsRoundResult[],
+): Map<string, Map<number, TeamRoundResult>> {
+  const map = new Map<string, Map<number, TeamRoundResult>>();
+  for (const r of results) {
+    const key = teamKey(r.team_name);
+    const rounds = map.get(key) ?? new Map<number, TeamRoundResult>();
+    rounds.set(r.round, { position: r.position, points: r.points });
+    map.set(key, rounds);
+  }
+  return map;
+}
+
+/** Look up a team's result for a round by team name. */
+export function lookupTeamRound(
+  index: Map<string, Map<number, TeamRoundResult>>,
+  teamName: string,
+  round: number,
+): TeamRoundResult | undefined {
+  return index.get(teamKey(teamName))?.get(round);
+}
+
+/** Group results by round number, each sorted by finishing position. */
+export function groupResultsByRound(results: CppsRoundResult[]): Map<number, CppsRoundResult[]> {
+  const map = new Map<number, CppsRoundResult[]>();
+  for (const r of results) {
+    const list = map.get(r.round) ?? [];
+    list.push(r);
+    map.set(r.round, list);
+  }
+  for (const list of map.values()) {
+    list.sort((a, b) => {
+      if (a.position !== b.position) {
+        if (a.position === null) return 1;
+        if (b.position === null) return -1;
+        return a.position - b.position;
+      }
+      return b.points - a.points;
+    });
+  }
+  return map;
+}
+
+/** Rounds that have at least one recorded result, ascending. */
+export function roundsWithResults(results: CppsRoundResult[]): number[] {
+  return [...new Set(results.map((r) => r.round))].sort((a, b) => a - b);
+}
+
 export const CPPS_DIVISION_ORDER = [
   'Elite',
   'Semi-Pro',
