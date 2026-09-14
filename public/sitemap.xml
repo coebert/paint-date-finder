@@ -11,6 +11,11 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://findawalkon.com/cpps</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://findawalkon.com/field-layout</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -689,18 +694,6 @@
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://findawalkon.com/events/9bfc1111-b50e-4d51-876b-186377305dbd</loc>
-    <lastmod>2026-05-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/events/51c886a1-a479-401a-a651-fe23c9e03aa5</loc>
-    <lastmod>2026-03-02</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://findawalkon.com/events/969e8f03-c961-4a97-94b7-38336c670a84</loc>
     <lastmod>2026-09-01</lastmod>
     <changefreq>weekly</changefreq>
@@ -713,8 +706,20 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://findawalkon.com/events/9c3020fc-15f7-472b-b8a0-1ff4a498a6d5</loc>
+    <lastmod>2026-09-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://findawalkon.com/events/a3f7cd92-4433-4f6e-8a55-bc4ef1e2b01a</loc>
     <lastmod>2026-03-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/events/83693892-73e1-4cc0-aead-5aae1ad90f5c</loc>
+    <lastmod>2026-09-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -725,14 +730,38 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://findawalkon.com/events/317105de-564c-4b3a-95b6-eeed074f0e06</loc>
+    <lastmod>2026-09-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/events/3e3f4beb-78ef-48e2-bb6e-8e299c132630</loc>
+    <lastmod>2026-09-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://findawalkon.com/events/841be1fe-7e83-4670-9d1e-bffa0585e6a3</loc>
     <lastmod>2026-03-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://findawalkon.com/events/c7981b7f-79bb-48f3-bed1-5bc0c21caa37</loc>
+    <lastmod>2026-09-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://findawalkon.com/events/c3f21fc4-758f-4b12-89b5-06c9a8c1d05d</loc>
     <lastmod>2026-02-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/events/495b2c2d-cceb-40cf-b56d-63cedd847ffc</loc>
+    <lastmod>2026-09-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
