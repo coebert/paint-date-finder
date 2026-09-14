@@ -4,6 +4,7 @@ import { format, parseISO } from 'date-fns';
 import { ArrowLeft, Mail, MapPin, Plus, UserSearch, Copy } from 'lucide-react';
 import { z } from 'zod';
 import { RouteHead } from '@/components/RouteHead';
+import { ReplyToPlayerDialog } from '@/components/ReplyToPlayerDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -44,6 +45,7 @@ export default function LookingForGame() {
   const [filterRegion, setFilterRegion] = useState<string>('');
   const [filterType, setFilterType] = useState<string>('');
   const [createdToken, setCreatedToken] = useState<{ id: string; token: string } | null>(null);
+  const [replyTo, setReplyTo] = useState<{ id: string; name: string } | null>(null);
 
   const [form, setForm] = useState({
     player_name: '',
@@ -290,6 +292,12 @@ export default function LookingForGame() {
           )}
         </DialogContent>
       </Dialog>
+
+      <ReplyToPlayerDialog
+        postId={replyTo?.id ?? null}
+        playerName={replyTo?.name ?? ''}
+        onClose={() => setReplyTo(null)}
+      />
 
       <RemoveByQuery />
     </>
