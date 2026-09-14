@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { SubmitEventDialog } from '@/components/SubmitEventDialog';
+import { AddEventDialog } from '@/components/AddEventDialog';
 import { format, isSameMonth, isSameYear, parseISO } from 'date-fns';
 import { CalendarDays, MapPin, Trophy, Star, ExternalLink, Ticket } from 'lucide-react';
 import { RouteHead } from '@/components/RouteHead';
@@ -205,6 +207,11 @@ export default function CppsRounds() {
 
   const loading = roundsLoading || teamsLoading;
 
+  const navigate = useNavigate();
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
+  const [submitInitialTab, setSubmitInitialTab] = useState<'flyer' | 'manual'>('flyer');
+
   return (
     <div className="min-h-dvh bg-background">
       <RouteHead
@@ -214,10 +221,23 @@ export default function CppsRounds() {
       />
       <Header
         view="calendar"
-        onViewChange={() => {}}
-        onAddEvent={() => {}}
-        onSubmitEvent={() => {}}
-        onImportFlyer={() => {}}
+        onViewChange={(v) => navigate(v === 'calendar' ? '/' : `/?view=${v}`)}
+        onAddEvent={() => setAddDialogOpen(true)}
+        onSubmitEvent={() => {
+          setSubmitInitialTab('manual');
+          setSubmitDialogOpen(true);
+        }}
+        onImportFlyer={() => {
+          setSubmitInitialTab('flyer');
+          setSubmitDialogOpen(true);
+        }}
+      />
+
+      <AddEventDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
+      <SubmitEventDialog
+        open={submitDialogOpen}
+        onOpenChange={setSubmitDialogOpen}
+        initialTab={submitInitialTab}
       />
 
       <main className="container mx-auto px-4 py-8 max-w-5xl">
