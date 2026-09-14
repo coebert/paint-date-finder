@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      cpps_round_results: {
+        Row: {
+          created_at: string
+          division: string
+          id: string
+          notes: string | null
+          points: number
+          position: number | null
+          round: number
+          season: string
+          team_id: string | null
+          team_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          division: string
+          id?: string
+          notes?: string | null
+          points?: number
+          position?: number | null
+          round: number
+          season?: string
+          team_id?: string | null
+          team_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          division?: string
+          id?: string
+          notes?: string | null
+          points?: number
+          position?: number | null
+          round?: number
+          season?: string
+          team_id?: string | null
+          team_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cpps_round_results_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_flags: {
         Row: {
           created_at: string
