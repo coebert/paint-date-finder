@@ -62,11 +62,17 @@ export async function authorizeAdminOrCron(
   const authHeader = req.headers.get("Authorization");
   const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "";
 
-  // Cron paths.
-  const cronSecretEnvName = opts.cronSecretEnv ?? "SCRAPE_CRON_SECRET";
-  const cronSecret = Deno.env.get(cronSecretEnvName) ?? "";
+  // Cron paths. Either shared scheduler secret is accepted: CRON_SECRET is
+  // wired into the pg_cron schedules, SCRAPE_CRON_SECRET into manual callers.
+  const cronSecretEnvNames = opts.cronSecretEnv
+    ? [opts.cronSecretEnv]
+    : ["SCRAPE_CRON_SECRET", "CRON_SECRET"];
   const cronHeader = req.headers.get("x-cron-secret") ?? "";
-  const isCronBySecret = !!cronSecret && cronHeader === cronSecret;
+  const isCronBySecret = !!cronHeader &&
+    cronSecretEnvNames.some((name) => {
+      const secret = Deno.env.get(name) ?? "";
+      return !!secret && secret === cronHeader;
+    });
   const isCronByBearer = !!bearer && bearer === env.serviceKey;
   if (isCronBySecret || isCronByBearer) {
     return { ok: true, triggeredBy: "cron", userId: null };
