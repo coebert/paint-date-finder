@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTeams } from '@/hooks/useTeams';
 import { useCppsRounds } from '@/hooks/useCppsRounds';
 import { useCppsResults, CPPS_CURRENT_SEASON, cppsResultKeys } from '@/hooks/useCppsResults';
-import { groupResultsByRound, sortDivisions } from '@/lib/cpps';
+import { groupResultsByRound, seasonsFromRounds, sortDivisions } from '@/lib/cpps';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,16 +32,25 @@ export function RoundResultsCard() {
   const queryClient = useQueryClient();
   const { data: rounds } = useCppsRounds();
   const { data: teams } = useTeams({ league: 'CPPS' });
-  const { data: results } = useCppsResults();
+  const [season, setSeason] = useState<string>(CPPS_CURRENT_SEASON);
+  const { data: results } = useCppsResults(season);
 
   const [round, setRound] = useState<string>('');
   const [division, setDivision] = useState<string>('');
   const [rows, setRows] = useState<ResultRow[]>([{ ...EMPTY_ROW }]);
   const [saving, setSaving] = useState(false);
 
+  const seasons = useMemo(() => {
+    const found = seasonsFromRounds(rounds ?? []);
+    return found.includes(CPPS_CURRENT_SEASON) ? found : [CPPS_CURRENT_SEASON, ...found];
+  }, [rounds]);
   const roundNumbers = useMemo(
-    () => (rounds ?? []).map((r) => r.round).sort((a, b) => a - b),
-    [rounds],
+    () =>
+      (rounds ?? [])
+        .filter((r) => r.season === season)
+        .map((r) => r.round)
+        .sort((a, b) => a - b),
+    [rounds, season],
   );
   const divisions = useMemo(
     () => sortDivisions([...new Set((teams ?? []).map((t) => t.division))]),
@@ -101,7 +110,7 @@ export function RoundResultsCard() {
       const { error: delError } = await supabase
         .from('cpps_round_results')
         .delete()
-        .eq('season', CPPS_CURRENT_SEASON)
+        .eq('season', season)
         .eq('round', roundNum)
         .eq('division', division);
       if (delError) throw delError;
@@ -111,7 +120,7 @@ export function RoundResultsCard() {
           (t) => t.name.trim().toLowerCase() === r.team_name.trim().toLowerCase(),
         );
         return {
-          season: CPPS_CURRENT_SEASON,
+          season,
           round: roundNum,
           division,
           team_id: match?.id ?? null,
@@ -150,7 +159,28 @@ export function RoundResultsCard() {
           that round and division.
         </p>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="space-y-1.5">
+            <Label>Season</Label>
+            <Select
+              value={season}
+              onValueChange={(v) => {
+                setSeason(v);
+                setRound('');
+              }}
+            >
+              <SelectTrigger aria-label="Choose a season">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {seasons.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="space-y-1.5">
             <Label>Round</Label>
             <Select value={round} onValueChange={setRound}>

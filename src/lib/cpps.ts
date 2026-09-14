@@ -14,6 +14,8 @@ export interface CppsEvent {
 }
 
 export interface CppsRound {
+  /** Calendar year the round was played in, e.g. "2025". */
+  season: string;
   round: number;
   events: CppsEvent[];
   startDate: Date;
@@ -30,24 +32,38 @@ export function parseRoundNumber(title: string): number | null {
   return m ? parseInt(m[1], 10) : null;
 }
 
-/** Group CPPS events into rounds, sorted by round number. */
-export function groupCppsRounds(events: CppsEvent[], today: Date = startOfDay(new Date())): CppsRound[] {
-  const byRound = new Map<number, CppsEvent[]>();
+/** The season a CPPS event belongs to — the calendar year of its date. */
+export function seasonOf(eventDate: string): string {
+  return eventDate.slice(0, 4);
+}
+
+/**
+ * Group CPPS events into rounds. Rounds are keyed by season + round number so
+ * "Round 1" in different years never merge, and sorted newest season first.
+ */
+export function groupCppsRounds(
+  events: CppsEvent[],
+  today: Date = startOfDay(new Date()),
+): CppsRound[] {
+  const byRound = new Map<string, CppsEvent[]>();
   for (const ev of events) {
     const round = parseRoundNumber(ev.title);
     if (round === null) continue;
-    const list = byRound.get(round) ?? [];
+    const key = `${seasonOf(ev.event_date)}#${round}`;
+    const list = byRound.get(key) ?? [];
     list.push(ev);
-    byRound.set(round, list);
+    byRound.set(key, list);
   }
 
-  const rounds: CppsRound[] = [...byRound.entries()].map(([round, evs]) => {
+  const rounds: CppsRound[] = [...byRound.entries()].map(([key, evs]) => {
+    const [season, roundStr] = key.split('#');
     const dates = evs
       .map((e) => startOfDay(parseISO(e.event_date)))
       .sort((a, b) => a.getTime() - b.getTime());
     const sorted = [...evs].sort((a, b) => a.event_date.localeCompare(b.event_date));
     return {
-      round,
+      season,
+      round: parseInt(roundStr, 10),
       events: sorted,
       startDate: dates[0],
       endDate: dates[dates.length - 1],
@@ -58,10 +74,63 @@ export function groupCppsRounds(events: CppsEvent[], today: Date = startOfDay(ne
     };
   });
 
-  rounds.sort((a, b) => a.round - b.round);
-  const next = rounds.find((r) => !r.isPast);
-  if (next) next.isNext = true;
+  rounds.sort((a, b) => (a.season === b.season ? a.round - b.round : b.season.localeCompare(a.season)));
+  // "Next up" is the soonest unplayed round across every season.
+  const upcoming = rounds.filter((r) => !r.isPast);
+  upcoming.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+  if (upcoming[0]) upcoming[0].isNext = true;
   return rounds;
+}
+
+/** Seasons present in a set of rounds, newest first. */
+export function seasonsFromRounds(rounds: CppsRound[]): string[] {
+  return [...new Set(rounds.map((r) => r.season))].sort((a, b) => b.localeCompare(a));
+}
+
+export interface SeasonStanding {
+  teamName: string;
+  division: string;
+  points: number;
+  roundsPlayed: number;
+  bestPosition: number | null;
+}
+
+/**
+ * Build a division-by-division standings table from recorded round results.
+ * Used for past seasons, where the live `teams` table no longer applies.
+ */
+export function computeSeasonStandings(results: CppsRoundResult[]): Map<string, SeasonStanding[]> {
+  const byDivision = new Map<string, Map<string, SeasonStanding>>();
+  for (const r of results) {
+    const teams = byDivision.get(r.division) ?? new Map<string, SeasonStanding>();
+    const key = r.team_name.trim().toLowerCase();
+    const current =
+      teams.get(key) ??
+      ({
+        teamName: r.team_name.trim(),
+        division: r.division,
+        points: 0,
+        roundsPlayed: 0,
+        bestPosition: null,
+      } satisfies SeasonStanding);
+    current.points += r.points;
+    current.roundsPlayed += 1;
+    if (r.position !== null) {
+      current.bestPosition =
+        current.bestPosition === null ? r.position : Math.min(current.bestPosition, r.position);
+    }
+    teams.set(key, current);
+    byDivision.set(r.division, teams);
+  }
+
+  const out = new Map<string, SeasonStanding[]>();
+  for (const [division, teams] of byDivision) {
+    out.set(
+      division,
+      [...teams.values()].sort((a, b) => b.points - a.points || a.teamName.localeCompare(b.teamName)),
+    );
+  }
+  return out;
 }
 
 /** A single team's result for one CPPS round. */

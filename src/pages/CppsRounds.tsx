@@ -19,18 +19,21 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import {
+  computeSeasonStandings,
   divisionColors,
   groupResultsByRound,
   indexResultsByTeam,
   lookupTeamRound,
   roundsWithResults,
+  seasonsFromRounds,
   sortDivisions,
   type CppsRound,
   type CppsRoundResult,
+  type SeasonStanding,
   type TeamRoundResult,
 } from '@/lib/cpps';
 import { useCppsRounds } from '@/hooks/useCppsRounds';
-import { useCppsResults } from '@/hooks/useCppsResults';
+import { useCppsResults, CPPS_CURRENT_SEASON } from '@/hooks/useCppsResults';
 import { useTeams, type Team } from '@/hooks/useTeams';
 import { StandingsHistoryCard } from '@/components/StandingsHistoryCard';
 
@@ -270,10 +273,44 @@ function StandingsTable({
   );
 }
 
+/** Standings for a finished season, worked out from the recorded results. */
+function ArchiveStandingsTable({ standings }: { standings: SeasonStanding[] }) {
+  return (
+    <div className="overflow-x-auto rounded-lg border border-border/50">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-border/50 bg-secondary/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
+            <th className="px-3 py-2 w-10">#</th>
+            <th className="px-3 py-2">Team</th>
+            <th className="px-3 py-2 text-right">Rounds</th>
+            <th className="px-3 py-2 text-right">Best</th>
+            <th className="px-3 py-2 text-right">Points</th>
+          </tr>
+        </thead>
+        <tbody>
+          {standings.map((s, i) => (
+            <tr
+              key={s.teamName}
+              className="border-b border-border/30 last:border-0 hover:bg-secondary/30 transition-colors"
+            >
+              <td className="px-3 py-2 text-muted-foreground">{i + 1}</td>
+              <td className="px-3 py-2 font-medium text-foreground">{s.teamName}</td>
+              <td className="px-3 py-2 text-right tabular-nums">{s.roundsPlayed}</td>
+              <td className="px-3 py-2 text-right tabular-nums">{s.bestPosition ?? '—'}</td>
+              <td className="px-3 py-2 text-right tabular-nums font-semibold">{s.points}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function CppsRounds() {
   const { data: rounds, isLoading: roundsLoading } = useCppsRounds();
   const { data: teams, isLoading: teamsLoading } = useTeams({ league: 'CPPS' });
-  const { data: results, isLoading: resultsLoading } = useCppsResults();
+  const [season, setSeason] = useState<string>(CPPS_CURRENT_SEASON);
+  const { data: results, isLoading: resultsLoading } = useCppsResults(season);
 
   const [myTeamId, setMyTeamId] = useState<string | null>(() => {
     try {
@@ -306,9 +343,26 @@ export default function CppsRounds() {
     [teams, myTeamId],
   );
 
+  const seasons = useMemo(() => seasonsFromRounds(rounds ?? []), [rounds]);
+  // Fall back to the newest season in the calendar if the current one is empty.
+  useEffect(() => {
+    if (seasons.length > 0 && !seasons.includes(season)) setSeason(seasons[0]);
+  }, [seasons, season]);
+
   const resultIndex = useMemo(() => indexResultsByTeam(results ?? []), [results]);
   const playedRounds = useMemo(() => roundsWithResults(results ?? []), [results]);
   const resultsByRound = useMemo(() => groupResultsByRound(results ?? []), [results]);
+  const archiveStandings = useMemo(() => computeSeasonStandings(results ?? []), [results]);
+  const archiveDivisions = useMemo(
+    () => sortDivisions([...archiveStandings.keys()]),
+    [archiveStandings],
+  );
+  const seasonRounds = useMemo(
+    () => (rounds ?? []).filter((r) => r.season === season),
+    [rounds, season],
+  );
+  const isCurrentSeason = season === CPPS_CURRENT_SEASON;
+  const standingsDivisions = isCurrentSeason ? divisions : archiveDivisions;
 
   const loading = roundsLoading || teamsLoading || resultsLoading;
 
@@ -352,9 +406,27 @@ export default function CppsRounds() {
             CPPS Season Tracker
           </h1>
           <p className="mt-2 text-muted-foreground max-w-2xl">
-            Every round of the Central Paintball Premier Series with dates and venues, the current
-            division standings, and a shortcut to track your own team.
+            Every round of the Central Paintball Premier Series with dates and venues, the division
+            standings, and a shortcut to track your own team.
           </p>
+          {seasons.length > 1 && (
+            <div className="mt-4 flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Season</span>
+              <Select value={season} onValueChange={setSeason}>
+                <SelectTrigger className="w-32" aria-label="Choose a season">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {seasons.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                      {s === CPPS_CURRENT_SEASON ? ' (current)' : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </header>
 
         {/* My team picker + progress */}
@@ -429,11 +501,11 @@ export default function CppsRounds() {
                   <Skeleton key={i} className="h-32 w-full" />
                 ))}
               </div>
-            ) : rounds && rounds.length > 0 ? (
+            ) : seasonRounds.length > 0 ? (
               <ol>
-                {rounds.map((r, i) => (
+                {seasonRounds.map((r, i) => (
                   <RoundCard
-                    key={r.round}
+                    key={`${r.season}-${r.round}`}
                     round={r}
                     index={i}
                     results={resultsByRound.get(r.round) ?? []}
@@ -442,7 +514,7 @@ export default function CppsRounds() {
               </ol>
             ) : (
               <p className="text-muted-foreground text-sm">
-                No CPPS rounds are in the calendar yet — check back soon.
+                No CPPS rounds for {season} are in the calendar yet.
               </p>
             )}
           </section>
@@ -454,28 +526,34 @@ export default function CppsRounds() {
             </h2>
             {loading ? (
               <Skeleton className="h-64 w-full" />
-            ) : divisions.length > 0 ? (
-              <Tabs defaultValue={divisions[0]}>
+            ) : standingsDivisions.length > 0 ? (
+              <Tabs key={season} defaultValue={standingsDivisions[0]}>
                 <TabsList className="flex flex-wrap h-auto gap-1 bg-secondary/60">
-                  {divisions.map((div) => (
+                  {standingsDivisions.map((div) => (
                     <TabsTrigger key={div} value={div} className="text-xs sm:text-sm">
                       {div}
                     </TabsTrigger>
                   ))}
                 </TabsList>
-                {divisions.map((div) => (
+                {standingsDivisions.map((div) => (
                   <TabsContent key={div} value={div} className="mt-4">
-                    <StandingsTable
-                      teams={teamsByDivision.get(div) ?? []}
-                      myTeamId={myTeamId}
-                      playedRounds={playedRounds}
-                      resultIndex={resultIndex}
-                    />
+                    {isCurrentSeason ? (
+                      <StandingsTable
+                        teams={teamsByDivision.get(div) ?? []}
+                        myTeamId={myTeamId}
+                        playedRounds={playedRounds}
+                        resultIndex={resultIndex}
+                      />
+                    ) : (
+                      <ArchiveStandingsTable standings={archiveStandings.get(div) ?? []} />
+                    )}
                   </TabsContent>
                 ))}
               </Tabs>
             ) : (
-              <p className="text-muted-foreground text-sm">No CPPS standings available yet.</p>
+              <p className="text-muted-foreground text-sm">
+                No standings recorded for {season} yet.
+              </p>
             )}
           </section>
         </div>

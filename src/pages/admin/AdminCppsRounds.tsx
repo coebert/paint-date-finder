@@ -56,12 +56,14 @@ export default function AdminCppsRounds() {
   const [saving, setSaving] = useState(false);
   const { data: rounds, isLoading: roundsLoading } = useCppsRounds();
 
-  const existingByRound = useMemo(() => {
-    const map = new Map<number, Set<string>>();
+  // Dates already in the calendar, keyed "round|YYYY-MM-DD" so the same round
+  // number in different seasons never clashes.
+  const existingRoundDates = useMemo(() => {
+    const set = new Set<string>();
     for (const r of rounds ?? []) {
-      map.set(r.round, new Set(r.events.map((e) => e.event_date)));
+      for (const e of r.events) set.add(`${r.round}|${e.event_date}`);
     }
-    return map;
+    return set;
   }, [rounds]);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
@@ -75,7 +77,7 @@ export default function AdminCppsRounds() {
   const removeDate = (i: number) =>
     setForm((f) => ({ ...f, dates: f.dates.filter((_, j) => j !== i) }));
 
-  const existingDates = existingByRound.get(Number(form.round)) ?? new Set<string>();
+  const isExisting = (date: string) => existingRoundDates.has(`${Number(form.round)}|${date}`);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,8 +93,7 @@ export default function AdminCppsRounds() {
     const { round, venue_name, venue_location, booking_url, price_info, description, dates } =
       parsed.data;
     const uniqueDates = [...new Set(dates)].sort();
-    const already = existingByRound.get(round) ?? new Set<string>();
-    const toInsert = uniqueDates.filter((d) => !already.has(d));
+    const toInsert = uniqueDates.filter((d) => !existingRoundDates.has(`${round}|${d}`));
     const skipped = uniqueDates.length - toInsert.length;
 
     if (toInsert.length === 0) {
@@ -225,7 +226,7 @@ export default function AdminCppsRounds() {
               <div className="space-y-2">
                 <Label>Dates</Label>
                 {form.dates.map((d, i) => {
-                  const dupe = d && existingDates.has(d);
+                  const dupe = d && isExisting(d);
                   return (
                     <div key={i} className="flex items-center gap-2">
                       <Input
@@ -279,8 +280,13 @@ export default function AdminCppsRounds() {
             ) : rounds && rounds.length > 0 ? (
               <ul className="divide-y divide-border/40">
                 {rounds.map((r) => (
-                  <li key={r.round} className="py-3 flex flex-wrap items-center gap-2">
-                    <span className="font-medium">Round {r.round}</span>
+                  <li
+                    key={`${r.season}-${r.round}`}
+                    className="py-3 flex flex-wrap items-center gap-2"
+                  >
+                    <span className="font-medium">
+                      {r.season} · Round {r.round}
+                    </span>
                     <span className="text-sm text-muted-foreground">
                       {format(r.startDate, 'd MMM yyyy')}
                       {r.startDate.getTime() !== r.endDate.getTime() &&
