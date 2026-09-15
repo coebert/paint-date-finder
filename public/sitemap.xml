@@ -166,6 +166,18 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://findawalkon.com/teams/b0b6870c-ff3a-40d3-9576-59047a7963fb</loc>
+    <lastmod>2026-03-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/6e2fb290-dd83-478f-851d-137d91056af6</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://findawalkon.com/teams/7469dc59-5488-4e5b-874d-548c95ed564f</loc>
     <lastmod>2026-03-10</lastmod>
     <changefreq>weekly</changefreq>
@@ -174,78 +186,6 @@
   <url>
     <loc>https://findawalkon.com/teams/818cd5af-14cd-4c6b-98bb-2739da6f7f53</loc>
     <lastmod>2026-03-10</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/2c4fdd79-d024-4dad-8956-887e84192aa1</loc>
-    <lastmod>2026-03-10</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/eaa4bb3c-e37f-4843-9aed-241087374222</loc>
-    <lastmod>2026-03-10</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/22722d16-dc4b-4bf0-9198-c4c453e2614d</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/c57469fc-3bce-42a4-9dc8-922146270dda</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/187431c0-5d6c-4d83-939c-967ac579caf1</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/0b7e1fcf-9078-48b1-aed3-30e5a75b5b4f</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/ba94c030-3128-46dc-b375-e0215e08f3f1</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/f5aad3d5-700b-483e-a542-cf4301d10515</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/1b18f1df-e302-473e-a477-764f7576b648</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/26879e30-2bdc-4e81-956c-d0a06919f971</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/edbf6346-aa76-444d-abf2-627912777dda</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/6d6639fb-e6e1-4932-a0f9-4c85b159a168</loc>
-    <lastmod>2026-06-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -268,50 +208,56 @@
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://findawalkon.com/teams/b0b6870c-ff3a-40d3-9576-59047a7963fb</loc>
+    <loc>https://findawalkon.com/teams/afd2296e-b270-4a89-b08a-c34e1d1a37ba</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/3fde0548-e47d-4075-a067-9bd202f35983</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/c3d01e48-a197-4339-895d-322016062811</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/df0424d1-d225-4278-8689-2dc856b321fb</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/50216913-9d0b-4ae1-afc3-970c45568aad</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/2c4fdd79-d024-4dad-8956-887e84192aa1</loc>
     <lastmod>2026-03-10</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://findawalkon.com/teams/43f5c83d-e359-4aaa-bc75-f2ac08f64286</loc>
+    <loc>https://findawalkon.com/teams/2b31564a-4d29-4725-bd04-e34da10bed8f</loc>
     <lastmod>2026-06-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://findawalkon.com/teams/374967b6-3a5b-4631-8a4b-95c763248f20</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/a24997f8-c1fa-440d-988f-fc0c172da7dc</loc>
+    <loc>https://findawalkon.com/teams/8f804405-1342-4e67-9f6f-cb6e0d34c453</loc>
     <lastmod>2026-03-10</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://findawalkon.com/teams/8ee4dc88-2a9b-4b93-a848-6df0fb93608a</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/181d0027-545a-42e9-89a6-7c7143ea4df1</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/a94d1c28-a1dc-4be6-bdf5-d31696f14bf0</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/0e755ac7-03cf-42db-9baf-1f51002cc49f</loc>
-    <lastmod>2026-06-01</lastmod>
+    <loc>https://findawalkon.com/teams/d4a434cd-c6b2-4957-90b1-3afe83661fbc</loc>
+    <lastmod>2026-03-10</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -352,25 +298,7 @@
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://findawalkon.com/teams/0c371b27-b298-4e73-a60d-cc6b5362e00a</loc>
-    <lastmod>2026-03-10</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/d4a434cd-c6b2-4957-90b1-3afe83661fbc</loc>
-    <lastmod>2026-03-10</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
     <loc>https://findawalkon.com/teams/678760d3-163c-41a2-8b0a-a48f186381cf</loc>
-    <lastmod>2026-03-10</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/8f804405-1342-4e67-9f6f-cb6e0d34c453</loc>
     <lastmod>2026-03-10</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
@@ -388,19 +316,13 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://findawalkon.com/teams/0c371b27-b298-4e73-a60d-cc6b5362e00a</loc>
+    <lastmod>2026-03-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://findawalkon.com/teams/7a5b711f-92a2-400b-bc28-62a1cc4ee087</loc>
-    <lastmod>2026-03-10</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/bd37b2eb-7898-4409-aa94-243cd90fd29b</loc>
-    <lastmod>2026-03-10</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/6c552f03-ba3d-49c4-b158-61c8c5f59443</loc>
     <lastmod>2026-03-10</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
@@ -430,67 +352,7 @@
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://findawalkon.com/teams/afd2296e-b270-4a89-b08a-c34e1d1a37ba</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/3fde0548-e47d-4075-a067-9bd202f35983</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/c3d01e48-a197-4339-895d-322016062811</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/df0424d1-d225-4278-8689-2dc856b321fb</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/50216913-9d0b-4ae1-afc3-970c45568aad</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/2b31564a-4d29-4725-bd04-e34da10bed8f</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
     <loc>https://findawalkon.com/teams/8a868ff9-2d76-4cb0-b677-620ad34d97f2</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/eb0abf4c-2ec7-448b-b479-5fa275117571</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/620ee5aa-4205-4dca-b711-9f884da2ed46</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/84a6c7db-d1f5-48b6-a625-6dca8d82053d</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/762df60b-b853-4eaf-9ff2-b9b61ae4add8</loc>
     <lastmod>2026-06-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
@@ -502,91 +364,7 @@
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://findawalkon.com/teams/474b9af4-43fb-4d82-bcdf-c7d3261701ff</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/694cd642-9eaa-4a9d-8444-67c6d129cffe</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/8002fde1-dbaf-4ab5-83d9-d0fa398d1a4e</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/c1e93cf4-169f-4168-9d6b-6164b837fa94</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/88eaf6ac-a707-4fe6-92bf-3b7baa41d426</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/f600c1a5-a0e7-4f85-bb9c-a43699f0d0ca</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/c7d6bf9c-fd11-4fe1-8001-9531a7bde70b</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
     <loc>https://findawalkon.com/teams/f8663e48-c43c-48c2-9598-342d9bdb0c65</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/a578e2ec-2bb4-44c0-aa00-d771953654b2</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/bababf94-7e3f-4ad4-95b5-bafb4236aac1</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/bc971bd3-6ffa-4aba-8556-1c914f0351ed</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/ae038ab1-e111-4f30-80e2-40370071a99c</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/7981e101-d357-44e5-98de-bb6f3066a9df</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/26b3d755-7a9a-4edd-b4e9-68e2951d5978</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/b8ec39ce-7b9c-41b4-9b08-4fedec5e4631</loc>
     <lastmod>2026-06-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
@@ -598,49 +376,7 @@
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://findawalkon.com/teams/dc763b68-964d-4abd-9a85-b08834064d28</loc>
-    <lastmod>2026-03-10</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/a79964f5-42ef-4a6e-b6d6-2f37219030a9</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/91dcd001-ac81-4df0-8a78-11307cc0b6b9</loc>
-    <lastmod>2026-03-10</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/4a56d029-967a-459a-88db-3c2cedbbb393</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/0851b2d0-0484-4c4e-89ce-ae47524472dc</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/646d6083-2034-44f7-89c6-09b17b40b3ce</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/e6a0f251-da1e-4ab4-b11e-5cddc1220874</loc>
-    <lastmod>2026-06-01</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/teams/72c2ddfc-6171-4d91-8337-69e838ed61c8</loc>
+    <loc>https://findawalkon.com/teams/187431c0-5d6c-4d83-939c-967ac579caf1</loc>
     <lastmod>2026-06-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
@@ -652,31 +388,85 @@
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://findawalkon.com/teams/f823bf03-97a2-48d7-8014-5a85a3195f4c</loc>
+    <loc>https://findawalkon.com/teams/374967b6-3a5b-4631-8a4b-95c763248f20</loc>
     <lastmod>2026-06-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://findawalkon.com/teams/777f7a79-fa53-4a54-8e46-5d64aa0c56aa</loc>
-    <lastmod>2026-03-10</lastmod>
+    <loc>https://findawalkon.com/teams/738f2893-1efd-466a-af6a-a3119816b826</loc>
+    <lastmod>2026-09-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://findawalkon.com/teams/28a56c05-30d7-488c-a1c7-bc18972ecca1</loc>
+    <loc>https://findawalkon.com/teams/72c2ddfc-6171-4d91-8337-69e838ed61c8</loc>
     <lastmod>2026-06-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://findawalkon.com/teams/36698090-b7e0-4a00-9890-36d84ccedb7c</loc>
+    <loc>https://findawalkon.com/teams/bd37b2eb-7898-4409-aa94-243cd90fd29b</loc>
     <lastmod>2026-03-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/22722d16-dc4b-4bf0-9198-c4c453e2614d</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/eb0abf4c-2ec7-448b-b479-5fa275117571</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/694cd642-9eaa-4a9d-8444-67c6d129cffe</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/dc763b68-964d-4abd-9a85-b08834064d28</loc>
+    <lastmod>2026-03-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/646d6083-2034-44f7-89c6-09b17b40b3ce</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/0b7e1fcf-9078-48b1-aed3-30e5a75b5b4f</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/1b18f1df-e302-473e-a477-764f7576b648</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/0e755ac7-03cf-42db-9baf-1f51002cc49f</loc>
+    <lastmod>2026-06-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://findawalkon.com/teams/41bc86e1-d0e2-4771-80b7-f22e423b7a10</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/f823bf03-97a2-48d7-8014-5a85a3195f4c</loc>
     <lastmod>2026-06-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
@@ -688,8 +478,260 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://findawalkon.com/teams/620ee5aa-4205-4dca-b711-9f884da2ed46</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/8002fde1-dbaf-4ab5-83d9-d0fa398d1a4e</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/bababf94-7e3f-4ad4-95b5-bafb4236aac1</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/a79964f5-42ef-4a6e-b6d6-2f37219030a9</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/6c552f03-ba3d-49c4-b158-61c8c5f59443</loc>
+    <lastmod>2026-03-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/63118173-064c-4265-9ec6-d8f6cde2070b</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/a24997f8-c1fa-440d-988f-fc0c172da7dc</loc>
+    <lastmod>2026-03-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/181d0027-545a-42e9-89a6-7c7143ea4df1</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/28a56c05-30d7-488c-a1c7-bc18972ecca1</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/474b9af4-43fb-4d82-bcdf-c7d3261701ff</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/eaa4bb3c-e37f-4843-9aed-241087374222</loc>
+    <lastmod>2026-03-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/c1e93cf4-169f-4168-9d6b-6164b837fa94</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/91dcd001-ac81-4df0-8a78-11307cc0b6b9</loc>
+    <lastmod>2026-03-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/06c932a2-6192-4697-a6fa-ea6aefdbdc3a</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/6d6639fb-e6e1-4932-a0f9-4c85b159a168</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/ee4f9cb3-0981-4f0a-bf5a-ae5ea0a5c61a</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://findawalkon.com/teams/92071466-1693-4320-af4a-f3e4cdacb33a</loc>
     <lastmod>2026-03-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/c7d6bf9c-fd11-4fe1-8001-9531a7bde70b</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/edbf6346-aa76-444d-abf2-627912777dda</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/b8ec39ce-7b9c-41b4-9b08-4fedec5e4631</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/bc971bd3-6ffa-4aba-8556-1c914f0351ed</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/84a6c7db-d1f5-48b6-a625-6dca8d82053d</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/88eaf6ac-a707-4fe6-92bf-3b7baa41d426</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/7981e101-d357-44e5-98de-bb6f3066a9df</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/4a56d029-967a-459a-88db-3c2cedbbb393</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/e6a0f251-da1e-4ab4-b11e-5cddc1220874</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/ba94c030-3128-46dc-b375-e0215e08f3f1</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/777f7a79-fa53-4a54-8e46-5d64aa0c56aa</loc>
+    <lastmod>2026-03-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/36698090-b7e0-4a00-9890-36d84ccedb7c</loc>
+    <lastmod>2026-03-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/df097d89-a3a8-46b6-935f-fc294de88b57</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/a578e2ec-2bb4-44c0-aa00-d771953654b2</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/c57469fc-3bce-42a4-9dc8-922146270dda</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/762df60b-b853-4eaf-9ff2-b9b61ae4add8</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/f600c1a5-a0e7-4f85-bb9c-a43699f0d0ca</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/26b3d755-7a9a-4edd-b4e9-68e2951d5978</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/0851b2d0-0484-4c4e-89ce-ae47524472dc</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/a94d1c28-a1dc-4be6-bdf5-d31696f14bf0</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/f5aad3d5-700b-483e-a542-cf4301d10515</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/43f5c83d-e359-4aaa-bc75-f2ac08f64286</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/8ee4dc88-2a9b-4b93-a848-6df0fb93608a</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/ae038ab1-e111-4f30-80e2-40370071a99c</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/26879e30-2bdc-4e81-956c-d0a06919f971</loc>
+    <lastmod>2026-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/teams/84f8e162-cbc4-479c-8293-2caad4a3b63b</loc>
+    <lastmod>2026-09-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -706,20 +748,8 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://findawalkon.com/events/9c3020fc-15f7-472b-b8a0-1ff4a498a6d5</loc>
-    <lastmod>2026-09-13</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://findawalkon.com/events/a3f7cd92-4433-4f6e-8a55-bc4ef1e2b01a</loc>
     <lastmod>2026-03-30</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/events/83693892-73e1-4cc0-aead-5aae1ad90f5c</loc>
-    <lastmod>2026-09-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -730,38 +760,14 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://findawalkon.com/events/317105de-564c-4b3a-95b6-eeed074f0e06</loc>
-    <lastmod>2026-09-13</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/events/3e3f4beb-78ef-48e2-bb6e-8e299c132630</loc>
-    <lastmod>2026-09-13</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://findawalkon.com/events/841be1fe-7e83-4670-9d1e-bffa0585e6a3</loc>
     <lastmod>2026-03-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://findawalkon.com/events/c7981b7f-79bb-48f3-bed1-5bc0c21caa37</loc>
-    <lastmod>2026-09-13</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://findawalkon.com/events/c3f21fc4-758f-4b12-89b5-06c9a8c1d05d</loc>
     <lastmod>2026-02-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://findawalkon.com/events/495b2c2d-cceb-40cf-b56d-63cedd847ffc</loc>
-    <lastmod>2026-09-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -1266,6 +1272,42 @@
   <url>
     <loc>https://findawalkon.com/events/36e91661-c6e9-4bce-af28-6d32dd088e6a</loc>
     <lastmod>2026-03-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/events/9c3020fc-15f7-472b-b8a0-1ff4a498a6d5</loc>
+    <lastmod>2026-09-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/events/83693892-73e1-4cc0-aead-5aae1ad90f5c</loc>
+    <lastmod>2026-09-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/events/317105de-564c-4b3a-95b6-eeed074f0e06</loc>
+    <lastmod>2026-09-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/events/3e3f4beb-78ef-48e2-bb6e-8e299c132630</loc>
+    <lastmod>2026-09-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/events/c7981b7f-79bb-48f3-bed1-5bc0c21caa37</loc>
+    <lastmod>2026-09-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://findawalkon.com/events/495b2c2d-cceb-40cf-b56d-63cedd847ffc</loc>
+    <lastmod>2026-09-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
