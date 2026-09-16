@@ -339,7 +339,7 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? "",
   });
   if (!auth.ok) return auth.response;
-  const isCron = auth.triggeredBy === "cron";
+  
 
   let triggeredBy = "cron";
   let requestedLimit: number | null = null;
