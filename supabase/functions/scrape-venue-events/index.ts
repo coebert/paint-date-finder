@@ -2,6 +2,7 @@
 // and insert them into event_submissions for admin review.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { errors, json, preflight } from "../_shared/http.ts";
+import { authorizeAdminOrCron } from "../_shared/supabase.ts";
 
 type Candidate = {
   title: string;
@@ -328,38 +329,17 @@ Deno.serve(async (req) => {
 
   // Admin-only: this endpoint runs paid scrape jobs.
   // Cron authentication accepts ONLY the service-role key or the shared
-  // x-cron-secret. The public anon/publishable key is never accepted.
-  const authHeader = req.headers.get("Authorization");
-  const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "";
-  const cronSecretHeader = req.headers.get("x-cron-secret") ?? "";
-  // Either shared scheduler secret is accepted (CRON_SECRET is the one wired
-  // into the pg_cron schedule; SCRAPE_CRON_SECRET is kept for manual callers).
-  const cronSecrets = [
-    Deno.env.get("CRON_SECRET") ?? "",
-    Deno.env.get("SCRAPE_CRON_SECRET") ?? "",
-  ].filter(Boolean);
-  const isCron =
-    (!!cronSecretHeader && cronSecrets.includes(cronSecretHeader)) ||
-    (bearer && bearer === SERVICE_KEY);
-  if (!bearer && !isCron) return errors.unauthorized();
-
-  if (!isCron) {
-    try {
-      const userClient = createClient(SUPABASE_URL, SERVICE_KEY, {
-        global: { headers: { Authorization: authHeader! } },
-      });
-      const { data: userData } = await userClient.auth.getUser();
-      const userId = userData.user?.id;
-      if (!userId) throw new Error("no user");
-      const { data: isAdmin, error: roleErr } = await userClient.rpc("has_role", {
-        _user_id: userId,
-        _role: "admin",
-      });
-      if (roleErr || !isAdmin) return errors.forbidden();
-    } catch {
-      return errors.unauthorized();
-    }
-  }
+  // x-cron-secret (CRON_SECRET / SCRAPE_CRON_SECRET). The public
+  // anon/publishable key is never accepted as authorization. Any other caller
+  // must present a user JWT belonging to an admin.
+  const auth = await authorizeAdminOrCron(req, {
+    supabaseUrl: SUPABASE_URL,
+    serviceKey: SERVICE_KEY,
+    anonKey: Deno.env.get("SUPABASE_ANON_KEY") ??
+      Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? "",
+  });
+  if (!auth.ok) return auth.response;
+  
 
   let triggeredBy = "cron";
   let requestedLimit: number | null = null;
