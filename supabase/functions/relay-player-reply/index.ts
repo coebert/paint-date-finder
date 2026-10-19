@@ -68,9 +68,12 @@ Deno.serve(async (req) => {
   const authHeader = req.headers.get("Authorization") ?? "";
   const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
   if (!token) return json({ error: "Please sign in to reply" }, { status: 401 });
-  const { data: claimsData, error: claimsErr } = await adminClient(env).auth.getClaims(token);
-  const claims = claimsData?.claims as { sub?: string; role?: string } | undefined;
-  if (claimsErr || !claims?.sub || claims.role !== "authenticated") {
+  let userId: string | undefined;
+  try {
+    const { data: u, error: uErr } = await adminClient(env).auth.getUser(token);
+    if (!uErr) userId = u?.user?.id;
+  } catch { /* invalid token */ }
+  if (!userId) {
     return json({ error: "Please sign in to reply" }, { status: 401 });
   }
 
