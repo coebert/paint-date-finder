@@ -64,6 +64,19 @@ Deno.serve(async (req) => {
   const resendKey = Deno.env.get("RESEND_API_KEY");
   if (!env || !lovableKey || !resendKey) return errors.missingEnv();
 
+  // Require a signed-in user so anonymous visitors can't send email in the app's name.
+  const authHeader = req.headers.get("Authorization") ?? "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+  if (!token) return json({ error: "Please sign in to reply" }, { status: 401 });
+  let userId: string | undefined;
+  try {
+    const { data: u, error: uErr } = await adminClient(env).auth.getUser(token);
+    if (!uErr) userId = u?.user?.id;
+  } catch { /* invalid token */ }
+  if (!userId) {
+    return json({ error: "Please sign in to reply" }, { status: 401 });
+  }
+
   let raw: unknown;
   try {
     raw = await req.json();
