@@ -15,6 +15,13 @@
       "when": 1792407263751,
       "tag": "0001_restrict_team_contact_columns_to_admins",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792407283420,
+      "tag": "0002_teams_public_select_excludes_contact_columns",
+      "breakpoints": true
     }
   ]
 }
