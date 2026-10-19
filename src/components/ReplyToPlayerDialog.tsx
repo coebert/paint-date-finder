@@ -35,6 +35,11 @@ export function ReplyToPlayerDialog({ postId, playerName, onClose }: ReplyToPlay
       toast.error(parsed.error.errors[0].message);
       return;
     }
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      toast.error('Please sign in to reply to players.');
+      return;
+    }
     setSending(true);
     try {
       const { data, error } = await supabase.functions.invoke('relay-player-reply', {
