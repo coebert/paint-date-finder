@@ -1,0 +1,2 @@
+REVOKE SELECT ON public.teams FROM anon, authenticated;
+GRANT SELECT (id, name, division, position, points, captain_name, website, social_media, logo_url, region, home_venue, description, is_active, created_at, updated_at, league) ON public.teams TO anon, authenticated;

@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`Checking admin status for user: ${user.email}`);
+    console.log(`Checking admin status for user: ${user.id}`);
 
     // Check if this is the admin email
     if (user.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
     }
 
     if (existingRole) {
-      console.log(`Admin role already exists for ${user.email}`);
+      console.log(`Admin role already exists for ${user.id}`);
       return new Response(
         JSON.stringify({ isAdmin: true, message: 'Admin role already exists' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`Admin role successfully assigned to ${user.email}`);
+    console.log(`Admin role successfully assigned to ${user.id}`);
     return new Response(
       JSON.stringify({ isAdmin: true, message: 'Admin role assigned successfully' }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
