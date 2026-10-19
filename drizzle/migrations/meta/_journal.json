@@ -22,6 +22,13 @@
       "when": 1792407283420,
       "tag": "0002_teams_public_select_excludes_contact_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792413678307,
+      "tag": "0003_scope_public_read_policies",
+      "breakpoints": true
     }
   ]
 }
