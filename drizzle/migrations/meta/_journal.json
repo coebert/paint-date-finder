@@ -8,6 +8,13 @@
       "when": 1792406732976,
       "tag": "0000_scope_roster_and_standings_history_to_active_teams",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792407263751,
+      "tag": "0001_restrict_team_contact_columns_to_admins",
+      "breakpoints": true
     }
   ]
 }
