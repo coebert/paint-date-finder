@@ -9,6 +9,7 @@ export default function Support() {
       <h2>Common questions</h2>
       <p><strong>How do I add an event?</strong> Tap "Submit event" at the top of the page. It will appear once it has been checked.</p>
       <p><strong>How do I delete my account?</strong> Sign in, open the account menu and choose <a href="/account">Account</a>.</p>
+      <p><strong>How do I get alerts?</strong> In the iPhone app, open <a href="/alerts">Event alerts</a>.</p>
       <p><strong>Read our</strong> <a href="/privacy">Privacy Policy</a>.</p>
     </InfoPage>
   );
