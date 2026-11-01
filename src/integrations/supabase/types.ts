@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      alert_devices: {
+        Row: {
+          cpps: boolean
+          created_at: string
+          id: string
+          latitude: number | null
+          longitude: number | null
+          platform: string
+          radius_miles: number
+          token: string
+          updated_at: string
+          walk_ons: boolean
+        }
+        Insert: {
+          cpps?: boolean
+          created_at?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          platform?: string
+          radius_miles?: number
+          token: string
+          updated_at?: string
+          walk_ons?: boolean
+        }
+        Update: {
+          cpps?: boolean
+          created_at?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          platform?: string
+          radius_miles?: number
+          token?: string
+          updated_at?: string
+          walk_ons?: boolean
+        }
+        Relationships: []
+      }
       cpps_round_results: {
         Row: {
           created_at: string
@@ -63,6 +102,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      event_alerts_sent: {
+        Row: {
+          event_id: string
+          recipients: number
+          sent_at: string
+        }
+        Insert: {
+          event_id: string
+          recipients?: number
+          sent_at?: string
+        }
+        Update: {
+          event_id?: string
+          recipients?: number
+          sent_at?: string
+        }
+        Relationships: []
       }
       event_flags: {
         Row: {
