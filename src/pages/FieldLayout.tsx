@@ -19,6 +19,7 @@ import { NXL_LAS_VEGAS_LAYOUT, NXL_WINDY_CITY_LAYOUT, NXL_WORLD_CUP_LAYOUT, NXL_
 import { Annotation, AnnotationTool, TEAM_COLORS } from '@/types/annotations';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PremiumGate } from '@/components/PremiumGate';
 
 let nextId = 1;
 function genId() {
@@ -371,6 +372,7 @@ export default function FieldLayout() {
 
           {/* Designer */}
           <TabsContent value="designer" className="space-y-6">
+            <PremiumGate feature="Field Designer">
             <div className="flex flex-col lg:flex-row gap-6">
               {/* Field */}
               <div className="flex-1">
@@ -510,6 +512,7 @@ export default function FieldLayout() {
                 </Card>
               </div>
             </div>
+            </PremiumGate>
           </TabsContent>
 
           {/* Street View */}
