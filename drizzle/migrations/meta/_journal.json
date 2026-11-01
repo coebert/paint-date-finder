@@ -29,6 +29,13 @@
       "when": 1792413678307,
       "tag": "0003_scope_public_read_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793569603438,
+      "tag": "0004_push_alert_devices",
+      "breakpoints": true
     }
   ]
 }
