@@ -8,7 +8,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { User, LogOut, Shield, Loader2 } from 'lucide-react';
+import { User, LogOut, Shield, Loader2, LifeBuoy, FileText } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 
@@ -67,6 +68,10 @@ export function UserMenu() {
             )}
           </div>
         </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild><Link to="/account"><User className="mr-2 h-4 w-4" />Account</Link></DropdownMenuItem>
+        <DropdownMenuItem asChild><Link to="/support"><LifeBuoy className="mr-2 h-4 w-4" />Support</Link></DropdownMenuItem>
+        <DropdownMenuItem asChild><Link to="/privacy"><FileText className="mr-2 h-4 w-4" />Privacy</Link></DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
           <LogOut className="mr-2 h-4 w-4" />

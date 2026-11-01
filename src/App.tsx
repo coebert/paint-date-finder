@@ -22,6 +22,9 @@ const RegionsIndex = lazy(() => import("./pages/RegionsIndex"));
 const RegionPage = lazy(() => import("./pages/RegionPage"));
 const CityPage = lazy(() => import("./pages/CityPage"));
 const CppsRounds = lazy(() => import("./pages/CppsRounds"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Support = lazy(() => import("./pages/Support"));
+const Account = lazy(() => import("./pages/Account"));
 
 // Admin routes — split into their own chunk so normal visitors never download them.
 const AdminOverview = lazy(() => import("./pages/admin/AdminOverview"));
@@ -87,6 +90,9 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/teams" element={<Teams />} />
             <Route path="/cpps" element={<CppsRounds />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/support" element={<Support />} />
+            <Route path="/account" element={<Account />} />
             <Route path="/teams/:id" element={<TeamDetail />} />
             <Route path="/field-layout" element={<FieldLayout />} />
             <Route path="/events/:id" element={<EventDetail />} />
