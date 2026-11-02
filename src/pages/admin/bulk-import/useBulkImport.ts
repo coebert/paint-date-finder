@@ -97,7 +97,7 @@ export function useBulkImport() {
           ...validateSubmission(s),
           ...(s.evidence_status === 'source_confirmed' && s.submission_kind === 'new'
             ? []
-            : ['Needs individual source review']),
+            : [{ field: 'source', message: 'Needs individual source review' }]),
         ],
       })),
     [filtered],
