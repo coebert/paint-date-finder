@@ -35,7 +35,7 @@ const REASON_LABELS: Record<string, string> = {
 };
 
 export default function AdminFlags() {
-  const { data: flags, isLoading, error } = useAdminEventFlags();
+  const { data: flags, isLoading, error, refetch, isFetching } = useAdminEventFlags();
   const resolveFlag = useResolveFlag();
   const deleteFlag = useDeleteFlag();
   const applySuggestedDate = useApplySuggestedDate();
@@ -57,6 +57,10 @@ export default function AdminFlags() {
         <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-6 text-center">
           <AlertTriangle className="h-8 w-8 text-destructive mx-auto mb-2" />
           <p className="text-destructive font-medium">Failed to load flags</p>
+          <p className="text-sm text-muted-foreground mt-1">{(error as Error).message}</p>
+          <Button variant="outline" size="sm" className="mt-3" onClick={() => refetch()} disabled={isFetching}>
+            {isFetching ? 'Retrying…' : 'Retry'}
+          </Button>
         </div>
       </AdminLayout>
     );
