@@ -3,6 +3,13 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { errors, json, preflight } from "../_shared/http.ts";
 import { authorizeAdminOrCron } from "../_shared/supabase.ts";
+import {
+  checkCandidateEvidence,
+  icsEventLines,
+  jsonLdEventLines,
+  sameEventIdentity,
+  sha256Hex,
+} from "../_shared/evidence.ts";
 
 type Candidate = {
   title: string;
@@ -39,39 +46,40 @@ function httpUrlOrNull(value: unknown): string | null {
   return /^https?:\/\/\S+$/i.test(trimmed) ? trimmed : null;
 }
 
-const BROWSER_UA =
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
+/** Last raw HTML per URL, so booking links can be checked against the page. */
+const rawHtmlByUrl = new Map<string, string>();
 
+/**
+ * Fetch a source honestly identified as our bot. Bot blocks are NOT retried
+ * with a spoofed browser identity; they surface as an error for review.
+ * Structured events (JSON-LD / ICS) are appended as quotable lines.
+ */
 async function fetchPageText(url: string): Promise<string> {
-  const attempt = (ua: string) =>
-    fetch(url, {
-      headers: {
-        "User-Agent": ua,
-        Accept: "text/html,application/xhtml+xml,text/calendar,text/plain;q=0.9,*/*;q=0.8",
-        "Accept-Language": "en-GB,en;q=0.9",
-      },
-      redirect: "follow",
-    });
-
-  let res = await attempt(
-    "Mozilla/5.0 (compatible; FindAWalkOnBot/1.0; +https://findawalkon.app)",
-  );
-  // Some hosts (Cloudflare early-data 425, bot filters 403/429) reject the bot UA
-  // but serve the same page to a normal browser UA. Retry once before failing.
-  if (!res.ok && [403, 425, 429, 503].includes(res.status)) {
-    res = await attempt(BROWSER_UA);
-  }
+  const res = await fetch(url, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (compatible; FindAWalkOnBot/1.0; +https://findawalkon.com)",
+      Accept: "text/html,application/xhtml+xml,text/calendar,text/plain;q=0.9,*/*;q=0.8",
+      "Accept-Language": "en-GB,en;q=0.9",
+    },
+    redirect: "follow",
+  });
   if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${url}`);
-  const html = await res.text();
-  // Strip scripts/styles, then tags, collapse whitespace. Cap at 30k chars.
-  const stripped = html
+  const body = await res.text();
+  rawHtmlByUrl.set(url, body.slice(0, 500_000));
+  if (/BEGIN:VCALENDAR/.test(body.slice(0, 2000))) {
+    return icsEventLines(body).join("\n").slice(0, 30_000);
+  }
+  const structured = jsonLdEventLines(body);
+  const stripped = body
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
     .replace(/<style[\s\S]*?<\/style>/gi, " ")
     .replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&pound;/g, "£")
     .replace(/\s+/g, " ")
     .trim();
-  return stripped.slice(0, 30_000);
+  return (structured.join(" \n ") + " \n " + stripped).trim().slice(0, 30_000);
 }
 
 // Firecrawl fallback: JS-renders the page and returns markdown.
