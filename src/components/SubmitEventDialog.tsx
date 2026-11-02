@@ -79,6 +79,7 @@ export function SubmitEventDialog({ open, onOpenChange, initialTab = 'flyer' }: 
   const [flyerSaving, setFlyerSaving] = useState(false);
   // Stable ids so a retry after a lost response cannot create duplicates.
   const manualIdRef = useRef<{ key: string; id: string } | null>(null);
+  // Fallback ids only for callers that don't supply a persisted _submissionId.
   const flyerIdsRef = useRef<Map<string, string>>(new Map());
   const [isAddingNewVenue, setIsAddingNewVenue] = useState(false);
   const [selectedVenue, setSelectedVenue] = useState('');
@@ -196,7 +197,7 @@ export function SubmitEventDialog({ open, onOpenChange, initialTab = 'flyer' }: 
   }
 
   const handleFlyerSave = async (
-    candidates: { title: string; description?: string | null; event_type: EventType; event_date: string; start_time?: string | null; end_time?: string | null; price_info?: string | null; booking_url?: string | null; venue_name?: string | null; venue_location?: string | null }[],
+    candidates: { title: string; description?: string | null; event_type: EventType; event_date: string; start_time?: string | null; end_time?: string | null; price_info?: string | null; booking_url?: string | null; venue_name?: string | null; venue_location?: string | null; source_quote?: string | null; _submissionId?: string }[],
     sourceUrl: string | null,
     flyerImageUrl: string | null,
   ) => {
@@ -214,6 +215,7 @@ export function SubmitEventDialog({ open, onOpenChange, initialTab = 'flyer' }: 
         candidate: c,
         submission: buildSubmissionPayload({
           ...c,
+          source_quote: c.source_quote ?? null,
           venue_name: c.venue_name || 'Unknown venue',
           source_url: sourceUrl,
           image_url: flyerImageUrl,
@@ -247,9 +249,9 @@ export function SubmitEventDialog({ open, onOpenChange, initialTab = 'flyer' }: 
       const ids: string[] = [];
       let failed = 0;
       let lastError: unknown = null;
-      for (const { submission } of toSend) {
+      for (const { candidate, submission } of toSend) {
         const key = JSON.stringify(submission);
-        let id = flyerIdsRef.current.get(key);
+        let id = candidate._submissionId ?? flyerIdsRef.current.get(key);
         if (!id) {
           id = crypto.randomUUID();
           flyerIdsRef.current.set(key, id);
@@ -266,9 +268,9 @@ export function SubmitEventDialog({ open, onOpenChange, initialTab = 'flyer' }: 
         setSubmitError(
           `${ids.length} of ${toSend.length} events were sent; ${failed} did not go through. ` +
             friendlySubmissionError(lastError) +
-            ' Press submit again to retry — events already sent will not be duplicated.',
+            ' The sent ones were removed from the list; press submit again to retry the rest.',
         );
-        return false;
+        return ids.length > 0 ? { savedIds: ids } : false;
       }
       flyerIdsRef.current.clear();
       setReceipt({ count: ids.length, ref: ids[0].slice(0, 8).toUpperCase() });

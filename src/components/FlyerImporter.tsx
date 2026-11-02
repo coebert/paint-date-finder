@@ -35,13 +35,18 @@ import { EVENT_TYPE_LABELS, type EventType } from '@/types/events';
 import { compressImageFile } from '@/lib/imageCompression';
 import { useVenueDetails } from '@/hooks/useVenueDetails';
 
+/** Result of a save: all saved, nothing saved, or only some rows confirmed. */
+export type FlyerSaveResult = boolean | { savedIds: string[] };
+
 export interface FlyerImporterProps {
   /** Called once the user has reviewed candidates and clicks Save. */
   onSave: (
-    candidates: (ExtractedCandidate & { _selected: true })[],
+    candidates: (ExtractedCandidate & { _selected: true; _submissionId: string })[],
     sourceUrl: string | null,
     flyerImageUrl: string | null,
-  ) => Promise<boolean> | boolean;  // only `true` clears the list; false or a throw keeps it for retry
+  ) => Promise<FlyerSaveResult> | FlyerSaveResult;
+  // `true` clears the list; false or a throw keeps it for retry;
+  // `{ savedIds }` removes only the confirmed rows and keeps the rest.
   /** Label for the save button. */
   saveLabel?: string;
   /** Disable the save button (e.g. mid-mutation). */
@@ -62,6 +67,8 @@ const formatMB = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 type EditableCandidate = ExtractedCandidate & {
   _id: string;
   _selected: boolean;
+  /** Stable id persisted with the draft so a retry after refresh cannot duplicate. */
+  _submissionId: string;
 };
 
 const DRAFT_STORAGE_KEY = 'flyer-importer-draft-v1';
@@ -96,6 +103,9 @@ function loadDraft(): DraftV1 | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as DraftV1;
     if (parsed?.v !== 1) return null;
+    parsed.candidates = (parsed.candidates ?? []).map((c) =>
+      c._submissionId ? c : { ...c, _submissionId: crypto.randomUUID() },
+    );
     if (!parsed.savedAt || Date.now() - parsed.savedAt > DRAFT_TTL_MS) {
       localStorage.removeItem(DRAFT_STORAGE_KEY);
       return null;
@@ -116,6 +126,8 @@ function saveDraftPartial(patch: Partial<DraftV1>) {
       sourceUrl: patch.sourceUrl ?? existing?.sourceUrl ?? '',
       pastedText: patch.pastedText ?? existing?.pastedText ?? '',
       candidates: patch.candidates ?? existing?.candidates ?? [],
+      uploadedFlyerUrl:
+        patch.uploadedFlyerUrl === undefined ? existing?.uploadedFlyerUrl ?? null : patch.uploadedFlyerUrl,
       inProgress:
         patch.inProgress === undefined ? existing?.inProgress ?? null : patch.inProgress,
     };
@@ -792,6 +804,7 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
           ...c,
           _id: `${Date.now()}-${i}`,
           _selected: true,
+          _submissionId: crypto.randomUUID(),
         })),
       );
       setStage('save', 'done', `${extracted.length} ready to review`);
@@ -854,6 +867,7 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
     setSavingBatch(true);
     let flyerImageUrl: string | null = uploadedFlyerUrl;
     let ok = false;
+    let savedIds: string[] = [];
     try {
       if (!flyerImageUrl && file && (tab === 'image' || tab === 'pdf')) {
         try {
@@ -864,7 +878,9 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
           toast.warning('Could not attach the original flyer image — saving the events anyway.');
         }
       }
-      ok = (await onSave(payload, sourceUrl.trim() || null, flyerImageUrl)) === true;
+      const result = await onSave(payload, sourceUrl.trim() || null, flyerImageUrl);
+      if (result === true) ok = true;
+      else if (result && typeof result === 'object') savedIds = result.savedIds ?? [];
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Saving failed — your list is kept so you can retry.');
       ok = false;
@@ -872,6 +888,13 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
       setSavingBatch(false);
     }
     if (!ok) {
+      if (savedIds.length > 0) {
+        // Lock in confirmed rows by removing them; keep failures for retry.
+        const done = new Set(savedIds);
+        const remaining = candidates.filter((c) => !done.has(c._submissionId));
+        setCandidates(remaining);
+        saveDraftPartial({ candidates: remaining });
+      }
       // Keep the reviewed list (and the uploaded flyer) so the user can retry.
       if (flyerImageUrl) setUploadedFlyerUrl(flyerImageUrl);
       return;

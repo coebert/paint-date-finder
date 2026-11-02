@@ -67,3 +67,13 @@ describe('normalizeTime', () => {
     expect(normalizeTime('', 'Start time')).toBeNull();
   });
 });
+
+describe('submission email and quote limits', () => {
+  const base = { title: 'QA', event_type: 'walk_on', venue_name: 'V', event_date: '2026-12-01' };
+  it('rejects an overlong email instead of truncating it', () => {
+    expect(() => buildSubmissionPayload({ ...base, submitter_email: 'a'.repeat(195) + '@x.com' })).toThrow(/too long/);
+  });
+  it('keeps the source quote', () => {
+    expect(buildSubmissionPayload({ ...base, submitter_email: 'q@x.com', source_quote: ' SUN 8TH NOVEMBER 2026 ' }).source_quote).toBe('SUN 8TH NOVEMBER 2026');
+  });
+});

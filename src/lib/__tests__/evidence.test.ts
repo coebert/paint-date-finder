@@ -66,7 +66,7 @@ describe('event finder evidence gate', () => {
   });
   it('rejects airsoft sources', () => {
     const v = checkCandidateEvidence(good, ctx({ pageText: 'Airsoft skirmish site. '.repeat(20) + good.source_quote.replace('Walk-On', 'Airsoft Walk-On') }));
-    expect(v.reasons).toContain('source_not_paintball');
+    expect(v.ok).toBe(false); expect(v.reasons.some((r) => r === 'source_not_paintball' || r === 'wrong_sport_section')).toBe(true);
   });
   it('marks a cancellation for review instead of a new event', () => {
     const v = checkCandidateEvidence({ title: 'Walk-On', event_type: 'walk_on', event_date: '2026-11-22', source_quote: '22 November 2026 walk-on cancelled due to flooding.' }, ctx());
@@ -112,5 +112,20 @@ describe('re-check of stored events', () => {
   });
   it('excerpt gone from page is stale', () => {
     expect(recheckStoredEvidence({ event_date: '2026-11-08', source_quote: good.source_quote }, filler).status).toBe('stale');
+  });
+});
+
+describe('sport is judged from the event section', () => {
+  const nav = 'Home | Paintball | Shop | Contact. ';
+  const airsoft = ' Proving Grounds airsoft skirmish. Airsoft walk-on Sunday 8th November 2026 at the airsoft site, bring your airsoft RIF. ';
+  it('rejects an airsoft shop that only links to paintball in its nav', () => {
+    const p = nav + 'x '.repeat(500) + airsoft;
+    const v = checkCandidateEvidence({ title: 'Airsoft walk-on Sunday', event_type: 'walk_on', event_date: '2026-11-08',
+      source_quote: 'Airsoft walk-on Sunday 8th November 2026 at the airsoft site' }, ctx({ pageText: p }));
+    expect(v.ok).toBe(false);
+  });
+  it('still accepts a paintball section on a page that mentions airsoft elsewhere', () => {
+    const p = 'We also run airsoft at our other site. ' + 'x '.repeat(500) + page;
+    expect(checkCandidateEvidence(good, ctx({ pageText: p })).ok).toBe(true);
   });
 });
