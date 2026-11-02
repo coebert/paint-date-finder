@@ -84,15 +84,16 @@ export function useDeletePlayerSeekingPost() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, token }: { id: string; token: string }) => {
-      const { error } = await supabase.rpc('delete_player_seeking_post', {
+      const { data, error } = await supabase.rpc('delete_player_seeking_post', {
         _id: id,
         _token: token,
       });
       if (error) throw error;
+      return data === true;
     },
-    onSuccess: () => {
+    onSuccess: (removed) => {
       qc.invalidateQueries({ queryKey: ['player-seeking-posts'] });
-      toast.success('Post removed.');
+      if (removed) toast.success('Post removed.');
     },
     onError: (err: Error) => toast.error(`Failed to remove: ${err.message}`),
   });

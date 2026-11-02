@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { ArrowLeft, Mail, MapPin, Plus, UserSearch, Copy } from 'lucide-react';
 import { z } from 'zod';
