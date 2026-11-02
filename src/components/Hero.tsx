@@ -80,7 +80,7 @@ export function Hero({ onFindNearMe, eventsCount, venuesCount }: HeroProps) {
                 <span>venues</span>
               </div>
               <span aria-hidden className="text-border">•</span>
-              <span>100% community-verified</span>
+              <span>Checked by moderators before listing</span>
             </dl>
           )}
         </div>

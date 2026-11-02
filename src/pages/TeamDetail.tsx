@@ -32,13 +32,14 @@ export default function TeamDetail() {
 
   // Get CPPS/tournament events (competitions & tournaments)
   const { data: allEvents = [] } = useEvents({});
-  const upcomingEvents = allEvents.filter(e => {
-    const eventDate = new Date(e.event_date);
-    const now = new Date();
-    return eventDate >= now && (
+  // Compare date-only strings so today's events still count as upcoming.
+  const todayStr = format(new Date(), 'yyyy-MM-dd');
+  const upcomingEvents = allEvents.filter(e =>
+    e.event_date >= todayStr && (
       e.event_type === 'competition' || e.event_type === 'tournament'
-    );
-  }).slice(0, 6);
+    )
+  ).slice(0, 6);
+  const allCpps = upcomingEvents.length > 0 && upcomingEvents.every(e => isCppsRoundEvent(e.title));
 
   if (isLoading) {
     return (
@@ -210,12 +211,12 @@ export default function TeamDetail() {
               <StandingsHistoryCard teamId={team.id} />
             )}
 
-            {/* Upcoming CPPS Events */}
+            {/* Upcoming competitions & tournaments */}
 
             <Card className="bg-card border-border/50">
               <CardHeader>
                 <CardTitle className="font-display tracking-wider text-lg">
-                  UPCOMING CPPS EVENTS
+                  {allCpps ? 'UPCOMING CPPS EVENTS' : 'UPCOMING TOURNAMENTS'}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -232,10 +233,10 @@ export default function TeamDetail() {
                       >
                         <div className="w-12 h-12 rounded-lg bg-accent/10 border border-accent/20 flex flex-col items-center justify-center flex-shrink-0">
                           <span className="text-xs text-accent font-medium uppercase">
-                            {format(new Date(event.event_date), 'MMM')}
+                            {format(parseISO(event.event_date), 'MMM')}
                           </span>
                           <span className="text-lg font-bold text-foreground leading-none">
-                            {format(new Date(event.event_date), 'd')}
+                            {format(parseISO(event.event_date), 'd')}
                           </span>
                         </div>
                         <div className="flex-1 min-w-0">
