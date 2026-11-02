@@ -268,14 +268,14 @@ export default function FieldLayout() {
             <div ref={fieldContainerRef} className="fullscreen-container">
               <Card className="bg-card border-border/50">
                 <CardHeader>
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                     <CardTitle className="font-display tracking-wider flex items-center gap-3">
                       {getPresetMeta(currentPreset).title}
                       <Badge className="bg-accent text-accent-foreground">
                         {getPresetMeta(currentPreset).badge}
                       </Badge>
                     </CardTitle>
-                    <div className="flex gap-1">
+                    <div className="flex flex-wrap gap-1">
                       <Button variant={showAnnotations ? 'default' : 'outline'} size="sm" className="h-8 gap-1 text-xs" onClick={() => setShowAnnotations(v => !v)}>
                         <PenTool className="w-3.5 h-3.5" /> Annotate
                       </Button>
