@@ -307,27 +307,49 @@ export default function LookingForGame() {
 /** Handles ?remove=<id>&token=<token> deep links so people can self-remove. */
 function RemoveByQuery() {
   const remove = useDeletePlayerSeekingPost();
-  const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+  const [params, setParams] = useSearchParams();
   const id = params.get('remove');
   const token = params.get('token');
+  const [failed, setFailed] = useState(false);
 
   if (!id || !token) return null;
 
+  const close = () => {
+    setFailed(false);
+    const next = new URLSearchParams(params);
+    next.delete('remove');
+    next.delete('token');
+    setParams(next, { replace: true });
+  };
+
   const onConfirm = async () => {
-    await remove.mutateAsync({ id, token });
-    window.history.replaceState({}, '', '/looking-for-a-game');
+    try {
+      const ok = await remove.mutateAsync({ id, token });
+      if (ok) close();
+      else setFailed(true);
+    } catch {
+      setFailed(true);
+    }
   };
 
   return (
-    <Dialog open onOpenChange={() => window.history.replaceState({}, '', '/looking-for-a-game')}>
+    <Dialog open onOpenChange={(o) => !o && close()}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Remove your post?</DialogTitle>
-          <DialogDescription>This will permanently delete the post.</DialogDescription>
+          <DialogDescription>
+            {failed
+              ? "We couldn't remove this post. The link may have expired, or the post was already removed."
+              : 'This will permanently delete the post.'}
+          </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" onClick={() => window.history.replaceState({}, '', '/looking-for-a-game')}>Cancel</Button>
-          <Button variant="destructive" onClick={onConfirm}>Remove</Button>
+          <Button variant="outline" onClick={close}>{failed ? 'Close' : 'Cancel'}</Button>
+          {!failed && (
+            <Button variant="destructive" onClick={onConfirm} disabled={remove.isPending}>
+              {remove.isPending ? 'Removing…' : 'Remove'}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
