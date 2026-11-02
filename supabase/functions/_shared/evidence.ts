@@ -208,7 +208,7 @@ export function priceStatedIn(excerpt: string, price: string | null | undefined)
 }
 
 const RECURRING = /\bevery\b|\beach (week|month|weekend|sunday|saturday)\b|\bweekly\b|\bmonthly\b|\bfortnightly\b|\b(first|second|third|fourth|last|1st|2nd|3rd|4th) (sun|sat|week)/;
-const CANCELLED = /\bcancel+ed\b|\bpostponed\b|\bcalled off\b|\brescheduled\b|\bno longer (running|taking place)\b/;
+const CANCELLED = /eventcancelled|eventpostponed|\bcancel+ed\b|\bpostponed\b|\bcalled off\b|\brescheduled\b|\bno longer (running|taking place)\b/;
 const WRONG_SPORT = /\bairsoft\b|\blaser ?(tag|quest)\b|\bnerf\b|\bgel ?blast/;
 
 export interface CandidateInput {
