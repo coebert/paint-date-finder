@@ -27,6 +27,7 @@ const menuItems = [
   { title: "Submissions", url: "/admin/submissions", icon: FileText },
   { title: "Bulk Import", url: "/admin/bulk-import", icon: Layers },
   { title: "Events", url: "/admin/events", icon: Calendar },
+  { title: "Event Quality", url: "/admin/event-quality", icon: ClipboardCheck },
   { title: "Venues", url: "/admin/venues", icon: MapPin },
   { title: "Recaps", url: "/admin/recaps", icon: Camera },
   { title: "Player Posts", url: "/admin/player-posts", icon: UserSearch },
