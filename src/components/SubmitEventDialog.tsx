@@ -204,7 +204,7 @@ export function SubmitEventDialog({ open, onOpenChange, initialTab = 'flyer' }: 
     const name = (document.getElementById('flyer-submitter-name') as HTMLInputElement | null)?.value?.trim();
     setSubmitError(null);
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      toast.error('Please enter a valid email so we can credit the submission');
+      setSubmitError('Please enter a valid email below so we can credit the submission.');
       return false;
     }
     // Validate every event first so nothing is half-sent because of bad data.
@@ -240,8 +240,8 @@ export function SubmitEventDialog({ open, onOpenChange, initialTab = 'flyer' }: 
         // Duplicate check is best-effort; moderators also dedupe on approval.
       }
       if (unique.length === 0) {
-        toast.info('All of these events are already on the calendar or queued for review.');
-        return true;
+        setSubmitError('All of these events are already on the calendar or waiting for review, so nothing new was sent.');
+        return false;
       }
       const toSend = built.filter((b) => unique.includes(b.candidate));
       const ids: string[] = [];
