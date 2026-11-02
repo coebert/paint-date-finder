@@ -7,7 +7,8 @@ import { VENUE_COORDINATES, type UKRegion } from '@/lib/venueCoordinates';
 import { useVenueDetails } from '@/hooks/useVenueDetails';
 import { useVenueGeo } from '@/hooks/useVenueGeo';
 import { normalizeVenueName } from '@/lib/venueGeo';
-import { DARK_MAP_STYLES, UK_CENTER, UK_ZOOM, loadGoogleMaps } from '@/lib/googleMaps';
+import { DARK_MAP_STYLES, UK_CENTER, UK_ZOOM, loadGoogleMaps, onGoogleMapsAuthFailure } from '@/lib/googleMaps';
+import { VenueFallbackMap } from './map/VenueFallbackMap';
 import {
   buildInfoWindowHtml,
   clusterRenderer,
@@ -93,6 +94,16 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
         ? venueGroups
         : venueGroups.filter((g) => g.region === selectedRegion),
     [venueGroups, selectedRegion],
+  );
+
+  // Google rejects the key after the script loads (e.g. site not on its allowed list).
+  useEffect(
+    () =>
+      onGoogleMapsAuthFailure(() => {
+        console.warn('[EventMap] Google Maps authorisation failed; using fallback map');
+        setStatus('error');
+      }),
+    [],
   );
 
   // Init map once.
@@ -230,7 +241,11 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
       />
 
       <div className="bg-card rounded-xl border border-border/50 overflow-hidden relative">
-        <div ref={mapContainerRef} className="w-full" style={{ height: '600px' }} />
+        <div
+          ref={mapContainerRef}
+          className="w-full"
+          style={{ height: '600px', display: status === 'error' ? 'none' : undefined }}
+        />
 
         {status === 'ready' && <MapLegend />}
 
@@ -243,13 +258,11 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
           </div>
         )}
         {status === 'error' && (
-          <div className="absolute inset-0 flex items-center justify-center bg-muted/80 p-6 text-center">
-            <div className="max-w-sm space-y-2">
-              <p className="text-sm font-medium text-foreground">Map unavailable</p>
-              <p className="text-xs text-muted-foreground">
-                {errorMsg ?? 'Google Maps could not be loaded.'}
-              </p>
-            </div>
+          <div>
+            <p className="px-4 pt-4 text-xs text-muted-foreground">
+              The interactive map isn't available right now, so here's a simple venue map instead.
+            </p>
+            <VenueFallbackMap groups={filteredGroups} onEventClick={onEventClick} />
           </div>
         )}
       </div>
