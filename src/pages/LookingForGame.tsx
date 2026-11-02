@@ -233,7 +233,7 @@ export default function LookingForGame() {
                 onChange={(e) => setForm({ ...form, player_name: e.target.value })} />
             </div>
             <div>
-              <Label htmlFor="lfg-email">Email (shown so others can contact you)</Label>
+              <Label htmlFor="lfg-email">Email (kept private — replies are forwarded to you)</Label>
               <Input id="lfg-email" type="email" value={form.contact_email} maxLength={200} required
                 onChange={(e) => setForm({ ...form, contact_email: e.target.value })} />
             </div>
