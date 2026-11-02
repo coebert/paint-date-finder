@@ -34,10 +34,16 @@ function invalidateAllEventCaches(qc: ReturnType<typeof useQueryClient>, id?: st
   if (id) qc.invalidateQueries({ queryKey: eventKeys.detail(id) });
 }
 
-export function useEvents(filters?: EventFilters) {
+/**
+ * `regionVenues`: undefined = no venue restriction; [] = restricted to zero
+ * venues, so the result is empty (never "all UK events").
+ */
+export function useEvents(filters?: EventFilters, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: eventKeys.list(filters),
+    enabled: options?.enabled ?? true,
     queryFn: async () => {
+      if (filters?.regionVenues && filters.regionVenues.length === 0) return [] as PaintballEvent[];
       let query = supabase
         .from('events')
         .select('*')

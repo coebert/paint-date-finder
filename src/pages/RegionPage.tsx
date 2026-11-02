@@ -39,13 +39,19 @@ export default function RegionPage() {
   if (!region) {
     return <Navigate to="/paintball" replace />;
   }
+  return <Content region={region} />;
+}
 
-  const { data: venues, isLoading: venuesLoading } = useVenuesInRegion(region.name);
-  const venueNames = useMemo(() => (venues ?? []).map((v) => v.name), [venues]);
-  const { data: allEvents, isLoading: eventsLoading } = useEvents({
-    verifiedOnly: false,
-    regionVenues: venueNames.length ? venueNames : undefined,
-  });
+function Content({ region }: { region: NonNullable<ReturnType<typeof getRegionBySlug>> }) {
+  const { data: venues, isLoading: venuesLoading, isError: venuesError, refetch: refetchVenues } = useVenuesInRegion(region.name);
+  const venueNames = useMemo(() => (venues ? venues.map((v) => v.name) : undefined), [venues]);
+  const { data: allEvents, isLoading: eventsQueryLoading, isError: eventsError, refetch: refetchEvents } = useEvents(
+    { verifiedOnly: false, regionVenues: venueNames ?? [] },
+    { enabled: !!venues },
+  );
+  const eventsLoading = venuesLoading || (!!venues && eventsQueryLoading);
+  const loadFailed = venuesError || eventsError;
+  const retryLoad = () => { if (venuesError) refetchVenues(); else refetchEvents(); };
   const { data: override } = useRegionOverride(region.slug);
 
   const effectiveIntro = override?.intro?.trim() || region.intro;
