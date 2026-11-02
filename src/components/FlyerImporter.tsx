@@ -1,4 +1,5 @@
 import { uploadFlyerFile } from '@/lib/flyerUpload';
+import { AuthDialog } from '@/components/AuthDialog';
 import { ImageWithSkeleton } from '@/components/ImageWithSkeleton';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -931,6 +932,18 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
               Dismiss
             </Button>
           </div>
+        </div>
+      )}
+      {signedIn === false && (
+        <div role="status" className="mb-3 rounded-md border border-primary/40 bg-primary/10 p-3 text-sm space-y-2">
+          <p>
+            Reading a flyer automatically needs a free account (it uses paid AI, so we limit it to real people).
+            You can still submit without signing in — use the <strong>Enter manually</strong> tab.
+          </p>
+          <Button type="button" size="sm" className="min-h-11" onClick={() => setAuthOpen(true)}>
+            Sign in or create account
+          </Button>
+          <AuthDialog open={authOpen} onOpenChange={setAuthOpen} reason="Sign in to read flyers automatically" />
         </div>
       )}
       <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
