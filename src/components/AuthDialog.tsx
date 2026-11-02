@@ -33,9 +33,11 @@ type LoginFormData = z.infer<typeof loginSchema>;
 interface AuthDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Optional line explaining why sign-in is needed (e.g. "to read flyers automatically"). */
+  reason?: string;
 }
 
-export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
+export function AuthDialog({ open, onOpenChange, reason }: AuthDialogProps) {
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
   const [isLoading, setIsLoading] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
@@ -104,13 +106,13 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
       <DialogContent className="bg-card border-border max-w-md">
         <DialogHeader>
           <DialogTitle className="font-display text-2xl tracking-wide">
-            {mode === 'login' ? 'ADMIN LOGIN' : mode === 'signup' ? 'CREATE ACCOUNT' : 'RESET PASSWORD'}
+            {mode === 'login' ? 'SIGN IN' : mode === 'signup' ? 'CREATE ACCOUNT' : 'RESET PASSWORD'}
           </DialogTitle>
           <DialogDescription>
             {mode === 'login'
-              ? 'Sign in to access admin features'
+              ? (reason ?? 'Sign in to your Find A Walk-On account')
               : mode === 'signup'
-              ? 'Create an account to manage events'
+              ? (reason ?? 'Create a free account to reply to players, read flyers and set alerts')
               : 'Enter your email to receive a password reset link'}
           </DialogDescription>
         </DialogHeader>
@@ -124,7 +126,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
               <Input
                 id="reset-email"
                 type="email"
-                placeholder="admin@example.com"
+                placeholder="you@example.com"
                 autoFocus
                 value={resetEmail}
                 onChange={(event) => setResetEmail(event.target.value)}
@@ -167,7 +169,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                     <FormControl>
                       <Input
                         type="email"
-                        placeholder="admin@example.com"
+                        placeholder="you@example.com"
                         ref={ref}
                         {...fieldProps}
                       />
