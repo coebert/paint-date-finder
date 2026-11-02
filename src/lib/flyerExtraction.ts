@@ -1,3 +1,4 @@
+import { FlyerSignInRequired } from '@/lib/flyerUpload';
 import { supabase } from '@/integrations/supabase/client';
 
 export type ExtractedCandidate = {
@@ -61,6 +62,8 @@ export async function extractFlyer(
   options?: { timeoutMs?: number },
 ): Promise<FlyerExtractionResult> {
   const timeoutMs = options?.timeoutMs ?? FLYER_TIMEOUTS_MS[input.kind];
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new FlyerSignInRequired();
 
   const invocation = supabase.functions.invoke('extract-flyer-event', {
     body: input,
