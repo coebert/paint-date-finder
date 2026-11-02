@@ -77,6 +77,7 @@ async function runBackfill(admin: any, dryRun: boolean): Promise<Response> {
       .select(
         "id,title,venue_name,event_date,description,booking_url,price_info,image_url,venue_location,source_url,source_quote,created_at"
       )
+      .neq("verification_status", "quarantined")
       .order("created_at", { ascending: true })
       .limit(10000);
 
