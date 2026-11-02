@@ -427,12 +427,16 @@ Deno.serve(async (req) => {
       const eventFeed = await getJson<EventsYear[]>("/cpps/rest/events");
       const wanted = new Set(seasonsSynced);
 
-      const { data: existingCpps } = await supabase
-        .from("events")
-        .select("event_date")
-        .eq("venue_name", CPPS_VENUE);
-      const takenDates = new Set((existingCpps ?? []).map((e) => e.event_date));
-
+      // Dates already listed or already queued for review are skipped.
+      const [{ data: existingCpps }, { data: queuedCpps }] = await Promise.all([
+        supabase.from("events").select("event_date").eq("venue_name", CPPS_VENUE),
+        supabase.from("event_submissions").select("event_date").eq("venue_name", CPPS_VENUE)
+          .in("status", ["pending", "approved"]),
+      ]);
+      const takenDates = new Set(
+        [...(existingCpps ?? []), ...(queuedCpps ?? [])].map((e) => e.event_date),
+      );
+      const fetchedAt = new Date().toISOString();
       const rows: Record<string, unknown>[] = [];
       for (const year of eventFeed) {
         if (!wanted.has(year.year)) continue;
@@ -454,18 +458,33 @@ Deno.serve(async (req) => {
               title: dates.length > 1
                 ? `CPPS Round ${round} — Day ${dates.indexOf(date) + 1}`
                 : `CPPS Round ${round}`,
-              description: ev.name && ev.name !== `CPPS Round ${round}` ? ev.name : null,
+              description: null,
               event_type: "tournament",
               venue_name: CPPS_VENUE,
               venue_location: "Penkridge, Staffordshire",
               event_date: date,
-              start_time: "08:00",
-              end_time: "18:00",
-              booking_url: "https://www.okpb.co.uk/booking",
-              is_verified: true,
-              verification_status: "verified",
-              source_url: `${BASE}/`,
-              source_quote: "CPPS season schedule (okpb.co.uk)",
+              // Times, price and booking link are not in the feed: left blank.
+              start_time: null,
+              end_time: null,
+              booking_url: null,
+              source_url: `${BASE}/cpps/rest/events`,
+              // Faithful copy of the organiser's own feed entry (season year is
+              // part of the feed structure, not guessed).
+              source_quote: JSON.stringify({
+                season: year.year,
+                name: ev.name,
+                eventDays: ev.eventDays ?? null,
+                startDate: ev.startDate ?? null,
+              }).slice(0, 400),
+              source_fetched_at: fetchedAt,
+              evidence_status: "source_confirmed",
+              evidence: { method: "organiser_structured_feed", feed: `${BASE}/cpps/rest/events`, fetched_at: fetchedAt },
+              submission_kind: "new",
+              venue_match_status: "matched",
+              sanity_warnings: [],
+              submitter_email: "scraper@findawalkon.local",
+              submitter_name: "CPPS feed (okpb.co.uk)",
+              status: "pending",
             });
           });
         }
@@ -473,7 +492,8 @@ Deno.serve(async (req) => {
 
       for (let i = 0; i < rows.length; i += 100) {
         const chunk = rows.slice(i, i + 100);
-        const { error } = await supabase.from("events").insert(chunk);
+        // Queued for admin review — never published automatically.
+        const { error } = await supabase.from("event_submissions").insert(chunk);
         if (error) throw error;
         datesAdded += chunk.length;
       }
