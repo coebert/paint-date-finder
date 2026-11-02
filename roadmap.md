@@ -10,3 +10,8 @@
 - [ ] App icon + splash, store screenshots
 - [ ] Accuracy + usability review pass before submission
 - [ ] Before submission: remove the live-preview server URL from capacitor config
+
+## Quality pass (Nov 2026)
+- [x] Public submissions, flyer upload, privacy of contact details/tokens, admin flags, filters, Looking for a Game, auth callback, region/city filtering, flyer dedupe/errors/drafts, alerts reliability, layout validation, phone overflow
+- [ ] Real signed-in flyer read through the UI (needs a real flyer; AI credits)
+- [ ] Review 10 open event flags (8 say Battlezone walk-ons don't exist) against the event-accuracy rule
