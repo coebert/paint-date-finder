@@ -167,6 +167,8 @@ Deno.serve(async (req) => {
     );
     if (newStatus === "source_confirmed") verified++;
     else flagged++;
+    // A moderator-reviewed listing without an excerpt keeps its review status.
+    if (newStatus === "needs_evidence" && ev.verification_status === "human_reviewed") continue;
 
     const { error: upErr } = await supabase
       .from("events")
