@@ -490,7 +490,7 @@ export default function CppsRounds() {
           </Card>
         </section>
 
-        <div className="grid gap-10 lg:grid-cols-[1fr_1.1fr]">
+        <div className="grid gap-10 grid-cols-1 lg:grid-cols-[1fr_1.1fr] [&>*]:min-w-0">
           {/* Rounds timeline */}
           <section aria-labelledby="rounds-heading">
             <h2 id="rounds-heading" className="font-display text-2xl tracking-wide mb-4">
