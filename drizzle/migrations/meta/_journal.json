@@ -43,6 +43,13 @@
       "when": 1793657891951,
       "tag": "0005_restrict_private_columns_posts_recaps_flags",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793658611708,
+      "tag": "0006_validate_field_layout_obstacles",
+      "breakpoints": true
     }
   ]
 }

@@ -45,7 +45,7 @@ export function AdminFlyerImportCard() {
   ) => {
     setSaving(true);
     try {
-      const { unique, duplicates } = await dedupeCandidates(candidates, 'both');
+      const { unique, duplicates } = await dedupeCandidates(candidates, 'both', { exactOnly: true });
       if (duplicates.length > 0) {
         toast.warning(
           `Skipped ${duplicates.length} duplicate${duplicates.length === 1 ? '' : 's'} already in calendar/queue`,

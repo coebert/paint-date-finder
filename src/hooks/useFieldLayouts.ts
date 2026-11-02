@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Obstacle } from '@/types/fieldLayout';
+import { sanitizeObstacles, MAX_LAYOUT_OBSTACLES } from '@/lib/fieldLayoutValidation';
 
 export interface FieldLayout {
   id: string;
@@ -57,11 +58,19 @@ export function useFieldLayouts() {
         .select('id, name, description, author_name, tags, obstacles, obstacle_count, created_at')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data ?? []).map((row: any) => ({
-        ...row,
-        tags: row.tags ?? [],
-        obstacles: (row.obstacles as any) ?? [],
-      }));
+      // Shared layouts are community-submitted: keep only well-formed obstacles
+      // and hide rows that have nothing drawable left.
+      return (data ?? []).flatMap((row: any) => {
+        const { obstacles } = sanitizeObstacles(row.obstacles);
+        if (obstacles.length === 0) return [];
+        return [{
+          ...row,
+          name: String(row.name ?? 'Untitled').slice(0, 200),
+          tags: Array.isArray(row.tags) ? row.tags.filter((t: unknown) => typeof t === 'string').slice(0, 20) : [],
+          obstacles,
+          obstacle_count: obstacles.length,
+        }];
+      });
     },
   });
 }
@@ -70,6 +79,12 @@ export function useSaveFieldLayout() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: SaveLayoutInput): Promise<{ id: string; delete_token: string }> => {
+      const { obstacles: clean, rejected } = sanitizeObstacles(input.obstacles);
+      if (clean.length === 0) throw new Error('Add at least one bunker before sharing.');
+      if (rejected > 0 || input.obstacles.length > MAX_LAYOUT_OBSTACLES) {
+        throw new Error(`This layout has ${rejected} invalid bunker${rejected === 1 ? '' : 's'} (max ${MAX_LAYOUT_OBSTACLES}).`);
+      }
+      input = { ...input, obstacles: clean };
       const { data, error } = await supabase.rpc('create_field_layout', {
         _name: input.name,
         _description: input.description || null,

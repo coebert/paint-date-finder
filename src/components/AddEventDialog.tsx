@@ -27,6 +27,7 @@ export function AddEventDialog({ open, onOpenChange }: AddEventDialogProps) {
   });
 
   const handleSubmit = async (data: AdminEventFormData) => {
+    try {
     await createEvent.mutateAsync({
       title: data.title,
       description: data.description || null,
@@ -42,7 +43,10 @@ export function AddEventDialog({ open, onOpenChange }: AddEventDialogProps) {
       is_verified: data.is_verified,
       source_url: null,
     });
-
+    } catch {
+      // The failure toast comes from the save hook; keep the form open with the typed values.
+      return;
+    }
     form.reset();
     onOpenChange(false);
   };

@@ -19,6 +19,9 @@ const pkceClient = createClient(
   }
 );
 
+/** Users we've already asked the server to sync admin status for this page load. */
+const ensureAdminCalledFor = new Set<string>();
+
 export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -27,23 +30,26 @@ export function useAuth() {
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
+        // Keep this callback synchronous: awaiting Supabase calls inside it can
+        // deadlock the auth client. Follow-up work is deferred below.
         setSession(session);
         setLoading(false);
-        
-        // Call ensure-admin edge function on sign in
         if (event === 'SIGNED_IN' && session) {
-          try {
-            await supabase.functions.invoke('ensure-admin');
-          } catch (error) {
-            console.error('Error calling ensure-admin:', error);
-          }
+          const uid = session.user.id;
+          setTimeout(() => {
+            if (ensureAdminCalledFor.has(uid)) return;
+            ensureAdminCalledFor.add(uid);
+            supabase.functions
+              .invoke('ensure-admin')
+              .catch((error) => console.error('Error calling ensure-admin:', error))
+              .finally(() => queryClient.invalidateQueries({ queryKey: ['admin-check'] }));
+          }, 0);
         }
-        
-        // Invalidate queries when auth state changes
         if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
-          queryClient.invalidateQueries({ queryKey: ['admin-check'] });
+          setTimeout(() => queryClient.invalidateQueries({ queryKey: ['admin-check'] }), 0);
         }
+        if (event === 'SIGNED_OUT') ensureAdminCalledFor.clear();
       }
     );
 

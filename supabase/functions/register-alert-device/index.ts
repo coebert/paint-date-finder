@@ -27,7 +27,8 @@ Deno.serve(async (req) => {
   const db = adminClient(env);
 
   if (!b.enabled) {
-    await db.from("alert_devices").delete().eq("token", b.token);
+    const { error: delError } = await db.from("alert_devices").delete().eq("token", b.token);
+    if (delError) return json({ error: "Could not turn off alerts" }, { status: 500 });
     return json({ ok: true, enabled: false });
   }
   const { error } = await db.from("alert_devices").upsert({

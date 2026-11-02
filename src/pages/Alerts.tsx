@@ -18,13 +18,30 @@ function load(): Prefs {
   try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch { return DEFAULTS; }
 }
 
-async function save(p: Prefs) {
-  localStorage.setItem(KEY, JSON.stringify(p));
-  if (!p.token) return;
-  const { error } = await supabase.functions.invoke('register-alert-device', {
+/** Saves to the server; returns true only when the server confirmed it. */
+async function save(p: Prefs): Promise<boolean> {
+  if (!p.token) return false;
+  const { data, error } = await supabase.functions.invoke('register-alert-device', {
     body: { token: p.token, enabled: p.enabled, walk_ons: p.walk_ons, cpps: p.cpps, radius_miles: p.radius_miles, latitude: p.latitude ?? null, longitude: p.longitude ?? null },
   });
-  if (error) toast.error('Could not save your alert settings. Please try again.');
+  if (error || !(data as { ok?: boolean })?.ok) return false;
+  localStorage.setItem(KEY, JSON.stringify(p));
+  return true;
+}
+
+/** Ask iOS for a push token, cleaning up listeners and giving up after 20s. */
+async function getPushToken(): Promise<string> {
+  const handles: { remove: () => Promise<void> }[] = [];
+  try {
+    return await new Promise<string>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('timeout')), 20000);
+      PushNotifications.addListener('registration', (t) => { clearTimeout(timer); resolve(t.value); }).then((h) => handles.push(h));
+      PushNotifications.addListener('registrationError', (e) => { clearTimeout(timer); reject(e); }).then((h) => handles.push(h));
+      PushNotifications.register().catch(reject);
+    });
+  } finally {
+    await Promise.all(handles.map((h) => h.remove()));
+  }
 }
 
 function getPosition(): Promise<{ latitude: number; longitude: number } | null> {
@@ -56,10 +73,18 @@ export default function Alerts() {
   const [prefs, setPrefs] = useState<Prefs>(load);
   const [busy, setBusy] = useState(false);
 
-  const update = (patch: Partial<Prefs>) => {
+  const update = async (patch: Partial<Prefs>): Promise<boolean> => {
+    const previous = prefs;
     const next = { ...prefs, ...patch };
     setPrefs(next);
-    void save(next);
+    setBusy(true);
+    const ok = await save(next);
+    setBusy(false);
+    if (!ok) {
+      setPrefs(previous);
+      toast.error('Could not save your alert settings. Check your connection and try again.');
+    }
+    return ok;
   };
 
   const turnOn = async () => {
@@ -70,13 +95,14 @@ export default function Alerts() {
         toast.error('Notifications are off. Turn them on in iPhone Settings → Find A Walk-On.');
         return;
       }
-      const token = await new Promise<string>((resolve, reject) => {
-        PushNotifications.addListener('registration', (t) => resolve(t.value));
-        PushNotifications.addListener('registrationError', (e) => reject(e));
-        PushNotifications.register();
-      });
+      const token = await getPushToken();
       const pos = await getPosition();
-      update({ enabled: true, token, latitude: pos?.latitude ?? null, longitude: pos?.longitude ?? null });
+      const next = { ...prefs, enabled: true, token, latitude: pos?.latitude ?? null, longitude: pos?.longitude ?? null };
+      if (!(await save(next))) {
+        toast.error('Could not turn on alerts — we could not reach our server. Please try again.');
+        return;
+      }
+      setPrefs(next);
       toast.success(pos ? 'Alerts are on.' : 'Alerts are on. Allow location to get walk-ons near you.');
     } catch {
       toast.error('Could not turn on alerts. Please try again.');
@@ -108,7 +134,7 @@ export default function Alerts() {
                 onValueCommit={([v]) => update({ radius_miles: v })} />
               <Button variant="outline" size="sm" className="min-h-11" onClick={async () => {
                 const pos = await getPosition();
-                if (pos) { update(pos); toast.success('Location updated.'); } else toast.error('Location not available. Check iPhone Settings.');
+                if (pos) { if (await update(pos)) toast.success('Location updated.'); } else toast.error('Location not available. Check iPhone Settings.');
               }}>{prefs.latitude == null ? 'Use my location' : 'Update my location'}</Button>
             </div>
           )}

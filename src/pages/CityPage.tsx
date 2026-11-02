@@ -42,13 +42,19 @@ export default function CityPage() {
   if (!city) {
     return <Navigate to="/paintball" replace />;
   }
+  return <Content city={city} />;
+}
 
-  const { data: venues, isLoading: venuesLoading } = useVenuesInCity(city);
-  const venueNames = useMemo(() => (venues ?? []).map((v) => v.name), [venues]);
-  const { data: allEvents, isLoading: eventsLoading } = useEvents({
-    verifiedOnly: false,
-    regionVenues: venueNames.length ? venueNames : undefined,
-  });
+function Content({ city }: { city: NonNullable<ReturnType<typeof getCityBySlug>> }) {
+  const { data: venues, isLoading: venuesLoading, isError: venuesError, refetch: refetchVenues } = useVenuesInCity(city);
+  const venueNames = useMemo(() => (venues ? venues.map((v) => v.name) : undefined), [venues]);
+  const { data: allEvents, isLoading: eventsQueryLoading, isError: eventsError, refetch: refetchEvents } = useEvents(
+    { verifiedOnly: false, regionVenues: venueNames ?? [] },
+    { enabled: !!venues },
+  );
+  const eventsLoading = venuesLoading || (!!venues && eventsQueryLoading);
+  const loadFailed = venuesError || eventsError;
+  const retryLoad = () => { if (venuesError) refetchVenues(); else refetchEvents(); };
 
   const upcoming = useMemo(() => {
     if (!allEvents) return [];
@@ -192,7 +198,12 @@ export default function CityPage() {
             <h2 id="events-heading" className="font-display text-2xl tracking-wide text-foreground mb-3 flex items-center gap-2">
               <CalendarDays className="w-5 h-5 text-accent" /> Upcoming walk-on events near {city.name}
             </h2>
-            {eventsLoading ? (
+            {loadFailed ? (
+              <div role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm">
+                <p className="text-destructive font-medium">We couldn't load local events.</p>
+                <Button variant="outline" size="sm" className="mt-2 min-h-11" onClick={retryLoad}>Retry</Button>
+              </div>
+            ) : eventsLoading ? (
               <Skeleton className="h-40 w-full" />
             ) : upcoming.length > 0 ? (
               <div className="space-y-3">

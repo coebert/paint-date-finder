@@ -36,7 +36,7 @@ export function AnnotationToolbar({
   return (
     <div className="flex flex-wrap items-center gap-2 p-2 bg-secondary/50 rounded-lg border border-border/50">
       {/* Tool buttons */}
-      <div className="flex gap-1">
+      <div className="flex flex-wrap gap-1">
         {TOOLS.map(t => (
           <Button
             key={t.id}
@@ -56,7 +56,7 @@ export function AnnotationToolbar({
       <div className="w-px h-6 bg-border/50" />
 
       {/* Color swatches */}
-      <div className="flex gap-1">
+      <div className="flex flex-wrap gap-1">
         {TEAM_COLORS.map(c => (
           <button
             key={c.value}
@@ -96,7 +96,7 @@ export function AnnotationToolbar({
       <div className="w-px h-6 bg-border/50" />
 
       {/* Actions */}
-      <div className="flex gap-1 ml-auto">
+      <div className="flex flex-wrap gap-1 ml-auto">
         <Button variant="outline" size="sm" className="h-8 gap-1 text-[10px] px-2" onClick={onUndo} disabled={annotationCount === 0}>
           <Undo2 className="w-3.5 h-3.5" /> Undo
         </Button>

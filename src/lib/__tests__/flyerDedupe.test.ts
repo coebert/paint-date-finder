@@ -57,7 +57,7 @@ describe('dedupeCandidates', () => {
 
   it('flags a duplicate when venue+date+type match an existing event', async () => {
     state.events = [
-      { title: 'Existing name', venue_name: 'NPF Bassetts Pole', event_date: '2026-07-01', event_type: 'walk_on' },
+      { title: 'Walk-on', venue_name: 'NPF Bassetts Pole', event_date: '2026-07-01', event_type: 'walk_on' },
     ];
     const { unique, duplicates } = await dedupeCandidates([c({})]);
     expect(unique).toHaveLength(0);
@@ -75,7 +75,7 @@ describe('dedupeCandidates', () => {
 
   it('normalises venue punctuation/case when matching', async () => {
     state.events = [
-      { title: 'X', venue_name: 'npf   bassetts-pole!!', event_date: '2026-07-01', event_type: 'walk_on' },
+      { title: 'Walk-on', venue_name: 'npf   bassetts-pole!!', event_date: '2026-07-01', event_type: 'walk_on' },
     ];
     const { duplicates } = await dedupeCandidates([c({})]);
     expect(duplicates).toHaveLength(1);
@@ -111,7 +111,7 @@ describe('dedupeCandidates', () => {
 
   it('honours scope=events (skips submissions lookup)', async () => {
     state.submissions = [
-      { title: 'X', venue_name: 'NPF Bassetts Pole', event_date: '2026-07-01', event_type: 'walk_on', status: 'pending' },
+      { title: 'Walk-on', venue_name: 'NPF Bassetts Pole', event_date: '2026-07-01', event_type: 'walk_on', status: 'pending' },
     ];
     const { unique } = await dedupeCandidates([c({})], 'events');
     expect(unique).toHaveLength(1);
@@ -119,7 +119,7 @@ describe('dedupeCandidates', () => {
 
   it('matches against pending submissions when scope=both', async () => {
     state.submissions = [
-      { title: 'X', venue_name: 'NPF Bassetts Pole', event_date: '2026-07-01', event_type: 'walk_on', status: 'pending' },
+      { title: 'Walk-on', venue_name: 'NPF Bassetts Pole', event_date: '2026-07-01', event_type: 'walk_on', status: 'pending' },
     ];
     const { duplicates } = await dedupeCandidates([c({})], 'both');
     expect(duplicates).toHaveLength(1);

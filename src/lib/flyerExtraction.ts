@@ -83,16 +83,7 @@ export async function extractFlyer(
 
   const { data, error } = result;
   if (error) {
-    const ctx = (error as { context?: { body?: string } }).context;
-    if (ctx?.body) {
-      try {
-        const parsed = JSON.parse(ctx.body);
-        if (parsed?.error) throw new Error(parsed.error);
-      } catch {
-        /* ignore */
-      }
-    }
-    throw error;
+    throw await describeFlyerError(error);
   }
   return data as FlyerExtractionResult;
 }
@@ -170,4 +161,39 @@ export function fileToDataUrl(file: File): Promise<string> {
     reader.onerror = () => reject(reader.error);
     reader.readAsDataURL(file);
   });
+}
+
+
+/** Error carrying the HTTP status from the flyer reader (401 sign-in, 402 credits, 429 limit). */
+export class FlyerHttpError extends Error {
+  constructor(message: string, public readonly status: number | null) {
+    super(message);
+    this.name = 'FlyerHttpError';
+  }
+}
+
+/** Turn a functions.invoke error into a clear, status-aware message. */
+export async function describeFlyerError(error: unknown): Promise<FlyerHttpError> {
+  const ctx = (error as { context?: unknown }).context;
+  let status: number | null = null;
+  let serverMsg: string | null = null;
+  if (ctx && typeof (ctx as Response).status === 'number') {
+    const res = ctx as Response;
+    status = res.status;
+    try {
+      const body = await res.clone().json();
+      if (body && typeof body.error === 'string') serverMsg = body.error;
+    } catch { /* not JSON */ }
+  } else if (ctx && typeof (ctx as { body?: unknown }).body === 'string') {
+    try {
+      const body = JSON.parse((ctx as { body: string }).body);
+      if (typeof body?.error === 'string') serverMsg = body.error;
+    } catch { /* ignore */ }
+  }
+  const fallback =
+    status === 401 ? 'Please sign in to read a flyer automatically.'
+    : status === 402 ? 'The flyer reader is temporarily unavailable (AI credits used up). Please enter the event manually.'
+    : status === 429 ? 'Too many flyer reads right now. Please wait a while and try again.'
+    : (error instanceof Error ? error.message : 'Flyer reading failed');
+  return new FlyerHttpError(serverMsg ?? fallback, status);
 }

@@ -85,6 +85,8 @@ type DraftV1 = {
   sourceUrl: string;
   pastedText: string;
   candidates: EditableCandidate[];
+  /** Address of the already-uploaded flyer, so a restored draft keeps its attachment. */
+  uploadedFlyerUrl?: string | null;
   inProgress?: InProgressMark | null;
 };
 
@@ -157,7 +159,14 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
   );
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [uploadedFlyerUrl, setUploadedFlyerUrl] = useState<string | null>(null);
+  const [uploadedFlyerUrl, setUploadedFlyerUrl] = useState<string | null>(
+    () => loadDraft()?.uploadedFlyerUrl ?? null,
+  );
+  // Release blob previews when replaced or on unmount.
+  useEffect(() => {
+    if (!previewUrl?.startsWith('blob:')) return;
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [previewUrl]);
   const [savingBatch, setSavingBatch] = useState(false);
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
@@ -405,11 +414,12 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
         sourceUrl,
         pastedText,
         candidates,
+        uploadedFlyerUrl,
       });
     } catch {
       /* quota exceeded / private mode — silently ignore */
     }
-  }, [tab, sourceUrl, pastedText, candidates, extracting]);
+  }, [tab, sourceUrl, pastedText, candidates, extracting, uploadedFlyerUrl]);
 
   const handleDiscardDraft = () => {
     setCandidates([]);
