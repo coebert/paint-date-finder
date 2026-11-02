@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -30,7 +30,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { EventType, EVENT_TYPE_LABELS } from '@/types/events';
-import { useCreateSubmission } from '@/hooks/useSubmissions';
+import { useCreateSubmission, friendlySubmissionError } from '@/hooks/useSubmissions';
+import { buildSubmissionPayload, isValidEventDate } from '@/lib/submissionPayload';
+import { Constants } from '@/integrations/supabase/types';
 import { useVenues } from '@/hooks/useEvents';
 import { useVenueDetails } from '@/hooks/useVenueDetails';
 import { Send, CheckCircle, Plus, Sparkles, Edit3 } from 'lucide-react';
@@ -42,12 +44,12 @@ import { toast } from 'sonner';
 const ADD_NEW_VENUE = '__add_new__';
 
 const formSchema = z.object({
-  title: z.string().min(3, 'Title must be at least 3 characters').max(200),
+  title: z.string().trim().min(3, 'Title must be at least 3 characters').max(200),
   description: z.string().max(2000).optional(),
-  event_type: z.enum(['walk_on', 'big_game', 'competition', 'tournament', 'speedball', 'scenario', 'other'] as const),
-  venue_name: z.string().min(2, 'Venue name is required').max(200),
+  event_type: z.enum(Constants.public.Enums.event_type),
+  venue_name: z.string().trim().min(2, 'Venue name is required').max(200),
   venue_location: z.string().max(200).optional(),
-  event_date: z.string().min(1, 'Event date is required'),
+  event_date: z.string().min(1, 'Event date is required').refine((v) => isValidEventDate(v), 'Enter a real date'),
   start_time: z.string().optional(),
   end_time: z.string().optional(),
   booking_url: safeOptionalUrlSchema,
@@ -58,7 +60,7 @@ const formSchema = z.object({
     .min(1, 'Source link is required so we can verify the event')
     .url('Must be a valid URL')
     .refine((v) => /^https?:\/\//i.test(v), 'URL must start with http:// or https://'),
-  submitter_email: z.string().email('Valid email required'),
+  submitter_email: z.string().trim().email('Valid email required'),
   submitter_name: z.string().max(100).optional(),
 });
 
@@ -72,6 +74,12 @@ interface SubmitEventDialogProps {
 
 export function SubmitEventDialog({ open, onOpenChange, initialTab = 'flyer' }: SubmitEventDialogProps) {
   const [submitted, setSubmitted] = useState(false);
+  const [receipt, setReceipt] = useState<{ count: number; ref: string } | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [flyerSaving, setFlyerSaving] = useState(false);
+  // Stable ids so a retry after a lost response cannot create duplicates.
+  const manualIdRef = useRef<{ key: string; id: string } | null>(null);
+  const flyerIdsRef = useRef<Map<string, string>>(new Map());
   const [isAddingNewVenue, setIsAddingNewVenue] = useState(false);
   const [selectedVenue, setSelectedVenue] = useState('');
   const createSubmission = useCreateSubmission();
@@ -114,29 +122,31 @@ export function SubmitEventDialog({ open, onOpenChange, initialTab = 'flyer' }: 
   }, [selectedVenue, venueDetails, form]);
 
   const onSubmit = async (data: FormData) => {
-    await createSubmission.mutateAsync({
-      title: data.title,
-      description: data.description || null,
-      event_type: data.event_type,
-      venue_name: data.venue_name,
-      venue_location: data.venue_location || null,
-      event_date: data.event_date,
-      start_time: data.start_time || null,
-      end_time: data.end_time || null,
-      booking_url: data.booking_url || null,
-      price_info: data.price_info || null,
-      source_url: data.source_url || null,
-      image_url: null,
-      submitter_email: data.submitter_email,
-      submitter_name: data.submitter_name || null,
-    });
-    setSubmitted(true);
+    setSubmitError(null);
+    try {
+      const submission = buildSubmissionPayload({ ...data, image_url: null });
+      const key = JSON.stringify(submission);
+      if (!manualIdRef.current || manualIdRef.current.key !== key) {
+        manualIdRef.current = { key, id: crypto.randomUUID() };
+      }
+      const { id } = await createSubmission.mutateAsync({ id: manualIdRef.current.id, submission });
+      manualIdRef.current = null;
+      setReceipt({ count: 1, ref: id.slice(0, 8).toUpperCase() });
+      setSubmitted(true);
+    } catch (e) {
+      // Keep everything the visitor typed; just explain what happened.
+      setSubmitError(friendlySubmissionError(e));
+    }
   };
 
   const handleClose = () => {
     onOpenChange(false);
     setTimeout(() => {
       setSubmitted(false);
+      setReceipt(null);
+      setSubmitError(null);
+      manualIdRef.current = null;
+      flyerIdsRef.current.clear();
       setIsAddingNewVenue(false);
       setSelectedVenue('');
       form.reset();
@@ -165,8 +175,17 @@ export function SubmitEventDialog({ open, onOpenChange, initialTab = 'flyer' }: 
             </div>
             <DialogTitle className="text-2xl font-display">Thank You!</DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              Your event has been submitted for review. We'll add it to the calendar once verified.
+              {receipt && receipt.count > 1
+                ? `We've received your ${receipt.count} events.`
+                : "We've received your event."}{' '}
+              It won't appear on the calendar straight away — a moderator checks every
+              submission against its source first, then publishes it.
             </DialogDescription>
+            {receipt && (
+              <p className="text-xs text-muted-foreground">
+                Reference: <span className="font-mono text-foreground">{receipt.ref}</span>
+              </p>
+            )}
             <Button onClick={handleClose} className="mt-4">
               Close
             </Button>
@@ -183,44 +202,88 @@ export function SubmitEventDialog({ open, onOpenChange, initialTab = 'flyer' }: 
   ) => {
     const email = (document.getElementById('flyer-submitter-email') as HTMLInputElement | null)?.value?.trim();
     const name = (document.getElementById('flyer-submitter-name') as HTMLInputElement | null)?.value?.trim();
-    if (!email || !/.+@.+\..+/.test(email)) {
+    setSubmitError(null);
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       toast.error('Please enter a valid email so we can credit the submission');
-      return;
+      return false;
     }
+    // Validate every event first so nothing is half-sent because of bad data.
+    let built: { candidate: (typeof candidates)[number]; submission: ReturnType<typeof buildSubmissionPayload> }[];
     try {
-      const { unique, duplicates } = await dedupeCandidates(candidates, 'both');
-      if (duplicates.length > 0) {
-        toast.warning(
-          `Skipped ${duplicates.length} duplicate${duplicates.length === 1 ? '' : 's'} already on the calendar or awaiting review`,
-        );
+      built = candidates.map((c) => ({
+        candidate: c,
+        submission: buildSubmissionPayload({
+          ...c,
+          venue_name: c.venue_name || 'Unknown venue',
+          source_url: sourceUrl,
+          image_url: flyerImageUrl,
+          submitter_email: email,
+          submitter_name: name || null,
+        }),
+      }));
+    } catch (e) {
+      setSubmitError(friendlySubmissionError(e) + ' Fix it in the list above and try again.');
+      return false;
+    }
+    setFlyerSaving(true);
+    try {
+      let unique = candidates;
+      try {
+        const result = await dedupeCandidates(candidates, 'both');
+        unique = result.unique;
+        if (result.duplicates.length > 0) {
+          toast.warning(
+            `Skipped ${result.duplicates.length} duplicate${result.duplicates.length === 1 ? '' : 's'} already on the calendar or awaiting review`,
+          );
+        }
+      } catch {
+        // Duplicate check is best-effort; moderators also dedupe on approval.
       }
       if (unique.length === 0) {
         toast.info('All of these events are already on the calendar or queued for review.');
-        return;
+        return true;
       }
-      for (const c of unique) {
-        await createSubmission.mutateAsync({
-          title: c.title.slice(0, 200),
-          description: c.description?.slice(0, 2000) ?? null,
-          event_type: c.event_type,
-          venue_name: (c.venue_name || 'Unknown venue').slice(0, 200),
-          venue_location: c.venue_location?.slice(0, 200) ?? null,
-          event_date: c.event_date,
-          start_time: c.start_time || null,
-          end_time: c.end_time || null,
-          booking_url: normalizeHttpUrl(c.booking_url),
-          price_info: c.price_info?.slice(0, 100) ?? null,
-          source_url: normalizeHttpUrl(sourceUrl),
-          image_url: normalizeHttpUrl(flyerImageUrl),
-          submitter_email: email,
-          submitter_name: name || null,
-        });
+      const toSend = built.filter((b) => unique.includes(b.candidate));
+      const ids: string[] = [];
+      let failed = 0;
+      let lastError: unknown = null;
+      for (const { submission } of toSend) {
+        const key = JSON.stringify(submission);
+        let id = flyerIdsRef.current.get(key);
+        if (!id) {
+          id = crypto.randomUUID();
+          flyerIdsRef.current.set(key, id);
+        }
+        try {
+          await createSubmission.mutateAsync({ id, submission });
+          ids.push(id);
+        } catch (e) {
+          failed += 1;
+          lastError = e;
+        }
       }
+      if (failed > 0) {
+        setSubmitError(
+          `${ids.length} of ${toSend.length} events were sent; ${failed} did not go through. ` +
+            friendlySubmissionError(lastError) +
+            ' Press submit again to retry — events already sent will not be duplicated.',
+        );
+        return false;
+      }
+      flyerIdsRef.current.clear();
+      setReceipt({ count: ids.length, ref: ids[0].slice(0, 8).toUpperCase() });
       setSubmitted(true);
-    } catch (e) {
-      // useCreateSubmission already toasts on error
+      return true;
+    } finally {
+      setFlyerSaving(false);
     }
   };
+
+  const errorBanner = submitError ? (
+    <div role="alert" className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+      {submitError}
+    </div>
+  ) : null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -256,8 +319,9 @@ export function SubmitEventDialog({ open, onOpenChange, initialTab = 'flyer' }: 
             <FlyerImporter
               onSave={handleFlyerSave}
               saveLabel="Submit for review"
-              saving={createSubmission.isPending}
+              saving={flyerSaving || createSubmission.isPending}
             />
+            {errorBanner}
           </TabsContent>
 
           <TabsContent value="manual" className="pt-4">
@@ -512,6 +576,7 @@ export function SubmitEventDialog({ open, onOpenChange, initialTab = 'flyer' }: 
               </div>
             </div>
 
+            {errorBanner}
             <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
