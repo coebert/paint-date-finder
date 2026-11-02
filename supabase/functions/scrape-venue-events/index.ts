@@ -640,7 +640,7 @@ async function runScrape(
             .in("status", ["pending", "approved"])
             .limit(100),
         ]);
-        const existingEvent = (sameDayEvents ?? []).find((e) =>
+        const existingEvent = (sameDayEvents ?? []).find((e: { id: string; title: string; venue_name: string; verification_status: string }) =>
           venueNamesMatch(e.venue_name ?? "", effectiveVenue) &&
           sameEventIdentity(e.title ?? "", verdict.cleaned.title)
         ) ?? null;
@@ -653,7 +653,7 @@ async function runScrape(
           deduped++;
           continue;
         }
-        const existingSub = (sameDaySubs ?? []).find((s) =>
+        const existingSub = (sameDaySubs ?? []).find((s: { title: string; venue_name: string; submission_kind: string | null }) =>
           venueNamesMatch(s.venue_name ?? "", effectiveVenue) &&
           sameEventIdentity(s.title ?? "", verdict.cleaned.title) &&
           (s.submission_kind ?? "new") === kind
