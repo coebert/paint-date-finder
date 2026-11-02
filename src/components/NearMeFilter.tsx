@@ -115,6 +115,7 @@ export function NearMeFilter({ location, hiddenNoCoords = 0 }: NearMeFilterProps
                 onChange={(e) => setPlaceQuery(e.target.value)}
                 placeholder="Postcode or town (e.g. SW1A 1AA, Bristol)"
                 className="pl-9 h-9 bg-input border-border"
+                id="near-me-place"
                 aria-label="Postcode or town"
               />
             </div>
