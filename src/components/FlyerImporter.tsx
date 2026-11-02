@@ -650,21 +650,7 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
         // The uploaded file is reused at save time as the attached flyer.
         let publicUrl = uploadedFlyerUrl;
         if (!publicUrl) {
-          const ext = file.name.split('.').pop()?.toLowerCase() || (tab === 'pdf' ? 'pdf' : 'jpg');
-          const safeExt = ext.replace(/[^a-z0-9]/g, '').slice(0, 5) || 'bin';
-          const objectKey = `${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}.${safeExt}`;
-          const { error: uploadError } = await supabase.storage
-            .from('flyer-images')
-            .upload(objectKey, file, {
-              cacheControl: '31536000',
-              contentType: file.type || undefined,
-              upsert: false,
-            });
-          if (uploadError) {
-            throw new Error(`Upload failed: ${uploadError.message}`);
-          }
-          const { data: pub } = supabase.storage.from('flyer-images').getPublicUrl(objectKey);
-          publicUrl = pub.publicUrl;
+          publicUrl = await uploadFlyerFile(file);
           setUploadedFlyerUrl(publicUrl);
         }
         setStage('prepare', 'done', `${(file.size / 1024 / 1024).toFixed(1)} MB uploaded`);
@@ -847,21 +833,7 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
     let flyerImageUrl: string | null = uploadedFlyerUrl;
     if (!flyerImageUrl && file && (tab === 'image' || tab === 'pdf')) {
       try {
-        const ext = file.name.split('.').pop()?.toLowerCase() || (tab === 'pdf' ? 'pdf' : 'jpg');
-        const safeExt = ext.replace(/[^a-z0-9]/g, '').slice(0, 5) || 'bin';
-        const objectKey = `${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}.${safeExt}`;
-        const { error: uploadError } = await supabase.storage
-          .from('flyer-images')
-          .upload(objectKey, file, {
-            cacheControl: '31536000',
-            contentType: file.type || undefined,
-            upsert: false,
-          });
-        if (uploadError) throw uploadError;
-        const { data: pub } = supabase.storage
-          .from('flyer-images')
-          .getPublicUrl(objectKey);
-        flyerImageUrl = pub.publicUrl;
+        flyerImageUrl = await uploadFlyerFile(file);
       } catch (e) {
         console.error('Flyer upload failed', e);
         toast.warning('Could not attach the original flyer image — saving the events anyway.');
