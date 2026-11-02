@@ -55,6 +55,16 @@ export function AdminFlyerImportCard() {
         toast.info('Nothing new to add — all candidates were duplicates.');
         return false;
       }
+      const proof = normalizeHttpUrl(sourceUrl) ?? normalizeHttpUrl(flyerImageUrl);
+      if (!proof) {
+        toast.error("Add the organiser's page link (or keep the uploaded flyer) so each event has a source.");
+        return false;
+      }
+      const noVenue = unique.find((c) => !c.venue_name?.trim());
+      if (noVenue) {
+        toast.error(`"${noVenue.title}" has no venue — add the venue shown on the flyer.`);
+        return false;
+      }
       const bad = unique.find((c) => !isValidEventDate(c.event_date));
       if (bad) {
         toast.error(`"${bad.title}" has an invalid date — fix it and save again.`);
@@ -64,14 +74,14 @@ export function AdminFlyerImportCard() {
         title: c.title.slice(0, 200),
         description: c.description?.slice(0, 2000) ?? null,
         event_type: c.event_type,
-        venue_name: (c.venue_name || 'Unknown venue').slice(0, 200),
+        venue_name: c.venue_name!.trim().slice(0, 200),
         venue_location: c.venue_location?.slice(0, 200) ?? null,
         event_date: c.event_date,
         start_time: normalizeTime(c.start_time, 'Start time'),
         end_time: normalizeTime(c.end_time, 'End time'),
         booking_url: normalizeHttpUrl(c.booking_url),
         price_info: c.price_info?.slice(0, 100) ?? null,
-        source_url: normalizeHttpUrl(sourceUrl),
+        source_url: proof,
         image_url: normalizeHttpUrl(flyerImageUrl),
         is_verified: true,
       }));

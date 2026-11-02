@@ -161,6 +161,32 @@ export function EventFormFields({ form, placeholders = {} }: EventFormFieldsProp
 
       <FormField
         control={form.control}
+        name="source_url"
+        render={({ field }) => (
+          <FormItem className="col-span-2">
+            <FormLabel>Source page (required)</FormLabel>
+            <FormControl>
+              <Input {...field} type="url" className="bg-input border-border" placeholder="Organiser, venue or event page showing this date" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
+        name="source_quote"
+        render={({ field }) => (
+          <FormItem className="col-span-2">
+            <FormLabel>Excerpt from the source (optional)</FormLabel>
+            <FormControl>
+              <Input {...field} className="bg-input border-border" placeholder="Copy the line that states the event and its date" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={form.control}
         name="booking_url"
         render={({ field }) => (
           <FormItem className="col-span-2">

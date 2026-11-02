@@ -34,6 +34,9 @@ export const adminEventSchema = z.object({
     .max(100, 'Price info must be less than 100 characters')
     .optional()
     .or(z.literal('')),
+  /** Organiser/venue/event page that states this date — required to publish. */
+  source_url: z.string().trim().regex(/^https?:\/\/\S+$/i, 'Add the organiser, venue or event page that shows this date'),
+  source_quote: z.string().trim().max(500).optional().or(z.literal('')),
   is_verified: z.boolean().default(true),
 });
 
@@ -50,5 +53,7 @@ export const defaultAdminEventValues: AdminEventFormData = {
   end_time: '',
   booking_url: '',
   price_info: '',
+  source_url: '',
+  source_quote: '',
   is_verified: true,
 };

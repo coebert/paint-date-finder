@@ -3,6 +3,13 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { errors, json, preflight } from "../_shared/http.ts";
 import { authorizeAdminOrCron } from "../_shared/supabase.ts";
+import {
+  checkCandidateEvidence,
+  icsEventLines,
+  jsonLdEventLines,
+  sameEventIdentity,
+  sha256Hex,
+} from "../_shared/evidence.ts";
 
 type Candidate = {
   title: string;
@@ -39,39 +46,40 @@ function httpUrlOrNull(value: unknown): string | null {
   return /^https?:\/\/\S+$/i.test(trimmed) ? trimmed : null;
 }
 
-const BROWSER_UA =
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
+/** Last raw HTML per URL, so booking links can be checked against the page. */
+const rawHtmlByUrl = new Map<string, string>();
 
+/**
+ * Fetch a source honestly identified as our bot. Bot blocks are NOT retried
+ * with a spoofed browser identity; they surface as an error for review.
+ * Structured events (JSON-LD / ICS) are appended as quotable lines.
+ */
 async function fetchPageText(url: string): Promise<string> {
-  const attempt = (ua: string) =>
-    fetch(url, {
-      headers: {
-        "User-Agent": ua,
-        Accept: "text/html,application/xhtml+xml,text/calendar,text/plain;q=0.9,*/*;q=0.8",
-        "Accept-Language": "en-GB,en;q=0.9",
-      },
-      redirect: "follow",
-    });
-
-  let res = await attempt(
-    "Mozilla/5.0 (compatible; FindAWalkOnBot/1.0; +https://findawalkon.app)",
-  );
-  // Some hosts (Cloudflare early-data 425, bot filters 403/429) reject the bot UA
-  // but serve the same page to a normal browser UA. Retry once before failing.
-  if (!res.ok && [403, 425, 429, 503].includes(res.status)) {
-    res = await attempt(BROWSER_UA);
-  }
+  const res = await fetch(url, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (compatible; FindAWalkOnBot/1.0; +https://findawalkon.com)",
+      Accept: "text/html,application/xhtml+xml,text/calendar,text/plain;q=0.9,*/*;q=0.8",
+      "Accept-Language": "en-GB,en;q=0.9",
+    },
+    redirect: "follow",
+  });
   if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${url}`);
-  const html = await res.text();
-  // Strip scripts/styles, then tags, collapse whitespace. Cap at 30k chars.
-  const stripped = html
+  const body = await res.text();
+  rawHtmlByUrl.set(url, body.slice(0, 500_000));
+  if (/BEGIN:VCALENDAR/.test(body.slice(0, 2000))) {
+    return icsEventLines(body).join("\n").slice(0, 30_000);
+  }
+  const structured = jsonLdEventLines(body);
+  const stripped = body
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
     .replace(/<style[\s\S]*?<\/style>/gi, " ")
     .replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&pound;/g, "£")
     .replace(/\s+/g, " ")
     .trim();
-  return stripped.slice(0, 30_000);
+  return (structured.join(" \n ") + " \n " + stripped).trim().slice(0, 30_000);
 }
 
 // Firecrawl fallback: JS-renders the page and returns markdown.
@@ -138,11 +146,11 @@ async function extractCandidates(
       "Each event may be hosted at a different venue. Extract the venue name as stated in the post. " +
       "Only return events with an unambiguous, explicitly stated date AND a clearly identified venue. " +
       "Never guess dates or venues. If either is missing, skip that event. " +
-      "GROUNDING: for every event, set source_quote to a verbatim excerpt (max 240 chars) from the page text that mentions the date — never paraphrase. If you cannot find a verbatim date mention, skip the event."
+      "GROUNDING: for every event, set source_quote to a verbatim excerpt (max 240 chars) from the page text that states the event name and its full date INCLUDING THE YEAR — copy it character for character, never paraphrase. Never infer a year, never extend a recurring schedule into dates, never use relative dates. If the page does not state the full date with year next to the event, skip it. Leave time, price and booking link empty unless stated."
     : "You extract upcoming UK paintball events from venue website text. " +
       "Only return events with an unambiguous, explicitly stated date. " +
       "Never guess or infer dates. If no concrete dates are present, return an empty array. " +
-      "GROUNDING: for every event, set source_quote to a verbatim excerpt (max 240 chars) from the page text that mentions the date — never paraphrase. If you cannot find a verbatim date mention, skip the event.";
+      "GROUNDING: for every event, set source_quote to a verbatim excerpt (max 240 chars) from the page text that states the event name and its full date INCLUDING THE YEAR — copy it character for character, never paraphrase. Never infer a year, never extend a recurring schedule into dates, never use relative dates. If the page does not state the full date with year next to the event, skip it. Leave time, price and booking link empty unless stated.";
 
   const contextLine = isGroup
     ? `Source: Facebook group "${venueName}"\nSource URL: ${sourceUrl}\nToday: ${today}\n\n` +
@@ -546,22 +554,8 @@ async function runScrape(
         text = await fetchViaFirecrawl(source.url, FIRECRAWL_API_KEY);
         usedFirecrawl = true;
       } else {
-        try {
-          text = await fetchPageText(source.url);
-        } catch (fetchErr) {
-          // Some venues (e.g. Campaign Paintball) block default fetch with
-          // 403/Cloudflare; retry transparently via Firecrawl.
-          const msg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
-          if (FIRECRAWL_API_KEY && /\bHTTP (403|401|429|503)\b/.test(msg)) {
-            console.log(
-              `[scrape] source="${source.venue_name}" plain_fetch_blocked (${msg}) — retrying via Firecrawl`,
-            );
-            text = await fetchViaFirecrawl(source.url, FIRECRAWL_API_KEY);
-            usedFirecrawl = true;
-          } else {
-            throw fetchErr;
-          }
-        }
+        // Bot blocks (401/403/429/503) are reported, not worked around.
+        text = await fetchPageText(source.url);
         // Fallback: if plain fetch returned suspiciously little content,
         // retry via Firecrawl (likely an SPA shell).
         if (!usedFirecrawl && text.length < 300 && FIRECRAWL_API_KEY) {
@@ -594,139 +588,120 @@ async function runScrape(
         `[scrape] source="${source.venue_name}" type=${sourceType} ai_returned=${returned}`,
       );
 
-      const pageHaystack = text
-        .toLowerCase()
-        .replace(/\s+/g, " ")
-        .trim();
-
-
+      const fetchedAt = new Date().toISOString();
+      const sourceHash = await sha256Hex(text);
+      const todayIso = new Date().toISOString().slice(0, 10);
+      const rejectCounts: Record<string, number> = {};
 
       for (const c of candidates) {
-        // Hard date guards
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(c.event_date)) {
-          invalidDate++;
-          continue;
-        }
-        if (c.event_date < new Date().toISOString().slice(0, 10)) {
-          invalidDate++;
-          continue;
-        }
-        if (c.event_date > maxFutureDateIso) {
-          invalidDate++;
-          continue;
-        }
-        if (!c.title || c.title.trim().length < 3) {
-          invalidDate++;
-          continue;
-        }
-
         // For facebook_group sources, the venue is per-event (extracted by AI).
-        // For venue sources, fall back to the source's venue_name.
         const effectiveVenue = sourceType === "facebook_group"
           ? (c.venue_name?.trim() || "")
           : source.venue_name;
 
-        if (sourceType === "facebook_group" && !effectiveVenue) {
+        // The AI output is only a pointer: the evidence gate checks the full
+        // excerpt against the fetched page, the exact date/year in that same
+        // excerpt, event identity, venue (multi-venue sources), sport and range.
+        const verdict = checkCandidateEvidence(
+          { ...c, venue_name: effectiveVenue },
+          {
+            pageText: text,
+            sourceUrl: source.url,
+            venueName: effectiveVenue || source.venue_name,
+            multiVenue: sourceType === "facebook_group",
+            today: todayIso,
+            maxDate: maxFutureDateIso,
+            rawHtml: rawHtmlByUrl.get(source.url),
+          },
+        );
+        if (!effectiveVenue) verdict.reasons.push("missing_venue");
+        if (!verdict.ok || !effectiveVenue) {
           invalidDate++;
+          for (const r of verdict.reasons) rejectCounts[r] = (rejectCounts[r] ?? 0) + 1;
           continue;
         }
 
-        // Grounded verification: source_quote must appear in page text.
-        const warnings: string[] = [];
-        let quoteVerified = false;
-        if (c.source_quote) {
-          const needle = c.source_quote
-            .toLowerCase()
-            .replace(/\s+/g, " ")
-            .trim()
-            .slice(0, 200);
-          if (needle.length >= 6 && pageHaystack.includes(needle)) {
-            quoteVerified = true;
-          } else {
-            const words = needle.split(" ").filter((w) => w.length > 2);
-            if (words.length >= 4 && pageHaystack.includes(words.slice(0, 4).join(" "))) {
-              quoteVerified = true;
-            }
-          }
-        }
-        if (!quoteVerified) {
-          // For scraped sources we have the page text, so an unverifiable
-          // quote is a strong hallucination signal — skip.
-          invalidDate++;
-          continue;
-        }
-
-        // Venue match
+        const warnings: string[] = [...verdict.warnings];
         const venueStatus = matchVenue(effectiveVenue);
         if (venueStatus === "unmatched") warnings.push("unknown_venue");
 
-        // Dedupe: fuzzy match against existing canonical events
-        // (same venue, overlapping date ±2 days, similar title) and against
-        // pending/approved submissions for the same date+type, comparing venue
-        // names loosely so punctuation/spelling drift still dedupes.
-        const [dupRes, { data: sameDaySubs }] = await Promise.all([
-          supabase.rpc("find_duplicate_event", {
-            _venue: effectiveVenue,
-            _date: c.event_date,
-            _title: c.title,
-          }),
+        // Exact-identity dedupe: same venue, SAME date, same event identity.
+        // Nearby dates are different events.
+        const [{ data: sameDayEvents }, { data: sameDaySubs }] = await Promise.all([
+          supabase
+            .from("events")
+            .select("id, title, venue_name, verification_status")
+            .eq("event_date", c.event_date)
+            .limit(100),
           supabase
             .from("event_submissions")
-            .select("id, venue_name")
+            .select("id, title, venue_name, submission_kind")
             .eq("event_date", c.event_date)
-            .eq("event_type", c.event_type)
             .in("status", ["pending", "approved"])
-            .limit(50),
+            .limit(100),
         ]);
-        const duplicateEventId = (dupRes.data as string | null) ?? null;
-        const existingSub = (sameDaySubs ?? []).find((s) =>
-          venueNamesMatch(s.venue_name ?? "", effectiveVenue)
+        const existingEvent = (sameDayEvents ?? []).find((e: { id: string; title: string; venue_name: string; verification_status: string }) =>
+          venueNamesMatch(e.venue_name ?? "", effectiveVenue) &&
+          sameEventIdentity(e.title ?? "", verdict.cleaned.title)
         ) ?? null;
-
-        if (duplicateEventId) {
-          // Merge new source info into the canonical event and skip insert
-          await supabase.rpc("merge_event_source", {
-            _event_id: duplicateEventId,
-            _source: {
-              source_url: source.url,
-              source_quote: c.source_quote ?? null,
-              description: c.description ?? null,
-              booking_url: httpUrlOrNull(c.booking_url),
-              price_info: c.price_info ?? null,
-              venue_location: c.venue_location ?? null,
-              scraped_by: source.venue_name,
-            },
-          });
+        const kind = verdict.kind === "cancellation"
+          ? (existingEvent ? "cancellation" : null)
+          : existingEvent
+          ? (existingEvent.verification_status === "source_confirmed" ? null : "evidence")
+          : "new";
+        if (!kind) {
           deduped++;
           continue;
         }
+        const existingSub = (sameDaySubs ?? []).find((s: { title: string; venue_name: string; submission_kind: string | null }) =>
+          venueNamesMatch(s.venue_name ?? "", effectiveVenue) &&
+          sameEventIdentity(s.title ?? "", verdict.cleaned.title) &&
+          (s.submission_kind ?? "new") === kind
+        );
         if (existingSub) {
           deduped++;
           continue;
         }
 
-
         const submitterLabel = sourceType === "facebook_group"
           ? `Auto-scraper (FB group: ${source.venue_name})`
           : `Auto-scraper (${source.venue_name})`;
 
+        // Queued for admin review only — never published or merged automatically.
         const { error: insErr } = await supabase
           .from("event_submissions")
           .insert({
-            title: c.title.slice(0, 200),
-            description: c.description?.slice(0, 2000) ?? null,
-            event_type: c.event_type,
+            title: verdict.cleaned.title,
+            description: verdict.cleaned.description,
+            event_type: verdict.cleaned.event_type,
             venue_name: effectiveVenue.slice(0, 200),
-            venue_location: c.venue_location?.slice(0, 200) ?? null,
+            venue_location: null,
             event_date: c.event_date,
-            start_time: c.start_time || null,
-            end_time: c.end_time || null,
-            booking_url: httpUrlOrNull(c.booking_url),
-            price_info: c.price_info?.slice(0, 100) ?? null,
+            start_time: verdict.cleaned.start_time,
+            end_time: verdict.cleaned.end_time,
+            booking_url: verdict.cleaned.booking_url,
+            price_info: verdict.cleaned.price_info,
             source_url: source.url,
-            source_quote: c.source_quote?.slice(0, 500) ?? null,
+            source_quote: verdict.quote,
+            source_fetched_at: fetchedAt,
+            source_hash: sourceHash,
+            evidence_status: "source_confirmed",
+            evidence: {
+              method: "excerpt_exact_match",
+              dates_in_quote: verdict.datesInQuote,
+              warnings,
+              fetched_at: fetchedAt,
+              source_hash: sourceHash,
+              ai_suggested: {
+                start_time: c.start_time ?? null,
+                end_time: c.end_time ?? null,
+                price_info: c.price_info ?? null,
+              },
+            },
+            submission_kind: kind,
+            related_event_id: existingEvent?.id ?? null,
             venue_match_status: venueStatus,
-            sanity_warnings: warnings,
+            sanity_warnings: kind === "new" ? warnings : [...warnings, `${kind}_for_existing_event`],
             submitter_email: SCRAPER_EMAIL,
             submitter_name: submitterLabel,
             status: "pending",
@@ -740,6 +715,9 @@ async function runScrape(
           candidatesCreated++;
           inserted++;
         }
+      }
+      if (Object.keys(rejectCounts).length) {
+        console.log(`[scrape] source="${source.venue_name}" rejected=${JSON.stringify(rejectCounts)}`);
       }
     } catch (e) {
       sourceStatus = "error";

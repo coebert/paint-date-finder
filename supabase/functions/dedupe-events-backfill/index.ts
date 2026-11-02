@@ -77,6 +77,7 @@ async function runBackfill(admin: any, dryRun: boolean): Promise<Response> {
       .select(
         "id,title,venue_name,event_date,description,booking_url,price_info,image_url,venue_location,source_url,source_quote,created_at"
       )
+      .neq("verification_status", "quarantined")
       .order("created_at", { ascending: true })
       .limit(10000);
 
@@ -100,6 +101,9 @@ async function runBackfill(admin: any, dryRun: boolean): Promise<Response> {
           _venue: ev.venue_name,
           _date: ev.event_date,
           _title: ev.title,
+          // Exact-date duplicates only: nearby dates are different events.
+          _date_window: 0,
+          _title_threshold: 0.6,
         },
       );
       if (dupErr) continue;
@@ -109,28 +113,11 @@ async function runBackfill(admin: any, dryRun: boolean): Promise<Response> {
       merges.push({ canonical: canonicalId, duplicate: ev.id });
 
       if (!dryRun) {
-        await admin.rpc("merge_event_source", {
-          _event_id: canonicalId,
-          _source: {
-            source_url: ev.source_url,
-            source_quote: ev.source_quote,
-            description: ev.description,
-            booking_url: ev.booking_url,
-            price_info: ev.price_info,
-            image_url: ev.image_url,
-            venue_location: ev.venue_location,
-            scraped_by: "dedupe-backfill",
-            original_event_id: ev.id,
-            original_title: ev.title,
-            original_venue: ev.venue_name,
-            original_event_date: ev.event_date,
-          },
+        // Reversible: hide the newer copy for review instead of deleting it.
+        const { error: delErr } = await admin.rpc("quarantine_event", {
+          _id: ev.id,
+          _reason: `Duplicate of event ${canonicalId} (same venue, same date, same title)`,
         });
-
-        const { error: delErr } = await admin
-          .from("events")
-          .delete()
-          .eq("id", ev.id);
         if (!delErr) removed.add(ev.id);
       } else {
         removed.add(ev.id);

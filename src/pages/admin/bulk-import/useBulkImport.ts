@@ -88,7 +88,18 @@ export function useBulkImport() {
   }, [submissions, dateFrom, dateTo, submitterFilter]);
 
   const enriched = useMemo<EnrichedRow[]>(
-    () => filtered.map((s) => ({ s, issues: validateSubmission(s) })),
+    () =>
+      filtered.map((s) => ({
+        s,
+        // Bulk publishing is limited to suggestions whose excerpt and exact
+        // date were found on the fetched source; everything else is reviewed one by one.
+        issues: [
+          ...validateSubmission(s),
+          ...(s.evidence_status === 'source_confirmed' && s.submission_kind === 'new'
+            ? []
+            : [{ field: 'source', message: 'Needs individual source review' }]),
+        ],
+      })),
     [filtered],
   );
 
@@ -163,70 +174,18 @@ export function useBulkImport() {
         setProgress((p) => (p ? { ...p, currentBatch: batchIndex } : p));
 
         try {
-          const candidates = batch.map((r) => ({
-            title: r.s.title,
-            description: r.s.description ?? undefined,
-            event_type: r.s.event_type,
-            event_date: r.s.event_date,
-            start_time: r.s.start_time ?? undefined,
-            end_time: r.s.end_time ?? undefined,
-            price_info: r.s.price_info ?? undefined,
-            booking_url: r.s.booking_url ?? undefined,
-            venue_name: r.s.venue_name,
-            venue_location: r.s.venue_location ?? undefined,
-          }));
-
-          const { unique } = await dedupeCandidates(candidates, 'events');
-          const uniqueKeys = new Set(
-            unique.map((c) => `${c.title}|${c.event_date}|${c.venue_name ?? ''}`),
-          );
-          const toPublish = batch.filter((r) =>
-            uniqueKeys.has(`${r.s.title}|${r.s.event_date}|${r.s.venue_name ?? ''}`),
-          );
-          const dupRows = batch.filter(
-            (r) => !uniqueKeys.has(`${r.s.title}|${r.s.event_date}|${r.s.venue_name ?? ''}`),
-          );
-
-          if (toPublish.length > 0) {
-            const eventRows = toPublish.map((r) => ({
-              title: r.s.title.slice(0, 200),
-              description: r.s.description?.slice(0, 2000) ?? null,
-              event_type: r.s.event_type,
-              venue_name: r.s.venue_name.slice(0, 200),
-              venue_location: r.s.venue_location?.slice(0, 200) ?? null,
-              event_date: r.s.event_date,
-              start_time: r.s.start_time || null,
-              end_time: r.s.end_time || null,
-              booking_url: r.s.booking_url || null,
-              price_info: r.s.price_info?.slice(0, 100) ?? null,
-              source_url: r.s.source_url || null,
-              is_verified: true,
-            }));
-            const { error: insertErr } = await supabase.from('events').insert(eventRows);
-            if (insertErr) throw insertErr;
-
-            const ids = toPublish.map((r) => r.s.id);
-            const { error: updErr } = await supabase
-              .from('event_submissions')
-              .update({
-                status: 'approved' as SubmissionStatus,
-                admin_notes: `Bulk imported (batch ${batchIndex}/${totalBatches})`,
-                reviewed_at: new Date().toISOString(),
-              })
-              .in('id', ids);
-            if (updErr) throw updErr;
-          }
-
-          if (dupRows.length > 0) {
-            const ids = dupRows.map((r) => r.s.id);
-            await supabase
-              .from('event_submissions')
-              .update({
-                status: 'rejected' as SubmissionStatus,
-                admin_notes: 'Bulk: duplicate of existing event',
-                reviewed_at: new Date().toISOString(),
-              })
-              .in('id', ids);
+          const toPublish: EnrichedRow[] = [];
+          const dupRows: EnrichedRow[] = [];
+          for (const r of batch) {
+            const { data, error } = await supabase.rpc('approve_submission', {
+              _id: r.s.id,
+              _source_url: r.s.source_url ?? '',
+              _confirmed_source_date: true,
+              _notes: `Bulk approved (batch ${batchIndex}/${totalBatches}); excerpt and date matched source`,
+            });
+            if (error) throw error;
+            if ((data as { duplicate?: boolean } | null)?.duplicate) dupRows.push(r);
+            else toPublish.push(r);
           }
 
           totalPublished += toPublish.length;

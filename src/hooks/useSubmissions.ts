@@ -73,91 +73,52 @@ export function friendlySubmissionError(error: unknown): string {
   return 'Something went wrong sending your event. Please try again in a moment — your details are still filled in.';
 }
 
+export interface ApproveSubmissionInput {
+  submission: EventSubmission;
+  adminNotes?: string;
+  /** Organiser/venue/event page the moderator checked (defaults to the submission's link). */
+  sourceUrl?: string | null;
+  /** Moderator confirms the source shows this exact day, month and year. */
+  confirmedSourceDate: boolean;
+}
+
+/**
+ * Approval runs entirely on the server (approve_submission): it requires a
+ * source link and an explicit date check, keeps the excerpt and evidence,
+ * matches only exact same-date duplicates, and records whether the listing is
+ * organiser-source confirmed or moderator reviewed.
+ */
 export function useApproveSubmission() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ submission, adminNotes }: { submission: EventSubmission; adminNotes?: string }) => {
-      let mergedIntoEventId: string | null = null;
-
-      // Prevent duplicate events if this submission was already approved
-      if (submission.status !== 'approved') {
-        // Try to find an existing canonical event (same venue, overlapping date, similar title)
-        const { data: duplicateId } = await supabase.rpc('find_duplicate_event', {
-          _venue: submission.venue_name,
-          _date: submission.event_date,
-          _title: submission.title,
-        });
-
-        if (duplicateId) {
-          // Merge this submission's source info into the canonical event
-          mergedIntoEventId = duplicateId as string;
-          const { error: mergeError } = await supabase.rpc('merge_event_source', {
-            _event_id: duplicateId,
-            _source: {
-              source_url: submission.source_url ?? null,
-              source_quote: (submission as { source_quote?: string | null }).source_quote ?? null,
-              description: submission.description ?? null,
-              booking_url: submission.booking_url ?? null,
-              price_info: submission.price_info ?? null,
-              image_url: submission.image_url ?? null,
-              venue_location: submission.venue_location ?? null,
-              submitter: submission.submitter_name ?? null,
-              merged_from_submission_id: submission.id,
-            },
-          });
-          if (mergeError) throw mergeError;
-        } else {
-          // No duplicate — create a fresh event from the submission
-          const { error: eventError } = await supabase
-            .from('events')
-            .insert({
-              title: submission.title,
-              description: submission.description,
-              event_type: submission.event_type,
-              venue_name: submission.venue_name,
-              venue_location: submission.venue_location,
-              event_date: submission.event_date,
-              start_time: submission.start_time,
-              end_time: submission.end_time,
-              booking_url: submission.booking_url,
-              price_info: submission.price_info,
-              source_url: submission.source_url,
-              image_url: submission.image_url,
-              is_verified: true,
-            });
-
-          if (eventError) throw eventError;
-        }
+    mutationFn: async ({ submission, adminNotes, sourceUrl, confirmedSourceDate }: ApproveSubmissionInput) => {
+      if (!confirmedSourceDate) {
+        throw new Error('Confirm you checked the source shows this exact date');
       }
-
-      // Then update the submission status
-      const notes = mergedIntoEventId
-        ? `${adminNotes ? adminNotes + '\n' : ''}Merged into existing event ${mergedIntoEventId}`
-        : adminNotes;
-      const { error: updateError } = await supabase
-        .from('event_submissions')
-        .update({
-          status: 'approved' as SubmissionStatus,
-          admin_notes: notes,
-          reviewed_at: new Date().toISOString(),
-        })
-        .eq('id', submission.id);
-
-      if (updateError) throw updateError;
-      return { mergedIntoEventId };
+      const { data, error } = await supabase.rpc('approve_submission', {
+        _id: submission.id,
+        _source_url: sourceUrl?.trim() || submission.source_url || '',
+        _confirmed_source_date: true,
+        _notes: adminNotes || null,
+      });
+      if (error) throw error;
+      const res = (data ?? {}) as { event_id?: string; duplicate?: boolean; basis?: string };
+      return { mergedIntoEventId: res.duplicate ? res.event_id ?? null : null, basis: res.basis ?? null };
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['submissions'] });
       queryClient.invalidateQueries({ queryKey: ['events'] });
       if (result?.mergedIntoEventId) {
-        toast.success('Approved and merged into an existing duplicate event');
+        toast.success('Matched an existing listing for the same day — source added to it');
+      } else if (result?.basis === 'organiser_source') {
+        toast.success('Published as organiser-source confirmed');
       } else {
-        toast.success('Event approved and published!');
+        toast.success('Published as moderator reviewed');
       }
     },
     onError: (error) => {
-      toast.error('Failed to approve event: ' + error.message);
+      toast.error('Not approved: ' + error.message);
     },
   });
 }

@@ -32,6 +32,7 @@ import { NativeAlertTaps } from "./components/NativeAlertTaps";
 // Admin routes — split into their own chunk so normal visitors never download them.
 const AdminOverview = lazy(() => import("./pages/admin/AdminOverview"));
 const AdminSubmissions = lazy(() => import("./pages/admin/AdminSubmissions"));
+const AdminEventQuality = lazy(() => import("./pages/admin/AdminEventQuality"));
 const AdminEvents = lazy(() => import("./pages/admin/AdminEvents"));
 const AdminTeams = lazy(() => import("./pages/admin/AdminTeams"));
 const AdminFlags = lazy(() => import("./pages/admin/AdminFlags"));
@@ -111,6 +112,7 @@ const App = () => (
             <Route element={<AdminSection />}>
               <Route path="/admin" element={<AdminOverview />} />
               <Route path="/admin/submissions" element={<AdminSubmissions />} />
+              <Route path="/admin/event-quality" element={<AdminEventQuality />} />
               <Route path="/admin/events" element={<AdminEvents />} />
               <Route path="/admin/teams" element={<AdminTeams />} />
               <Route path="/admin/flags" element={<AdminFlags />} />

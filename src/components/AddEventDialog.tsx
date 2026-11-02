@@ -41,7 +41,8 @@ export function AddEventDialog({ open, onOpenChange }: AddEventDialogProps) {
       image_url: null,
       price_info: data.price_info || null,
       is_verified: data.is_verified,
-      source_url: null,
+      source_url: data.source_url,
+      source_quote: data.source_quote || null,
     });
     } catch {
       // The failure toast comes from the save hook; keep the form open with the typed values.

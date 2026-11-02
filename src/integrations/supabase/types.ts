@@ -215,6 +215,39 @@ export type Database = {
           },
         ]
       }
+      event_review_log: {
+        Row: {
+          action: string
+          actor: string | null
+          after: Json | null
+          before: Json | null
+          created_at: string
+          event_id: string
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          action: string
+          actor?: string | null
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          event_id: string
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          action?: string
+          actor?: string | null
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          event_id?: string
+          id?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
       event_submissions: {
         Row: {
           admin_notes: string | null
@@ -224,15 +257,21 @@ export type Database = {
           end_time: string | null
           event_date: string
           event_type: Database["public"]["Enums"]["event_type"]
+          evidence: Json
+          evidence_status: string
           id: string
           image_url: string | null
           price_info: string | null
+          related_event_id: string | null
           reviewed_at: string | null
           sanity_warnings: string[]
+          source_fetched_at: string | null
+          source_hash: string | null
           source_quote: string | null
           source_url: string | null
           start_time: string | null
           status: Database["public"]["Enums"]["submission_status"]
+          submission_kind: string
           submitter_email: string
           submitter_name: string | null
           title: string
@@ -248,15 +287,21 @@ export type Database = {
           end_time?: string | null
           event_date: string
           event_type?: Database["public"]["Enums"]["event_type"]
+          evidence?: Json
+          evidence_status?: string
           id?: string
           image_url?: string | null
           price_info?: string | null
+          related_event_id?: string | null
           reviewed_at?: string | null
           sanity_warnings?: string[]
+          source_fetched_at?: string | null
+          source_hash?: string | null
           source_quote?: string | null
           source_url?: string | null
           start_time?: string | null
           status?: Database["public"]["Enums"]["submission_status"]
+          submission_kind?: string
           submitter_email: string
           submitter_name?: string | null
           title: string
@@ -272,15 +317,21 @@ export type Database = {
           end_time?: string | null
           event_date?: string
           event_type?: Database["public"]["Enums"]["event_type"]
+          evidence?: Json
+          evidence_status?: string
           id?: string
           image_url?: string | null
           price_info?: string | null
+          related_event_id?: string | null
           reviewed_at?: string | null
           sanity_warnings?: string[]
+          source_fetched_at?: string | null
+          source_hash?: string | null
           source_quote?: string | null
           source_url?: string | null
           start_time?: string | null
           status?: Database["public"]["Enums"]["submission_status"]
+          submission_kind?: string
           submitter_email?: string
           submitter_name?: string | null
           title?: string
@@ -298,6 +349,7 @@ export type Database = {
           end_time: string | null
           event_date: string
           event_type: Database["public"]["Enums"]["event_type"]
+          evidence: Json
           id: string
           image_url: string | null
           is_beginner_friendly: boolean
@@ -305,6 +357,9 @@ export type Database = {
           last_verified_at: string | null
           merged_sources: Json
           price_info: string | null
+          quarantine_reason: string | null
+          quarantined_at: string | null
+          review_basis: string | null
           source_quote: string | null
           source_url: string | null
           start_time: string | null
@@ -322,6 +377,7 @@ export type Database = {
           end_time?: string | null
           event_date: string
           event_type?: Database["public"]["Enums"]["event_type"]
+          evidence?: Json
           id?: string
           image_url?: string | null
           is_beginner_friendly?: boolean
@@ -329,6 +385,9 @@ export type Database = {
           last_verified_at?: string | null
           merged_sources?: Json
           price_info?: string | null
+          quarantine_reason?: string | null
+          quarantined_at?: string | null
+          review_basis?: string | null
           source_quote?: string | null
           source_url?: string | null
           start_time?: string | null
@@ -346,6 +405,7 @@ export type Database = {
           end_time?: string | null
           event_date?: string
           event_type?: Database["public"]["Enums"]["event_type"]
+          evidence?: Json
           id?: string
           image_url?: string | null
           is_beginner_friendly?: boolean
@@ -353,6 +413,9 @@ export type Database = {
           last_verified_at?: string | null
           merged_sources?: Json
           price_info?: string | null
+          quarantine_reason?: string | null
+          quarantined_at?: string | null
+          review_basis?: string | null
           source_quote?: string | null
           source_url?: string | null
           start_time?: string | null
@@ -1037,6 +1100,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_submission: {
+        Args: {
+          _confirmed_source_date: boolean
+          _id: string
+          _notes?: string
+          _source_url: string
+        }
+        Returns: Json
+      }
       create_event_flag:
         | {
             Args: {
@@ -1205,6 +1277,19 @@ export type Database = {
       merge_event_source: {
         Args: { _event_id: string; _source: Json }
         Returns: undefined
+      }
+      quarantine_event: {
+        Args: { _id: string; _reason: string }
+        Returns: boolean
+      }
+      reinstate_event: {
+        Args: {
+          _id: string
+          _note: string
+          _source_quote: string
+          _source_url: string
+        }
+        Returns: boolean
       }
     }
     Enums: {
