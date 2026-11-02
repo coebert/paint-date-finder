@@ -198,7 +198,12 @@ function Content({ city }: { city: NonNullable<ReturnType<typeof getCityBySlug>>
             <h2 id="events-heading" className="font-display text-2xl tracking-wide text-foreground mb-3 flex items-center gap-2">
               <CalendarDays className="w-5 h-5 text-accent" /> Upcoming walk-on events near {city.name}
             </h2>
-            {eventsLoading ? (
+            {loadFailed ? (
+              <div role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm">
+                <p className="text-destructive font-medium">We couldn't load local events.</p>
+                <Button variant="outline" size="sm" className="mt-2 min-h-11" onClick={retryLoad}>Retry</Button>
+              </div>
+            ) : eventsLoading ? (
               <Skeleton className="h-40 w-full" />
             ) : upcoming.length > 0 ? (
               <div className="space-y-3">
