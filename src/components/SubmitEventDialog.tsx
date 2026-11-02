@@ -229,7 +229,7 @@ export function SubmitEventDialog({ open, onOpenChange, initialTab = 'flyer' }: 
     try {
       let unique = candidates;
       try {
-        const result = await dedupeCandidates(candidates, 'both');
+        const result = await dedupeCandidates(candidates, 'both', { exactOnly: true });
         unique = result.unique;
         if (result.duplicates.length > 0) {
           toast.warning(
