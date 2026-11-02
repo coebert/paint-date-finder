@@ -95,6 +95,7 @@ export function useEventById(id: string | undefined) {
         .from('events')
         .select('*')
         .eq('id', id!)
+        .neq('verification_status', 'quarantined')
         .maybeSingle();
       if (error) throw error;
       return data ? normalizeEventUrls(data as PaintballEvent) : null;
