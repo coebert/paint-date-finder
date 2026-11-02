@@ -50,6 +50,13 @@
       "when": 1793658611708,
       "tag": "0006_validate_field_layout_obstacles",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793659473829,
+      "tag": "0007_event_evidence_pipeline",
+      "breakpoints": true
     }
   ]
 }
