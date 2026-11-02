@@ -47,6 +47,7 @@ export function useEvents(filters?: EventFilters, options?: { enabled?: boolean 
       let query = supabase
         .from('events')
         .select('*')
+        .neq('verification_status', 'quarantined')
         .order('event_date', { ascending: true });
 
       if (filters?.eventType) {

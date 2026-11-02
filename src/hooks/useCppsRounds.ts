@@ -14,6 +14,7 @@ export function useCppsRounds() {
         .from('events')
         .select(COLUMNS)
         .ilike('title', 'CPPS%')
+        .neq('verification_status', 'quarantined')
         .order('event_date', { ascending: true });
       if (error) throw error;
       return groupCppsRounds((data ?? []) as CppsEvent[]);
