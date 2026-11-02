@@ -211,6 +211,23 @@ const RECURRING = /\bevery\b|\beach (week|month|weekend|sunday|saturday)\b|\bwee
 const CANCELLED = /eventcancelled|eventpostponed|\bcancel+ed\b|\bpostponed\b|\bcalled off\b|\brescheduled\b|\bno longer (running|taking place)\b/;
 const WRONG_SPORT = /\bairsoft\b|\blaser ?(tag|quest)\b|\bnerf\b|\bgel ?blast/;
 
+const SECTION_RADIUS = 600;
+const count = (re: RegExp, t: string) => (t.match(re) ?? []).length;
+
+/** Classify the sport of the page section containing the quote. */
+export function sportOfSection(page: string, quote: string): "paintball" | "wrong" | "none" {
+  const at = quote ? page.indexOf(quote) : -1;
+  const section = at >= 0
+    ? page.slice(Math.max(0, at - SECTION_RADIUS), at + quote.length + SECTION_RADIUS)
+    : page;
+  const pb = count(/paintball/g, section);
+  const other = count(new RegExp(WRONG_SPORT.source, "g"), section);
+  if (pb === 0 && other > 0) return "wrong";
+  if (other > pb) return "wrong";
+  if (pb === 0) return "none";
+  return "paintball";
+}
+
 export interface CandidateInput {
   title: string;
   event_type: string;
@@ -293,7 +310,11 @@ export function checkCandidateEvidence(c: CandidateInput, ctx: EvidenceContext):
     if (WRONG_SPORT.test(quote) && !/paintball/.test(quote)) reasons.push("wrong_sport");
     if (RECURRING.test(quote)) warnings.push("recurring_wording");
   }
-  if (!/paintball/.test(page)) reasons.push("source_not_paintball");
+  // Judge the sport from the section around the excerpt, not from nav links
+  // elsewhere on the page (an airsoft shop can still link to "paintball").
+  const sport = sportOfSection(page, quote);
+  if (sport === "none") reasons.push("source_not_paintball");
+  else if (sport === "wrong") reasons.push("wrong_sport_section");
 
   const kind = quote && CANCELLED.test(quote) ? "cancellation" : "new";
 
