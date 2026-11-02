@@ -42,7 +42,11 @@ export async function insertSubmission({ id, submission }: CreateSubmissionInput
     .from('event_submissions')
     .insert({ ...submission, id, status: 'pending', admin_notes: null, reviewed_at: null });
   if (error) {
-    if (error.code === '23505') return { id, alreadySaved: true };
+    // Only our own primary key means "this exact row was already saved";
+    // any other unique violation is a real failure.
+    if (error.code === '23505' && /event_submissions_pkey/.test(`${error.message ?? ''} ${(error as { details?: string }).details ?? ''}`)) {
+      return { id, alreadySaved: true };
+    }
     throw error;
   }
   return { id, alreadySaved: false };

@@ -31,6 +31,7 @@ export interface RawSubmission {
   image_url?: string | null;
   submitter_email?: string | null;
   submitter_name?: string | null;
+  source_quote?: string | null;
 }
 
 const EVENT_TYPES = Constants.public.Enums.event_type as readonly string[];
@@ -78,6 +79,9 @@ export function buildSubmissionPayload(raw: RawSubmission): EventSubmissionInser
   if (!title) throw new SubmissionValidationError('Event title is required');
   const venue_name = clean(raw.venue_name, 200);
   if (!venue_name) throw new SubmissionValidationError('Venue name is required');
+  if ((raw.submitter_email?.trim().length ?? 0) > 200) {
+    throw new SubmissionValidationError('That email address is too long (200 characters max)');
+  }
   const submitter_email = clean(raw.submitter_email, 200)?.toLowerCase() ?? null;
   if (!submitter_email || !EMAIL_RE.test(submitter_email)) {
     throw new SubmissionValidationError('A valid email address is required');
@@ -102,5 +106,6 @@ export function buildSubmissionPayload(raw: RawSubmission): EventSubmissionInser
     image_url: optionalUrl(raw.image_url, 'Flyer image link'),
     submitter_email,
     submitter_name: clean(raw.submitter_name, 100),
+    source_quote: clean(raw.source_quote, 500),
   };
 }

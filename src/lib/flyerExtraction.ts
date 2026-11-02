@@ -20,6 +20,8 @@ export type ExtractedCandidate = {
   booking_url?: string | null;
   venue_name?: string | null;
   venue_location?: string | null;
+  /** Verbatim excerpt from the source that states the date. */
+  source_quote?: string | null;
 };
 
 export type FlyerInput =

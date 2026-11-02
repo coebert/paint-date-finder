@@ -39,6 +39,7 @@ export function AdminFlyerImportCard() {
       booking_url?: string | null;
       venue_name?: string | null;
       venue_location?: string | null;
+      source_quote?: string | null;
     }>,
     sourceUrl: string | null,
     flyerImageUrl: string | null,
@@ -82,6 +83,7 @@ export function AdminFlyerImportCard() {
         booking_url: normalizeHttpUrl(c.booking_url),
         price_info: c.price_info?.slice(0, 100) ?? null,
         source_url: proof,
+        source_quote: c.source_quote?.trim().slice(0, 500) || null,
         image_url: normalizeHttpUrl(flyerImageUrl),
         is_verified: true,
       }));
