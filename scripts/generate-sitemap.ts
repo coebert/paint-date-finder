@@ -71,7 +71,7 @@ async function fetchEvents(): Promise<SitemapEntry[]> {
     // Only include events from today onwards to keep the sitemap focused on indexable upcoming pages.
     const today = new Date().toISOString().split("T")[0];
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/events?select=id,updated_at,event_date&event_date=gte.${today}`,
+      `${SUPABASE_URL}/rest/v1/events?select=id,updated_at,event_date&event_date=gte.${today}&verification_status=neq.quarantined`,
       {
         headers: {
           apikey: SUPABASE_ANON_KEY,

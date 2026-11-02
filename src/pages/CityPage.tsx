@@ -88,7 +88,7 @@ function Content({ city }: { city: NonNullable<ReturnType<typeof getCityBySlug>>
         name: `Where can I play paintball in ${city.name}?`,
         acceptedAnswer: {
           '@type': 'Answer',
-          text: `Browse verified .68 caliber paintball venues in and around ${city.name} on this page. Each listing includes location, website and a direct booking link.`,
+          text: `Browse .68 calibre paintball venues in and around ${city.name} on this page, with locations and links to each venue's own website.`,
         },
       },
       {
@@ -96,7 +96,7 @@ function Content({ city }: { city: NonNullable<ReturnType<typeof getCityBySlug>>
         name: `How much does paintball cost in ${city.name}?`,
         acceptedAnswer: {
           '@type': 'Answer',
-          text: `Walk-on entry near ${city.name} typically runs £15–£35 plus paintballs. Each event page shows the exact entry fee and paint price from the venue.`,
+          text: `Entry fees, paint prices, age limits and what is included are set by each venue near ${city.name}. Where an event page shows a price it comes from the organiser; otherwise check with the venue before booking.`,
         },
       },
       {
@@ -112,7 +112,7 @@ function Content({ city }: { city: NonNullable<ReturnType<typeof getCityBySlug>>
         name: 'Are events beginner-friendly?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Many sites near ' + city.name + ' offer hire gear and beginner-friendly walk-ons. Filter by beginner-friendly on the home page to see only suitable events.',
+          text: 'Some sites near ' + city.name + ' offer hire kit and beginner-friendly walk-ons — check with the organiser. You can filter by beginner-friendly on the home page.',
         },
       },
     ],

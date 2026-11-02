@@ -45,9 +45,9 @@ Cities used by OTHER regions (do NOT reuse): ${forbiddenCities.join(", ") || "(n
 
 Return STRICT JSON with this shape (no markdown, no commentary):
 {
-  "intro": "65-90 word region-specific intro paragraph in British English. Mention notable local fields/terrain/scene character if known. Avoid generic phrasing shared with other UK regions. Must read naturally, not keyword-stuffed.",
+  "intro": "65-90 word region-specific intro paragraph in British English. Describe general terrain/scene character only; do not name specific venues, events or prices. Avoid generic phrasing shared with other UK regions. Must read naturally, not keyword-stuffed.",
   "extra_cities": ["3 to 5 additional UK city or county names within ${region.name} that are NOT already listed and NOT in the forbidden list"],
-  "extra_copy": "A short FAQ-style paragraph (80-120 words) covering typical costs, age limits, paint formats (mechanical / mag-fed / speedball) and travel notes specific to ${region.name}. British English."
+  "extra_copy": "A short FAQ-style paragraph (80-120 words) covering game formats (mechanical / mag-fed / speedball) and travel notes specific to ${region.name}. Do NOT state prices, age limits, equipment inclusions, venue names or facts you cannot verify; instead say these vary by venue and should be checked with the organiser. British English."
 }`;
 
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {

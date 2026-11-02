@@ -100,6 +100,7 @@ Deno.serve(async (req) => {
       "id, title, venue_name, venue_location, event_date, event_type, is_beginner_friendly",
     )
     .eq("id", id)
+    .neq("verification_status", "quarantined")
     .maybeSingle();
 
   if (error || !event) {

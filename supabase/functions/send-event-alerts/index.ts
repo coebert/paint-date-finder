@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
 
   const { data: events } = await db.from("events")
     .select("id,title,venue_name,event_date,updated_at")
-    .eq("is_verified", true).gte("event_date", today).gte("updated_at", since)
+    .eq("is_verified", true).neq("verification_status", "quarantined").gte("event_date", today).gte("updated_at", since)
     .order("updated_at", { ascending: true }).limit(200);
   if (!events?.length) return json({ ok: true, sent: 0 });
 

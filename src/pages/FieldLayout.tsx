@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { FieldCanvas, CALLOUT_PREFIX } from '@/components/field/FieldCanvas';
 import { ObstaclePalette } from '@/components/field/ObstaclePalette';
 import { FieldStreetView } from '@/components/field/FieldStreetView';
+import { WebGLGuard } from '@/components/field/WebGLGuard';
 import { FieldCompare } from '@/components/field/FieldCompare';
 import { AnnotationToolbar } from '@/components/field/AnnotationToolbar';
 import { AnnotationLayer } from '@/components/field/AnnotationLayer';
@@ -577,12 +578,14 @@ export default function FieldLayout() {
 
                   {/* 3D View */}
                   <Suspense fallback={<Skeleton className="w-full h-[400px] md:h-[500px] rounded-lg" />}>
-                    <FieldStreetView
-                      obstacles={streetViewObstacles}
-                      viewPoint={streetViewPoint}
-                      onViewPointChange={setStreetViewPoint}
-                      onStanceChange={setStance}
-                    />
+                    <WebGLGuard>
+                      <FieldStreetView
+                        obstacles={streetViewObstacles}
+                        viewPoint={streetViewPoint}
+                        onViewPointChange={setStreetViewPoint}
+                        onStanceChange={setStance}
+                      />
+                    </WebGLGuard>
                   </Suspense>
 
                   {/* Mini-map for position picking */}

@@ -103,7 +103,7 @@ function Content({ region }: { region: NonNullable<ReturnType<typeof getRegionBy
         name: `Where can I play paintball in ${region.name}?`,
         acceptedAnswer: {
           '@type': 'Answer',
-          text: `Browse verified .68 caliber paintball venues across ${region.name} on this page, with locations, websites and direct booking links.`,
+          text: `Browse .68 calibre paintball venues across ${region.name} on this page, with locations and links to each venue's own website.`,
         },
       },
       {
@@ -111,7 +111,7 @@ function Content({ region }: { region: NonNullable<ReturnType<typeof getRegionBy
         name: 'How much does a paintball walk-on cost?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Walk-on entry in the UK is typically £15–£35 plus paintballs (boxes ~£35–£60 for 2,000). Each event page lists the exact price set by the venue.',
+          text: 'Prices, paint costs, age limits and what is included are set by each venue and change often. Where an event page shows a price it comes from the organiser; otherwise check with the venue before you go.',
         },
       },
       {
