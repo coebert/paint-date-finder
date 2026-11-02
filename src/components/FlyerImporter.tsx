@@ -1,4 +1,5 @@
 import { uploadFlyerFile } from '@/lib/flyerUpload';
+import { AuthDialog } from '@/components/AuthDialog';
 import { ImageWithSkeleton } from '@/components/ImageWithSkeleton';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -40,7 +41,7 @@ export interface FlyerImporterProps {
     candidates: (ExtractedCandidate & { _selected: true })[],
     sourceUrl: string | null,
     flyerImageUrl: string | null,
-  ) => Promise<void | boolean> | void | boolean;  // return false to keep the list for a retry
+  ) => Promise<boolean> | boolean;  // only `true` clears the list; false or a throw keeps it for retry
   /** Label for the save button. */
   saveLabel?: string;
   /** Disable the save button (e.g. mid-mutation). */
@@ -157,6 +158,14 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadedFlyerUrl, setUploadedFlyerUrl] = useState<string | null>(null);
+  const [savingBatch, setSavingBatch] = useState(false);
+  const [signedIn, setSignedIn] = useState<boolean | null>(null);
+  const [authOpen, setAuthOpen] = useState(false);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => setSignedIn(!!session));
+    return () => sub.subscription.unsubscribe();
+  }, []);
   const [pastedText, setPastedText] = useState(initialDraft?.pastedText ?? '');
   const [sourceUrl, setSourceUrl] = useState(initialDraft?.sourceUrl ?? '');
   const [extracting, setExtracting] = useState(false);
@@ -815,6 +824,7 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
   };
 
   const handleSave = async () => {
+    if (savingBatch) return;
     const selected = candidates.filter((c) => c._selected);
     if (selected.length === 0) {
       toast.error('Select at least one event to save');
@@ -831,18 +841,27 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
     // saved event. The file is normally already uploaded during extraction —
     // only upload here as a fallback (e.g. the user reviewed a draft from
     // an earlier session and never re-ran extraction).
+    setSavingBatch(true);
     let flyerImageUrl: string | null = uploadedFlyerUrl;
-    if (!flyerImageUrl && file && (tab === 'image' || tab === 'pdf')) {
-      try {
-        flyerImageUrl = await uploadFlyerFile(file);
-      } catch (e) {
-        console.error('Flyer upload failed', e);
-        toast.warning('Could not attach the original flyer image — saving the events anyway.');
+    let ok = false;
+    try {
+      if (!flyerImageUrl && file && (tab === 'image' || tab === 'pdf')) {
+        try {
+          flyerImageUrl = await uploadFlyerFile(file);
+          setUploadedFlyerUrl(flyerImageUrl);
+        } catch (e) {
+          console.error('Flyer upload failed', e);
+          toast.warning('Could not attach the original flyer image — saving the events anyway.');
+        }
       }
+      ok = (await onSave(payload, sourceUrl.trim() || null, flyerImageUrl)) === true;
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Saving failed — your list is kept so you can retry.');
+      ok = false;
+    } finally {
+      setSavingBatch(false);
     }
-
-    const ok = await onSave(payload, sourceUrl.trim() || null, flyerImageUrl);
-    if (ok === false) {
+    if (!ok) {
       // Keep the reviewed list (and the uploaded flyer) so the user can retry.
       if (flyerImageUrl) setUploadedFlyerUrl(flyerImageUrl);
       return;
@@ -913,6 +932,18 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
               Dismiss
             </Button>
           </div>
+        </div>
+      )}
+      {signedIn === false && (
+        <div role="status" className="mb-3 rounded-md border border-primary/40 bg-primary/10 p-3 text-sm space-y-2">
+          <p>
+            Reading a flyer automatically needs a free account (it uses paid AI, so we limit it to real people).
+            You can still submit without signing in — use the <strong>Enter manually</strong> tab.
+          </p>
+          <Button type="button" size="sm" className="min-h-11" onClick={() => setAuthOpen(true)}>
+            Sign in or create account
+          </Button>
+          <AuthDialog open={authOpen} onOpenChange={setAuthOpen} reason="Sign in to read flyers automatically" />
         </div>
       )}
       <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
@@ -1466,7 +1497,7 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
           <Button
             type="button"
             onClick={handleSave}
-            disabled={saving || selectedCount === 0}
+            disabled={saving || savingBatch || selectedCount === 0}
             className="w-full"
           >
             {saving ? (

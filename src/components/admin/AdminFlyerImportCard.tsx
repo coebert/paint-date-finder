@@ -1,3 +1,4 @@
+import { isValidEventDate, normalizeTime } from '@/lib/submissionPayload';
 import { useState } from 'react';
 import {
   Card,
@@ -52,7 +53,12 @@ export function AdminFlyerImportCard() {
       }
       if (unique.length === 0) {
         toast.info('Nothing new to add — all candidates were duplicates.');
-        return;
+        return false;
+      }
+      const bad = unique.find((c) => !isValidEventDate(c.event_date));
+      if (bad) {
+        toast.error(`"${bad.title}" has an invalid date — fix it and save again.`);
+        return false;
       }
       const rows = unique.map((c) => ({
         title: c.title.slice(0, 200),
@@ -61,8 +67,8 @@ export function AdminFlyerImportCard() {
         venue_name: (c.venue_name || 'Unknown venue').slice(0, 200),
         venue_location: c.venue_location?.slice(0, 200) ?? null,
         event_date: c.event_date,
-        start_time: c.start_time || null,
-        end_time: c.end_time || null,
+        start_time: normalizeTime(c.start_time, 'Start time'),
+        end_time: normalizeTime(c.end_time, 'End time'),
         booking_url: normalizeHttpUrl(c.booking_url),
         price_info: c.price_info?.slice(0, 100) ?? null,
         source_url: normalizeHttpUrl(sourceUrl),
@@ -73,9 +79,11 @@ export function AdminFlyerImportCard() {
       if (error) throw error;
       qc.invalidateQueries({ queryKey: ['events'] });
       toast.success(`Added ${rows.length} event${rows.length === 1 ? '' : 's'} to the calendar`);
+      return true;
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Failed to save events';
       toast.error(msg);
+      return false;
     } finally {
       setSaving(false);
     }

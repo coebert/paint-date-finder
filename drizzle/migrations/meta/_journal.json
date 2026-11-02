@@ -36,6 +36,13 @@
       "when": 1793569603438,
       "tag": "0004_push_alert_devices",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793657891951,
+      "tag": "0005_restrict_private_columns_posts_recaps_flags",
+      "breakpoints": true
     }
   ]
 }

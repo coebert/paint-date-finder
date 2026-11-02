@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { ArrowLeft, Mail, MapPin, Plus, UserSearch, Copy } from 'lucide-react';
 import { z } from 'zod';
 import { RouteHead } from '@/components/RouteHead';
+import { useAuth } from '@/hooks/useAuth';
+import { AuthDialog } from '@/components/AuthDialog';
 import { ReplyToPlayerDialog } from '@/components/ReplyToPlayerDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,6 +48,8 @@ export default function LookingForGame() {
   const [filterType, setFilterType] = useState<string>('');
   const [createdToken, setCreatedToken] = useState<{ id: string; token: string } | null>(null);
   const [replyTo, setReplyTo] = useState<{ id: string; name: string } | null>(null);
+  const [authOpen, setAuthOpen] = useState(false);
+  const { user, loading: authLoading } = useAuth();
 
   const [form, setForm] = useState({
     player_name: '',
@@ -161,6 +165,14 @@ export default function LookingForGame() {
             </div>
           </div>
 
+          {!authLoading && !user && (
+            <p className="mb-3 text-sm text-muted-foreground">
+              Replying to a player needs a free account.{' '}
+              <button type="button" className="underline text-primary min-h-11" onClick={() => setAuthOpen(true)}>
+                Sign in or create one
+              </button>
+            </p>
+          )}
           {isLoading ? (
             <Skeleton className="h-48 bg-card" />
           ) : filtered.length === 0 ? (
@@ -300,6 +312,7 @@ export default function LookingForGame() {
       />
 
       <RemoveByQuery />
+      <AuthDialog open={authOpen} onOpenChange={setAuthOpen} reason="Sign in to reply to players" />
     </>
   );
 }
@@ -307,27 +320,49 @@ export default function LookingForGame() {
 /** Handles ?remove=<id>&token=<token> deep links so people can self-remove. */
 function RemoveByQuery() {
   const remove = useDeletePlayerSeekingPost();
-  const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+  const [params, setParams] = useSearchParams();
   const id = params.get('remove');
   const token = params.get('token');
+  const [failed, setFailed] = useState(false);
 
   if (!id || !token) return null;
 
+  const close = () => {
+    setFailed(false);
+    const next = new URLSearchParams(params);
+    next.delete('remove');
+    next.delete('token');
+    setParams(next, { replace: true });
+  };
+
   const onConfirm = async () => {
-    await remove.mutateAsync({ id, token });
-    window.history.replaceState({}, '', '/looking-for-a-game');
+    try {
+      const ok = await remove.mutateAsync({ id, token });
+      if (ok) close();
+      else setFailed(true);
+    } catch {
+      setFailed(true);
+    }
   };
 
   return (
-    <Dialog open onOpenChange={() => window.history.replaceState({}, '', '/looking-for-a-game')}>
+    <Dialog open onOpenChange={(o) => !o && close()}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Remove your post?</DialogTitle>
-          <DialogDescription>This will permanently delete the post.</DialogDescription>
+          <DialogDescription>
+            {failed
+              ? "We couldn't remove this post. The link may have expired, or the post was already removed."
+              : 'This will permanently delete the post.'}
+          </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" onClick={() => window.history.replaceState({}, '', '/looking-for-a-game')}>Cancel</Button>
-          <Button variant="destructive" onClick={onConfirm}>Remove</Button>
+          <Button variant="outline" onClick={close}>{failed ? 'Close' : 'Cancel'}</Button>
+          {!failed && (
+            <Button variant="destructive" onClick={onConfirm} disabled={remove.isPending}>
+              {remove.isPending ? 'Removing…' : 'Remove'}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

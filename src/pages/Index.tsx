@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import { useState, useCallback, useMemo } from 'react';
 import { RouteHead } from '@/components/RouteHead';
 import { useEvents, useVenues } from '@/hooks/useEvents';
@@ -54,11 +55,12 @@ export default function Index() {
   const [submitInitialTab, setSubmitInitialTab] = useState<'flyer' | 'manual'>('flyer');
   const [detailEvent, setDetailEvent] = useState<PaintballEvent | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [nearMeOpen, setNearMeOpen] = useState(false);
 
   const { data: regionsData } = useRegions();
   const regionVenues = region ? regionsData?.venuesByRegion.get(region) : undefined;
 
-  const { data: events, isLoading, error } = useEvents({
+  const { data: events, isLoading, error, refetch: refetchEvents, isFetching: eventsFetching } = useEvents({
     eventType,
     venue,
     verifiedOnly,
@@ -226,11 +228,9 @@ export default function Index() {
       <Hero
         onFindNearMe={() => {
           const el = document.getElementById('near-me');
-          if (el) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            const input = el.querySelector<HTMLInputElement>('input');
-            input?.focus();
-          }
+          el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Open the distance picker once the scroll has settled; it focuses the postcode box.
+          window.setTimeout(() => setNearMeOpen(true), 350);
         }}
         eventsCount={events?.length ?? 0}
         venuesCount={venues.length}
@@ -253,6 +253,8 @@ export default function Index() {
           onRegionChange={setRegion}
           onVerifiedOnlyChange={setVerifiedOnly}
           onClearAll={clearAll}
+          nearMeOpen={nearMeOpen}
+          onNearMeOpenChange={setNearMeOpen}
         />
 
         {!isLoading && !error && (
@@ -271,7 +273,10 @@ export default function Index() {
             <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-6 text-center">
               <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-2" />
               <p className="text-destructive font-medium">Failed to load events</p>
-              <p className="text-muted-foreground text-sm mt-1">Please try again later</p>
+              <p className="text-muted-foreground text-sm mt-1">Check your connection and try again.</p>
+              <Button variant="outline" size="sm" className="mt-3 min-h-11" onClick={() => refetchEvents()} disabled={eventsFetching}>
+                {eventsFetching ? 'Retrying…' : 'Retry'}
+              </Button>
             </div>
           ) : (
             <>

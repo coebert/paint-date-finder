@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { AuthDialog } from '@/components/AuthDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,6 +28,9 @@ interface ReplyToPlayerDialogProps {
 export function ReplyToPlayerDialog({ postId, playerName, onClose }: ReplyToPlayerDialogProps) {
   const [form, setForm] = useState({ sender_name: '', sender_email: '', message: '' });
   const [sending, setSending] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  const { user, loading: authLoading } = useAuth();
+  const signedOut = !authLoading && !user;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +42,7 @@ export function ReplyToPlayerDialog({ postId, playerName, onClose }: ReplyToPlay
     }
     const { data: sessionData } = await supabase.auth.getSession();
     if (!sessionData.session) {
-      toast.error('Please sign in to reply to players.');
+      setAuthOpen(true);
       return;
     }
     setSending(true);
@@ -70,6 +75,14 @@ export function ReplyToPlayerDialog({ postId, playerName, onClose }: ReplyToPlay
             yours so they can reply.
           </DialogDescription>
         </DialogHeader>
+        {signedOut && (
+          <div className="rounded-md border border-primary/40 bg-primary/10 p-3 text-sm space-y-2" role="status">
+            <p>You need a free account to reply, so players only get messages from real people. Anything you type here is kept while you sign in.</p>
+            <Button type="button" size="sm" className="min-h-11" onClick={() => setAuthOpen(true)}>
+              Sign in or create account
+            </Button>
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
             <Label htmlFor="reply-name">Your name or team</Label>
@@ -88,11 +101,12 @@ export function ReplyToPlayerDialog({ postId, playerName, onClose }: ReplyToPlay
               value={form.message}
               onChange={(e) => setForm({ ...form, message: e.target.value })} />
           </div>
-          <Button type="submit" className="w-full min-h-11" disabled={sending}>
-            {sending ? 'Sending…' : 'Send reply'}
+          <Button type="submit" className="w-full min-h-11" disabled={sending || signedOut}>
+            {sending ? 'Sending…' : signedOut ? 'Sign in to send' : 'Send reply'}
           </Button>
         </form>
       </DialogContent>
+      <AuthDialog open={authOpen} onOpenChange={setAuthOpen} reason="Sign in to reply to players" />
     </Dialog>
   );
 }

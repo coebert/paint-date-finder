@@ -253,7 +253,7 @@ export default function Teams() {
         </section>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="bg-secondary border border-border/50">
+          <TabsList className="bg-secondary border border-border/50 max-w-full overflow-x-auto justify-start">
             <TabsTrigger value="cpps" className="gap-2 data-[state=active]:bg-accent/20">
               <Shield className="w-4 h-4" />
               CPPS League

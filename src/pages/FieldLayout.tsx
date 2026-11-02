@@ -217,7 +217,7 @@ export default function FieldLayout() {
 
       <main className="container mx-auto px-4 py-6">
         <Tabs defaultValue="current" className="space-y-6">
-          <TabsList className="bg-secondary/50">
+          <TabsList className="bg-secondary/50 max-w-full overflow-x-auto justify-start">
             <TabsTrigger value="current" className="gap-2 data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
               <Eye className="h-4 w-4" />
               <span className="hidden sm:inline">Current Layout</span>

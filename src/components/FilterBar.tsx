@@ -53,6 +53,9 @@ interface FilterBarProps {
   onRegionChange: (r: string) => void;
   onVerifiedOnlyChange: (v: boolean) => void;
   onClearAll: () => void;
+  /** Controlled open state for the distance picker (lets the hero button open it). */
+  nearMeOpen?: boolean;
+  onNearMeOpenChange?: (open: boolean) => void;
 }
 
 export function FilterBar(props: FilterBarProps) {
@@ -74,6 +77,11 @@ export function FilterBar(props: FilterBarProps) {
     onClearAll,
   } = props;
 
+  const { nearMeOpen, onNearMeOpenChange } = props;
+  const clearEverything = () => {
+    onClearAll();
+    location.clear();
+  };
   const nearMeActive = !!location.coords;
   const activeChips = useMemo(() => {
     const items: { key: string; label: string; onRemove: () => void }[] = [];
@@ -210,7 +218,7 @@ export function FilterBar(props: FilterBarProps) {
             </Popover>
 
             {/* Near me */}
-            <Popover>
+            <Popover open={nearMeOpen} onOpenChange={onNearMeOpenChange}>
               <PopoverTrigger asChild>
                 <Button
                   id="near-me"
@@ -223,7 +231,17 @@ export function FilterBar(props: FilterBarProps) {
                   <ChevronDown className="h-3.5 w-3.5 opacity-60" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[22rem] p-3" align="end">
+              <PopoverContent
+                className="w-[min(22rem,calc(100vw-2rem))] p-3"
+                align="end"
+                onOpenAutoFocus={(e) => {
+                  const input = document.getElementById('near-me-place') as HTMLInputElement | null;
+                  if (input) {
+                    e.preventDefault();
+                    input.focus();
+                  }
+                }}
+              >
                 <NearMeFilter location={location} hiddenNoCoords={hiddenNoCoords} />
               </PopoverContent>
             </Popover>
@@ -259,7 +277,7 @@ export function FilterBar(props: FilterBarProps) {
                 <DropdownMenuSeparator />
                 <button
                   type="button"
-                  onClick={onClearAll}
+                  onClick={clearEverything}
                   className="flex w-full items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground"
                 >
                   <X className="h-3.5 w-3.5" />
@@ -288,7 +306,7 @@ export function FilterBar(props: FilterBarProps) {
             ))}
             <button
               type="button"
-              onClick={onClearAll}
+              onClick={clearEverything}
               className="ml-1 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
             >
               Clear all
