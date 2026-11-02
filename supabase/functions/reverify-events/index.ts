@@ -16,6 +16,7 @@
 
 import { adminClient, authorizeAdminOrCron, readEnv } from "../_shared/supabase.ts";
 import { errors as httpErr, json, preflight } from "../_shared/http.ts";
+import { recheckStoredEvidence } from "../_shared/evidence.ts";
 
 const BATCH_SIZE = 80;
 const STALE_REFRESH_HOURS = 20; // skip rows verified within this window
@@ -84,21 +85,6 @@ function shouldUseFirecrawl(url: string): boolean {
   }
 }
 
-function normalize(s: string): string {
-  return s.toLowerCase().replace(/\s+/g, " ").trim();
-}
-
-function quoteFound(quote: string, haystack: string): boolean {
-  const needle = normalize(quote).slice(0, 200);
-  if (needle.length < 6) return false;
-  const hay = normalize(haystack);
-  if (hay.includes(needle)) return true;
-  // Fuzzy fallback: first 4 long-ish words must appear consecutively.
-  const words = needle.split(" ").filter((w) => w.length > 2);
-  if (words.length >= 4 && hay.includes(words.slice(0, 4).join(" "))) return true;
-  return false;
-}
-
 Deno.serve(async (req) => {
   const pf = preflight(req);
   if (pf) return pf;
@@ -130,7 +116,8 @@ Deno.serve(async (req) => {
   // Candidates: upcoming events with a source URL, not verified recently.
   const { data: candidates, error: selErr } = await supabase
     .from("events")
-    .select("id, title, source_url, source_quote, verification_status, last_verified_at")
+    .select("id, title, event_date, source_url, source_quote, verification_status, last_verified_at")
+    .neq("verification_status", "quarantined")
     .gte("event_date", today)
     .not("source_url", "is", null)
     .or(`last_verified_at.is.null,last_verified_at.lt.${refreshCutoff}`)
@@ -158,55 +145,28 @@ Deno.serve(async (req) => {
   for (const ev of candidates ?? []) {
     checked++;
     const url = ev.source_url as string;
-    let newStatus: "verified" | "stale" | "missing" | "unverified" = ev.verification_status as
-      | "verified" | "stale" | "missing" | "unverified";
-    let notes: string | null = null;
-
-    if (!ev.source_quote) {
-      // Cannot verify without an anchor quote. Just touch timestamp.
-      newStatus = "unverified";
-      notes = "No source_quote on record";
-    } else {
-      try {
-        let text = pageCache.get(url) ?? null;
-        if (text === null && !pageCache.has(url)) {
-          try {
-            if (firecrawlKey && shouldUseFirecrawl(url)) {
-              text = await fetchViaFirecrawl(url, firecrawlKey);
-            } else {
-              text = await fetchPageText(url);
-              if ((text?.length ?? 0) < 300 && firecrawlKey) {
-                text = await fetchViaFirecrawl(url, firecrawlKey);
-              }
-            }
-          } catch (e) {
-            text = null;
-            notes = `Fetch failed: ${e instanceof Error ? e.message : String(e)}`;
-          }
-          pageCache.set(url, text);
+    // Strict re-check: the full stored excerpt must still be on the page AND
+    // state this event's exact date. Only the evidence status changes —
+    // listing (is_verified) and event details are never touched here.
+    let text: string | null = null;
+    if (ev.source_quote) {
+      if (pageCache.has(url)) text = pageCache.get(url) ?? null;
+      else {
+        try {
+          if (firecrawlKey && shouldUseFirecrawl(url)) text = await fetchViaFirecrawl(url, firecrawlKey);
+          else text = await fetchPageText(url);
+        } catch {
+          text = null;
         }
-
-        if (!text) {
-          newStatus = "missing";
-          notes = notes ?? "Source page unreachable";
-          flagged++;
-        } else if (quoteFound(ev.source_quote as string, text)) {
-          newStatus = "verified";
-          notes = null;
-          verified++;
-        } else {
-          newStatus = "stale";
-          notes = "source_quote no longer present on source page";
-          flagged++;
-        }
-      } catch (e) {
-        errors.push({
-          event_id: ev.id as string,
-          message: e instanceof Error ? e.message : String(e),
-        });
-        continue;
+        pageCache.set(url, text);
       }
     }
+    const { status: newStatus, note: notes } = recheckStoredEvidence(
+      { event_date: ev.event_date as string, source_quote: (ev.source_quote as string | null) ?? null },
+      text,
+    );
+    if (newStatus === "source_confirmed") verified++;
+    else flagged++;
 
     const { error: upErr } = await supabase
       .from("events")
