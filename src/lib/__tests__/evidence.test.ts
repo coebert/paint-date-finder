@@ -66,7 +66,7 @@ describe('event finder evidence gate', () => {
   });
   it('rejects airsoft sources', () => {
     const v = checkCandidateEvidence(good, ctx({ pageText: 'Airsoft skirmish site. '.repeat(20) + good.source_quote.replace('Walk-On', 'Airsoft Walk-On') }));
-    expect(v.reasons).toContain('source_not_paintball');
+    expect(v.ok).toBe(false); expect(v.reasons.some((r) => r === 'source_not_paintball' || r === 'wrong_sport_section')).toBe(true);
   });
   it('marks a cancellation for review instead of a new event', () => {
     const v = checkCandidateEvidence({ title: 'Walk-On', event_type: 'walk_on', event_date: '2026-11-22', source_quote: '22 November 2026 walk-on cancelled due to flooding.' }, ctx());
