@@ -20,6 +20,33 @@ export const DARK_MAP_STYLES: google.maps.MapTypeStyle[] = [
 ];
 
 let mapsLoadingPromise: Promise<typeof google> | null = null;
+let authFailed = false;
+const authFailureListeners = new Set<() => void>();
+const LOAD_TIMEOUT_MS = 15000;
+
+/**
+ * Google calls window.gm_authFailure when the key is rejected (e.g. the site's
+ * address isn't on the key's allowed list) — after the script has loaded.
+ * Subscribe to switch to a fallback; returns an unsubscribe function.
+ */
+export function onGoogleMapsAuthFailure(cb: () => void): () => void {
+  if (authFailed) {
+    cb();
+    return () => {};
+  }
+  authFailureListeners.add(cb);
+  return () => authFailureListeners.delete(cb);
+}
+
+function installAuthFailureHook() {
+  const w = window as unknown as { gm_authFailure?: () => void };
+  const previous = w.gm_authFailure;
+  w.gm_authFailure = () => {
+    authFailed = true;
+    authFailureListeners.forEach((cb) => cb());
+    previous?.();
+  };
+}
 
 /**
  * Load the Google Maps JS SDK once per session and reuse the promise.
@@ -28,6 +55,7 @@ let mapsLoadingPromise: Promise<typeof google> | null = null;
 export function loadGoogleMaps(): Promise<typeof google> {
   if (typeof window === 'undefined') return Promise.reject(new Error('SSR'));
   const win = window as unknown as { google?: typeof google };
+  if (authFailed) return Promise.reject(new Error('Google Maps authorisation failed'));
   if (win.google?.maps) return Promise.resolve(win.google);
   if (mapsLoadingPromise) return mapsLoadingPromise;
 
@@ -39,9 +67,15 @@ export function loadGoogleMaps(): Promise<typeof google> {
     | undefined;
   if (!browserKey) return Promise.reject(new Error('Missing Google Maps browser key'));
 
+  installAuthFailureHook();
   mapsLoadingPromise = new Promise((resolve, reject) => {
     const cbName = `__initGoogleMaps_${Math.random().toString(36).slice(2)}`;
+    const timer = window.setTimeout(() => {
+      mapsLoadingPromise = null;
+      reject(new Error('Google Maps timed out'));
+    }, LOAD_TIMEOUT_MS);
     (window as unknown as Record<string, unknown>)[cbName] = () => {
+      window.clearTimeout(timer);
       delete (window as unknown as Record<string, unknown>)[cbName];
       resolve((window as unknown as { google: typeof google }).google);
     };
@@ -58,6 +92,7 @@ export function loadGoogleMaps(): Promise<typeof google> {
     script.async = true;
     script.defer = true;
     script.onerror = () => {
+      window.clearTimeout(timer);
       mapsLoadingPromise = null;
       reject(new Error('Failed to load Google Maps'));
     };
