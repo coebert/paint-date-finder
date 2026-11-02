@@ -56,6 +56,7 @@ Deno.serve(async (req) => {
     .sign(await importPKCS8(p8.replace(/\\n/g, "\n"), "ES256"));
 
   let sent = 0;
+  let failedEvents = 0;
   const deadTokens: string[] = [];
   for (const ev of pending) {
     const isCpps = /cpps/i.test(ev.title) || /cpps/i.test(ev.venue_name);
@@ -73,18 +74,51 @@ Deno.serve(async (req) => {
       },
       eventId: ev.id,
     };
+    let delivered = 0;
+    let transientFailures = 0;
     for (const d of targets) {
-      const res = await fetch(`https://${host}/3/device/${d.token}`, {
-        method: "POST",
-        headers: { authorization: `bearer ${jwt}`, "apns-topic": bundleId, "apns-push-type": "alert", "content-type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (res.ok) sent++;
-      else if (res.status === 410 || res.status === 400) deadTokens.push(d.token);
-      await res.body?.cancel();
+      const r = await pushOnce(host, jwt, bundleId, d.token, body);
+      if (r === "ok") { delivered++; sent++; }
+      else if (r === "dead") deadTokens.push(d.token);
+      else if (r === "transient") transientFailures++;
     }
-    await db.from("event_alerts_sent").insert({ event_id: ev.id, recipients: targets.length });
+    // Mark the event done only when something was delivered, nobody was targeted,
+    // or every failure was permanent. If Apple was unreachable for everyone, leave
+    // it for the next hourly run instead of silently dropping the alert.
+    if (delivered > 0 || transientFailures === 0) {
+      await db.from("event_alerts_sent").insert({ event_id: ev.id, recipients: delivered });
+    } else {
+      failedEvents++;
+    }
   }
   if (deadTokens.length) await db.from("alert_devices").delete().in("token", deadTokens);
-  return json({ ok: true, events: pending.length, sent, removed: deadTokens.length });
+  return json({ ok: true, events: pending.length, sent, removed: deadTokens.length, retry_later: failedEvents });
 });
+
+/** Reasons Apple uses when a token will never work again. */
+const PERMANENT_REASONS = new Set(["BadDeviceToken", "Unregistered", "DeviceTokenNotForTopic", "ExpiredToken"]);
+
+/** Send one push with up to 2 retries on 429/5xx/network errors. */
+async function pushOnce(host: string, jwt: string, topic: string, token: string, body: unknown): Promise<"ok" | "dead" | "transient" | "failed"> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(`https://${host}/3/device/${token}`, {
+        method: "POST",
+        headers: { authorization: `bearer ${jwt}`, "apns-topic": topic, "apns-push-type": "alert", "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) { await res.body?.cancel(); return "ok"; }
+      let reason = "";
+      try { reason = (await res.json())?.reason ?? ""; } catch { /* no body */ }
+      if (res.status === 410 || PERMANENT_REASONS.has(reason)) return "dead";
+      if (res.status !== 429 && res.status < 500) {
+        console.error(`[alerts] APNs ${res.status} ${reason}`);
+        return "failed";
+      }
+    } catch (e) {
+      console.error("[alerts] APNs network error", e instanceof Error ? e.message : e);
+    }
+    await new Promise((r) => setTimeout(r, 500 * 2 ** attempt));
+  }
+  return "transient";
+}
