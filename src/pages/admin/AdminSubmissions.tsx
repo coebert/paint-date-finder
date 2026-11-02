@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle, Check, X, ExternalLink, Trash2, Clock, CheckCircle, XCircle, ShieldCheck } from 'lucide-react';
 import { format } from 'date-fns';
@@ -26,16 +28,24 @@ import type { EventSubmission } from '@/types/submissions';
 
 function SubmissionCard({ submission, onApprove, onReject, onDelete }: {
   submission: EventSubmission;
-  onApprove: (id: string, notes: string) => void;
+  onApprove: (id: string, notes: string, sourceUrl: string, confirmed: boolean) => void;
   onReject: (id: string, notes: string) => void;
   onDelete: (id: string) => void;
 }) {
   const [notes, setNotes] = useState(submission.admin_notes || '');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [sourceUrl, setSourceUrl] = useState(submission.source_url || '');
+  const [confirmed, setConfirmed] = useState(false);
+  const sourceOk = /^https?:\/\/\S+$/i.test(sourceUrl.trim());
+  const kindLabel: Record<string, string> = {
+    evidence: 'Source evidence for an existing listing',
+    cancellation: 'Cancellation notice for an existing listing',
+    correction: 'Correction for an existing listing',
+  };
 
   const handleApprove = async () => {
     setIsProcessing(true);
-    await onApprove(submission.id, notes);
+    await onApprove(submission.id, notes, sourceUrl.trim(), confirmed);
     setIsProcessing(false);
   };
 
@@ -77,11 +87,34 @@ function SubmissionCard({ submission, onApprove, onReject, onDelete }: {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="flex flex-wrap gap-2">
+          {submission.evidence_status === 'source_confirmed' ? (
+            <Badge variant="outline" className="border-primary/40 text-primary">Excerpt and date found on source page</Badge>
+          ) : (
+            <Badge variant="outline" className="text-muted-foreground">No automatic source check — check it yourself</Badge>
+          )}
+          {submission.submission_kind !== 'new' && (
+            <Badge variant="outline" className="border-accent/40 text-accent">{kindLabel[submission.submission_kind] ?? submission.submission_kind}</Badge>
+          )}
+          {(submission.sanity_warnings ?? []).map((w) => (
+            <Badge key={w} variant="secondary" className="text-[10px]">{w.replace(/_/g, ' ')}</Badge>
+          ))}
+        </div>
+        {submission.source_quote && (
+          <blockquote className="border-l-2 border-primary/50 pl-3 text-sm italic text-foreground/90">
+            “{submission.source_quote}”
+            {submission.source_fetched_at && (
+              <span className="block not-italic text-xs text-muted-foreground mt-1">
+                Read from source {format(new Date(submission.source_fetched_at), 'dd/MM/yyyy HH:mm')}
+              </span>
+            )}
+          </blockquote>
+        )}
         <div className="grid gap-3 text-sm">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <span className="text-muted-foreground">Date:</span>{' '}
-              <span className="font-medium">{format(new Date(submission.event_date), 'PPP')}</span>
+              <span className="font-medium">{format(new Date(`${submission.event_date}T12:00:00`), 'EEE dd/MM/yyyy')}</span>
             </div>
             <div>
               <span className="text-muted-foreground">Venue:</span>{' '}
@@ -166,10 +199,26 @@ function SubmissionCard({ submission, onApprove, onReject, onDelete }: {
               />
             </div>
 
+            <div className="space-y-2 rounded-md border border-border/50 p-3">
+              <label className="text-sm font-medium text-muted-foreground" htmlFor={`src-${submission.id}`}>
+                Source page (organiser, venue or event page)
+              </label>
+              <Input
+                id={`src-${submission.id}`}
+                value={sourceUrl}
+                onChange={(e) => setSourceUrl(e.target.value)}
+                placeholder="https://"
+                className="bg-secondary/50"
+              />
+              <label className="flex items-start gap-2 text-sm">
+                <Checkbox checked={confirmed} onCheckedChange={(v) => setConfirmed(v === true)} className="mt-0.5" />
+                <span>I opened this source and it shows this paintball event at this venue on this exact day, month and year.</span>
+              </label>
+            </div>
             <div className="flex gap-2 pt-2">
               <Button
                 onClick={handleApprove}
-                disabled={isProcessing}
+                disabled={isProcessing || !confirmed || !sourceOk}
                 className="flex-1 bg-green-600 hover:bg-green-700 text-white"
               >
                 <Check className="w-4 h-4 mr-2" />
@@ -236,7 +285,7 @@ export default function AdminSubmissions() {
   const pendingSubmissions = submissions?.filter(s => s.status === 'pending') || [];
   const reviewedSubmissions = submissions?.filter(s => s.status !== 'pending') || [];
 
-  const handleApprove = async (id: string, notes: string) => {
+  const handleApprove = async (id: string, notes: string, sourceUrl: string, confirmed: boolean) => {
     const submission = submissions?.find(s => s.id === id);
     if (!submission) return;
     
@@ -244,6 +293,8 @@ export default function AdminSubmissions() {
       await approveSubmission.mutateAsync({
         submission,
         adminNotes: notes,
+        sourceUrl,
+        confirmedSourceDate: confirmed,
       });
     } catch (error) {
       // Error handled by mutation

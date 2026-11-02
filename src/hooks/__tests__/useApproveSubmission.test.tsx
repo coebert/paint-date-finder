@@ -3,175 +3,80 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 
-// Capture inserted payload
-const insertSpy = vi.fn();
-const updateSpy = vi.fn();
-const selectMock = vi.fn();
-
 const rpcSpy = vi.fn();
+const fromSpy = vi.fn();
 
-vi.mock('@/integrations/supabase/client', () => {
-  return {
-    supabase: {
-      rpc: (name: string, args: any) => {
-        rpcSpy(name, args);
-        // Default: no duplicate found, merge no-op
-        if (name === 'find_duplicate_event') {
-          const dupId = (globalThis as any).__duplicateEventId ?? null;
-          return Promise.resolve({ data: dupId, error: null });
-        }
-        return Promise.resolve({ data: null, error: null });
-      },
-      from: (table: string) => {
-        if (table === 'events') {
-          return {
-            insert: (payload: any) => {
-              insertSpy(payload);
-              return Promise.resolve({ error: null });
-            },
-            select: () => ({
-              order: () => ({
-                eq: (col: string, val: any) => {
-                  selectMock(col, val);
-                  // Return only verified rows
-                  const rows = (globalThis as any).__events ?? [];
-                  const filtered = col === 'is_verified' ? rows.filter((r: any) => r.is_verified === val) : rows;
-                  return Promise.resolve({ data: filtered, error: null });
-                },
-              }),
-            }),
-          };
-        }
-        if (table === 'event_submissions') {
-          return {
-            update: (payload: any) => ({
-              eq: (_col: string, _val: any) => {
-                updateSpy(payload);
-                return Promise.resolve({ error: null });
-              },
-            }),
-          };
-        }
-        return {} as any;
-      },
+vi.mock('@/integrations/supabase/client', () => ({
+  supabase: {
+    rpc: (name: string, args: unknown) => {
+      rpcSpy(name, args);
+      const g = globalThis as { __rpcResult?: { data: unknown; error: unknown } };
+      return Promise.resolve(g.__rpcResult ?? { data: { event_id: 'e1', duplicate: false, basis: 'human_review' }, error: null });
     },
-  };
-});
-
-
-vi.mock('sonner', () => ({
-  toast: { success: vi.fn(), error: vi.fn() },
+    from: (t: string) => {
+      fromSpy(t);
+      return {};
+    },
+  },
 }));
+vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 import { useApproveSubmission } from '../useSubmissions';
-import { useEvents } from '../useEvents';
 import type { EventSubmission } from '@/types/submissions';
 
 const wrapper = ({ children }: { children: React.ReactNode }) => {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 };
 
-const sampleSubmission: EventSubmission = {
-  id: 'sub-1',
-  title: 'Diamond Wars 2026 - Event 2',
-  description: null,
-  event_type: 'big_game' as any,
-  venue_name: 'NPF Bassetts Pole',
-  venue_location: null,
-  event_date: '2026-06-28',
-  start_time: null,
-  end_time: null,
-  booking_url: null,
-  price_info: null,
-  source_url: null,
-  source_quote: null,
-  image_url: null,
-  submitter_email: 'a@b.com',
-  submitter_name: null,
-  status: 'pending' as any,
-  admin_notes: null,
-  reviewed_at: null,
-  created_at: new Date().toISOString(),
-  sanity_warnings: [],
-  venue_match_status: 'unknown',
-};
+const sub = {
+  id: 'sub-1', title: 'Diamond Wars', event_type: 'big_game', venue_name: 'NPF Bassetts Pole',
+  event_date: '2026-06-28', source_url: 'https://npf.example/events', status: 'pending',
+} as unknown as EventSubmission;
 
-describe('useApproveSubmission', () => {
+describe('useApproveSubmission (server-side approval with evidence)', () => {
   beforeEach(() => {
-    insertSpy.mockClear();
-    updateSpy.mockClear();
-    selectMock.mockClear();
     rpcSpy.mockClear();
-    (globalThis as any).__events = [];
-    (globalThis as any).__duplicateEventId = null;
+    fromSpy.mockClear();
+    (globalThis as { __rpcResult?: unknown }).__rpcResult = undefined;
   });
 
-
-  it('inserts approved submissions with is_verified=true so they appear on the calendar', async () => {
+  it('refuses to approve without the moderator confirming the source date', async () => {
     const { result } = renderHook(() => useApproveSubmission(), { wrapper });
-
-    result.current.mutate({ submission: sampleSubmission });
-
-    await waitFor(() => expect(insertSpy).toHaveBeenCalledTimes(1));
-
-    const payload = insertSpy.mock.calls[0][0];
-    expect(payload.is_verified).toBe(true);
-    expect(payload.title).toBe('Diamond Wars 2026 - Event 2');
-    expect(payload.event_date).toBe('2026-06-28');
-    expect(updateSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ status: 'approved' })
-    );
+    result.current.mutate({ submission: sub, confirmedSourceDate: false });
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(rpcSpy).not.toHaveBeenCalled();
   });
 
-  it('event from approved submission is visible to verified-only calendar query', async () => {
-    // Simulate the approval having persisted the event
-    (globalThis as any).__events = [
-      { id: 'e1', title: sampleSubmission.title, event_date: sampleSubmission.event_date, is_verified: true },
-    ];
-
-    const { result } = renderHook(
-      () => useEvents({ verifiedOnly: true }),
-      { wrapper }
-    );
-
+  it('approves through approve_submission and never writes events directly', async () => {
+    const { result } = renderHook(() => useApproveSubmission(), { wrapper });
+    result.current.mutate({ submission: sub, confirmedSourceDate: true, adminNotes: 'checked' });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-
-    expect(selectMock).toHaveBeenCalledWith('is_verified', true);
-    expect(result.current.data).toHaveLength(1);
-    expect(result.current.data?.[0].title).toBe('Diamond Wars 2026 - Event 2');
+    expect(rpcSpy).toHaveBeenCalledWith('approve_submission', {
+      _id: 'sub-1', _source_url: 'https://npf.example/events', _confirmed_source_date: true, _notes: 'checked',
+    });
+    expect(fromSpy).not.toHaveBeenCalledWith('events');
   });
 
-  it('does not insert a duplicate event when approving an already-approved submission', async () => {
-    const approvedSubmission = { ...sampleSubmission, status: 'approved' as any };
+  it('uses the source link the moderator entered', async () => {
     const { result } = renderHook(() => useApproveSubmission(), { wrapper });
-
-    result.current.mutate({ submission: approvedSubmission });
-
-    await waitFor(() => expect(updateSpy).toHaveBeenCalledTimes(1));
-
-    // Event insert should be skipped for already-approved submissions
-    expect(insertSpy).not.toHaveBeenCalled();
-    expect(updateSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ status: 'approved' })
-    );
+    result.current.mutate({ submission: { ...sub, source_url: null }, confirmedSourceDate: true, sourceUrl: 'https://venue.example/walk-on' });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(rpcSpy.mock.calls[0][1]._source_url).toBe('https://venue.example/walk-on');
   });
 
-  it('merges into existing canonical event when a duplicate is detected', async () => {
-    (globalThis as any).__duplicateEventId = 'existing-event-id';
+  it('surfaces a server refusal (e.g. no source link) as an error', async () => {
+    (globalThis as { __rpcResult?: unknown }).__rpcResult = { data: null, error: { message: 'A source link (organiser, venue or event page) is required' } };
     const { result } = renderHook(() => useApproveSubmission(), { wrapper });
+    result.current.mutate({ submission: { ...sub, source_url: null }, confirmedSourceDate: true });
+    await waitFor(() => expect(result.current.isError).toBe(true));
+  });
 
-    result.current.mutate({ submission: sampleSubmission });
-
-    await waitFor(() => expect(updateSpy).toHaveBeenCalledTimes(1));
-
-    // Should call merge_event_source RPC and skip inserting a new event
-    expect(rpcSpy).toHaveBeenCalledWith('find_duplicate_event', expect.any(Object));
-    expect(rpcSpy).toHaveBeenCalledWith(
-      'merge_event_source',
-      expect.objectContaining({ _event_id: 'existing-event-id' })
-    );
-    expect(insertSpy).not.toHaveBeenCalled();
+  it('reports a same-day duplicate match', async () => {
+    (globalThis as { __rpcResult?: unknown }).__rpcResult = { data: { event_id: 'old', duplicate: true, basis: 'human_review' }, error: null };
+    const { result } = renderHook(() => useApproveSubmission(), { wrapper });
+    result.current.mutate({ submission: sub, confirmedSourceDate: true });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data?.mergedIntoEventId).toBe('old');
   });
 });
-
