@@ -56,7 +56,7 @@ interface CommunityLayoutsDialogProps {
 export function CommunityLayoutsDialog({ onLoad }: CommunityLayoutsDialogProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const { data: layouts, isLoading } = useFieldLayouts();
+  const { data: layouts, isLoading, isError, refetch } = useFieldLayouts();
   const deleteLayout = useDeleteFieldLayout();
 
   const filtered = (layouts ?? []).filter((l) => {
@@ -115,7 +115,13 @@ export function CommunityLayoutsDialog({ onLoad }: CommunityLayoutsDialogProps) 
               <Skeleton className="h-28 w-full" />
             </>
           )}
-          {!isLoading && filtered.length === 0 && (
+          {isError && (
+            <div role="alert" className="text-center py-6 text-sm">
+              <p className="text-destructive">Couldn't load community layouts.</p>
+              <Button variant="outline" size="sm" className="mt-2 min-h-11" onClick={() => refetch()}>Retry</Button>
+            </div>
+          )}
+          {!isLoading && !isError && filtered.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-8">
               {search ? 'No layouts match your search' : 'No community layouts yet. Be the first to save one!'}
             </p>
