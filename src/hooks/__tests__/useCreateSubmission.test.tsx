@@ -16,7 +16,7 @@ vi.mock('@/integrations/supabase/client', () => ({
         insertSpy(table, payload);
         if (nextResult.error) return Promise.resolve(nextResult);
         if (savedIds.has(payload.id)) {
-          return Promise.resolve({ error: { code: '23505', message: 'duplicate key' } });
+          return Promise.resolve({ error: { code: '23505', message: 'duplicate key value violates unique constraint "event_submissions_pkey"' } });
         }
         savedIds.add(payload.id);
         return Promise.resolve({ error: null });
@@ -95,5 +95,14 @@ describe('useCreateSubmission', () => {
 
   it('explains network failures in plain words', () => {
     expect(friendlySubmissionError(new TypeError('Failed to fetch'))).toMatch(/could not reach the server/);
+  });
+});
+
+describe('only our own primary key counts as already saved', () => {
+  it('treats another unique violation as a failure', async () => {
+    const { insertSubmission } = await import('@/hooks/useSubmissions');
+    nextResult = { error: { code: '23505', message: 'duplicate key value violates unique constraint "some_other_key"' } };
+    await expect(insertSubmission({ id: crypto.randomUUID(), submission } as any)).rejects.toBeTruthy();
+    nextResult = { error: null };
   });
 });
