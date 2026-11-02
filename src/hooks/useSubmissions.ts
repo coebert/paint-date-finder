@@ -25,28 +25,52 @@ export function useSubmissions(status?: SubmissionStatus) {
   });
 }
 
+export interface CreateSubmissionInput {
+  /** Client-generated id; reusing it on retry makes the insert idempotent. */
+  id: string;
+  submission: EventSubmissionInsert;
+}
+
+/**
+ * Public submissions: anyone may INSERT but only admins may SELECT, so we
+ * must not ask for the row back (that would fail RLS and look like an error
+ * even though the row was saved). The id is generated client-side so a retry
+ * after a dropped response hits the primary key instead of duplicating.
+ */
+export async function insertSubmission({ id, submission }: CreateSubmissionInput): Promise<{ id: string; alreadySaved: boolean }> {
+  const { error } = await supabase
+    .from('event_submissions')
+    .insert({ ...submission, id, status: 'pending', admin_notes: null, reviewed_at: null });
+  if (error) {
+    if (error.code === '23505') return { id, alreadySaved: true };
+    throw error;
+  }
+  return { id, alreadySaved: false };
+}
+
 export function useCreateSubmission() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (submission: EventSubmissionInsert) => {
-      const { data, error } = await supabase
-        .from('event_submissions')
-        .insert(submission)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
+    mutationFn: insertSubmission,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['submissions'] });
-      toast.success('Event submitted for review!');
-    },
-    onError: (error) => {
-      toast.error('Failed to submit event: ' + error.message);
     },
   });
+}
+
+/** Turn a database/network error into something a visitor can act on. */
+export function friendlySubmissionError(error: unknown): string {
+  const e = error as { name?: string; message?: string; code?: string } | null;
+  if (e?.name === 'SubmissionValidationError' && e.message) return e.message;
+  const msg = e?.message ?? '';
+  if (/failed to fetch|network|load failed/i.test(msg)) {
+    return 'We could not reach the server. Check your connection and try again — your details are still filled in.';
+  }
+  if (e?.code === '23514' || /check constraint|row-level security/i.test(msg)) {
+    return 'Some details were not accepted. Check the date, links and email, then try again.';
+  }
+  return 'Something went wrong sending your event. Please try again in a moment — your details are still filled in.';
 }
 
 export function useApproveSubmission() {

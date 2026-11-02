@@ -39,7 +39,7 @@ export interface FlyerImporterProps {
     candidates: (ExtractedCandidate & { _selected: true })[],
     sourceUrl: string | null,
     flyerImageUrl: string | null,
-  ) => Promise<void> | void;
+  ) => Promise<void | boolean> | void | boolean;  // return false to keep the list for a retry
   /** Label for the save button. */
   saveLabel?: string;
   /** Disable the save button (e.g. mid-mutation). */
@@ -868,7 +868,12 @@ export function FlyerImporter({ onSave, saveLabel = 'Save selected', saving }: F
       }
     }
 
-    await onSave(payload, sourceUrl.trim() || null, flyerImageUrl);
+    const ok = await onSave(payload, sourceUrl.trim() || null, flyerImageUrl);
+    if (ok === false) {
+      // Keep the reviewed list (and the uploaded flyer) so the user can retry.
+      if (flyerImageUrl) setUploadedFlyerUrl(flyerImageUrl);
+      return;
+    }
     setCandidates([]);
     setFile(null);
     setPreviewUrl(null);
