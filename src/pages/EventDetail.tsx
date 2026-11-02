@@ -1,3 +1,4 @@
+import { evidenceLabel } from '@/lib/evidenceLabel';
 import { useParams, Link } from 'react-router-dom';
 import { useState } from 'react';
 import { format, parseISO } from 'date-fns';
@@ -332,17 +333,20 @@ export default function EventDetail() {
           <EventSourceBadge sourceUrl={event.source_url} />
 
           <div className="flex items-center gap-2 text-sm">
-            {event.is_verified ? (
-              <>
-                <CheckCircle className="h-4 w-4 text-primary" />
-                <span className="text-primary">Verified event</span>
-              </>
-            ) : (
-              <>
-                <AlertCircle className="h-4 w-4 text-accent" />
-                <span className="text-accent">Unverified — dates may be approximate</span>
-              </>
-            )}
+            {(() => {
+              const l = evidenceLabel(event);
+              return l.tone === 'warning' ? (
+                <>
+                  <AlertCircle className="h-4 w-4 text-accent" />
+                  <span className="text-accent">{l.short} — {l.long}</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-primary">{l.short} — {l.long}</span>
+                </>
+              );
+            })()}
           </div>
 
           <div className="flex flex-wrap gap-2 pt-4 border-t border-border">

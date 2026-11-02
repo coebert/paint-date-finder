@@ -1,3 +1,4 @@
+import { evidenceLabel } from '@/lib/evidenceLabel';
 import { Link } from 'react-router-dom';
 import { PaintballEvent } from '@/types/events';
 import { EventTypeBadge } from './EventTypeBadge';
@@ -35,15 +36,18 @@ export function EventCard({ event, onEdit, distanceMiles }: EventCardProps) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
               <EventTypeBadge type={event.event_type} />
-              {event.is_verified ? (
-                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-primary">
-                  <ShieldCheck className="h-3 w-3" /> Verified
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
-                  <ShieldAlert className="h-3 w-3" /> Unverified
-                </span>
-              )}
+              {(() => {
+                const l = evidenceLabel(event);
+                return l.tone === 'warning' ? (
+                  <span title={l.long} className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
+                    <ShieldAlert className="h-3 w-3" /> {l.short}
+                  </span>
+                ) : (
+                  <span title={l.long} className="inline-flex items-center gap-1 text-[10px] font-medium text-primary">
+                    <ShieldCheck className="h-3 w-3" /> {l.short}
+                  </span>
+                );
+              })()}
               <EventSourceBadge sourceUrl={event.source_url} compact />
             </div>
             <h3 className="font-display text-xl text-foreground truncate">{event.title}</h3>
