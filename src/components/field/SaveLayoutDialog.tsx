@@ -34,8 +34,11 @@ export function SaveLayoutDialog({ obstacles }: SaveLayoutDialogProps) {
     saveLayout.mutate(
       { name: name.trim(), description: description.trim(), author_name: authorName.trim(), tags, obstacles },
       {
-        onSuccess: () => {
+        onSuccess: (res) => {
           toast.success('Layout saved!');
+          if (!res.tokenSaved) {
+            toast.warning("Saved, but this browser couldn't remember it, so you won't be able to delete it later from here.");
+          }
           setOpen(false);
           setName('');
           setDescription('');

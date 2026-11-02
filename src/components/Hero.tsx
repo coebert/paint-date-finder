@@ -44,8 +44,8 @@ export function Hero({ onFindNearMe, eventsCount, venuesCount }: HeroProps) {
             Find your next <span className="text-accent">walk-on</span> day.
           </h1>
           <p className="mt-5 max-w-2xl text-base md:text-lg text-foreground/85">
-            Every .68 caliber walk-on, scenario game and tournament across the UK — manually
-            verified, mapped and filterable by date, region, venue and format.
+            Every .68 caliber walk-on, scenario game and tournament across the UK — checked
+            by moderators, mapped and filterable by date, region, venue and format.
           </p>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -80,7 +80,7 @@ export function Hero({ onFindNearMe, eventsCount, venuesCount }: HeroProps) {
                 <span>venues</span>
               </div>
               <span aria-hidden className="text-border">•</span>
-              <span>100% community-verified</span>
+              <span>Checked by moderators before listing</span>
             </dl>
           )}
         </div>

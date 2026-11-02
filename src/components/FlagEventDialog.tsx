@@ -70,11 +70,14 @@ export function FlagEventDialog({ eventId, eventTitle, open, onOpenChange }: Fla
 
       // Store the delete token so the user can withdraw their flag
       const row = Array.isArray(data) ? (data as any)[0] : (data as any);
-      if (row?.id && row?.delete_token) {
-        storeFlagToken(eventId, row.id, row.delete_token);
-      }
+      const kept = row?.id && row?.delete_token
+        ? storeFlagToken(eventId, row.id, row.delete_token)
+        : true;
 
       toast.success('Thank you! Your report has been submitted for review.');
+      if (!kept) {
+        toast.warning("Your report was sent, but this browser couldn't remember it, so you won't be able to withdraw it later.");
+      }
       queryClient.invalidateQueries({ queryKey: ['flagged-event-ids'] });
       setReason('');
       setDetails('');

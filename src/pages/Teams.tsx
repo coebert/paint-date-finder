@@ -24,8 +24,7 @@ const divisionColors: Record<string, string> = {
 
 function TeamCard({ team }: { team: Team }) {
   return (
-    <Link to={`/teams/${team.id}`}>
-    <Card className="bg-card border-border/50 hover:border-accent/30 transition-all duration-200 group cursor-pointer">
+    <Card className="relative bg-card border-border/50 hover:border-accent/30 focus-within:border-accent/50 transition-all duration-200 group">
       <CardContent className="p-4">
         <div className="flex items-start gap-4">
           <div className="relative w-16 h-16 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0 overflow-hidden border border-border/50">
@@ -39,7 +38,12 @@ function TeamCard({ team }: { team: Team }) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-1">
               <h3 className="font-display text-lg tracking-wide text-foreground truncate">
-                {team.name}
+                <Link
+                  to={`/teams/${team.id}`}
+                  className="after:absolute after:inset-0 after:content-[''] focus:outline-none focus-visible:underline"
+                >
+                  {team.name}
+                </Link>
               </h3>
               {team.position && (
                 <span className="text-xs text-muted-foreground font-medium">
@@ -75,7 +79,7 @@ function TeamCard({ team }: { team: Team }) {
 
             <div className="flex items-center gap-3 flex-wrap">
               {team.website && (
-                <a href={team.website} target="_blank" rel="noopener noreferrer" className="text-xs text-accent hover:text-accent/80 flex items-center gap-1 transition-colors" onClick={e => e.stopPropagation()}>
+                <a href={team.website} target="_blank" rel="noopener noreferrer" className="relative z-10 text-xs text-accent hover:text-accent/80 flex items-center gap-1 transition-colors">
                   <Globe className="w-3 h-3" /> Website
                 </a>
               )}
@@ -84,7 +88,6 @@ function TeamCard({ team }: { team: Team }) {
         </div>
       </CardContent>
     </Card>
-    </Link>
   );
 }
 

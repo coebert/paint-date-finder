@@ -14,17 +14,27 @@ function getStoredFlags(): Record<string, { flagId: string; deleteToken: string 
 }
 
 /** Store a flag token in localStorage */
-export function storeFlagToken(eventId: string, flagId: string, deleteToken: string) {
-  const flags = getStoredFlags();
-  flags[eventId] = { flagId, deleteToken };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(flags));
+/** Returns false if the browser refused to save (private mode, storage full). */
+export function storeFlagToken(eventId: string, flagId: string, deleteToken: string): boolean {
+  try {
+    const flags = getStoredFlags();
+    flags[eventId] = { flagId, deleteToken };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(flags));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** Remove a stored flag token */
 function removeFlagToken(eventId: string) {
   const flags = getStoredFlags();
   delete flags[eventId];
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(flags));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(flags));
+  } catch {
+    /* storage unavailable — nothing to clean up */
+  }
 }
 
 /** Get the stored flag for a specific event */

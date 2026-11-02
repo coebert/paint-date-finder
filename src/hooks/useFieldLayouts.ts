@@ -33,16 +33,26 @@ function getStoredTokens(): Record<string, string> {
   }
 }
 
-function storeToken(layoutId: string, token: string) {
-  const tokens = getStoredTokens();
-  tokens[layoutId] = token;
-  localStorage.setItem(TOKEN_KEY, JSON.stringify(tokens));
+/** Returns false if the browser refused to save (private mode, storage full). */
+export function storeToken(layoutId: string, token: string): boolean {
+  try {
+    const tokens = getStoredTokens();
+    tokens[layoutId] = token;
+    localStorage.setItem(TOKEN_KEY, JSON.stringify(tokens));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function removeStoredToken(layoutId: string) {
-  const tokens = getStoredTokens();
-  delete tokens[layoutId];
-  localStorage.setItem(TOKEN_KEY, JSON.stringify(tokens));
+  try {
+    const tokens = getStoredTokens();
+    delete tokens[layoutId];
+    localStorage.setItem(TOKEN_KEY, JSON.stringify(tokens));
+  } catch {
+    /* storage unavailable */
+  }
 }
 
 export function getDeleteToken(layoutId: string): string | null {
@@ -78,7 +88,7 @@ export function useFieldLayouts() {
 export function useSaveFieldLayout() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: SaveLayoutInput): Promise<{ id: string; delete_token: string }> => {
+    mutationFn: async (input: SaveLayoutInput): Promise<{ id: string; delete_token: string; tokenSaved: boolean }> => {
       const { obstacles: clean, rejected } = sanitizeObstacles(input.obstacles);
       if (clean.length === 0) throw new Error('Add at least one bunker before sharing.');
       if (rejected > 0 || input.obstacles.length > MAX_LAYOUT_OBSTACLES) {
@@ -96,8 +106,8 @@ export function useSaveFieldLayout() {
       if (error) throw error;
       const row = Array.isArray(data) ? data[0] : (data as any);
       if (!row?.id || !row?.delete_token) throw new Error('Failed to create layout');
-      storeToken(row.id, row.delete_token);
-      return { id: row.id, delete_token: row.delete_token };
+      const tokenSaved = storeToken(row.id, row.delete_token);
+      return { id: row.id, delete_token: row.delete_token, tokenSaved };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['field-layouts'] });
