@@ -42,6 +42,8 @@ export function EventEditDialog({ event, open, onOpenChange }: EventEditDialogPr
         end_time: event.end_time?.slice(0, 5) || '',
         booking_url: event.booking_url || '',
         price_info: event.price_info || '',
+        source_url: event.source_url ?? '',
+        source_quote: event.source_quote ?? '',
         is_verified: event.is_verified,
       });
     }
@@ -63,6 +65,8 @@ export function EventEditDialog({ event, open, onOpenChange }: EventEditDialogPr
         end_time: data.end_time || null,
         booking_url: data.booking_url || null,
         price_info: data.price_info || null,
+        source_url: data.source_url,
+        source_quote: data.source_quote || null,
         is_verified: data.is_verified,
       },
     });
