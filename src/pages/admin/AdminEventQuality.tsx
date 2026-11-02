@@ -163,7 +163,7 @@ export default function AdminEventQuality() {
   }, [data]);
 
   return (
-    <AdminLayout>
+    <AdminLayout title="Event Quality">
       <div className="space-y-4">
         <Card className="bg-card border-border/50">
           <CardHeader>
