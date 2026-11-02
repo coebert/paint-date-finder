@@ -13,6 +13,6 @@ describe('event type dropdown matches shared validation', () => {
       title: 'Mag day', event_type: 'mag_fed', venue_name: 'Delta', event_date: '2026-12-12',
       submitter_email: 'a@b.co',
     } as never);
-    expect(r.ok).toBe(true);
+    expect(r.event_type).toBe('mag_fed');
   });
 });
