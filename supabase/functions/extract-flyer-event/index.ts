@@ -519,6 +519,35 @@ function systemPrompt(): string {
   );
 }
 
+const MAX_FLYER_BYTES = 10 * 1024 * 1024;
+const ALLOWED_FLYER_MIME = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+
+/**
+ * Resolve a flyer reference to a base64 data URL the model can read.
+ * Accepts only (a) data URLs of an allowed type within the size cap, or
+ * (b) files in this project's flyer-images bucket, fetched server-side.
+ */
+async function resolveFlyerData(ref: string, expectPdf: boolean): Promise<string> {
+  if (ref.startsWith("data:")) {
+    const m = /^data:([a-z/+.-]+);base64,/i.exec(ref);
+    if (!m || !ALLOWED_FLYER_MIME.includes(m[1].toLowerCase())) throw new Error("Unsupported file type");
+    if ((ref.length - m[0].length) * 0.75 > MAX_FLYER_BYTES) throw new Error("File too large (max 10 MB)");
+    return ref;
+  }
+  const prefix = `${SUPABASE_URL}/storage/v1/object/public/flyer-images/`;
+  if (!ref.startsWith(prefix)) throw new Error("Flyer must be uploaded through the app first");
+  const res = await fetch(ref);
+  if (!res.ok) throw new Error(`Could not read uploaded flyer (${res.status})`);
+  const buf = new Uint8Array(await res.arrayBuffer());
+  if (buf.length === 0 || buf.length > MAX_FLYER_BYTES) throw new Error("File too large (max 10 MB)");
+  const mime = (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
+  if (!ALLOWED_FLYER_MIME.includes(mime)) throw new Error("Unsupported file type");
+  if (expectPdf !== (mime === "application/pdf")) throw new Error("File type does not match the chosen tab");
+  let bin = "";
+  for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+  return `data:${mime};base64,${btoa(bin)}`;
+}
+
 async function extractFromImage(
   apiKey: string,
   dataUrl: string,
@@ -623,6 +652,7 @@ Deno.serve(async (req) => {
         .from("flyer_extraction_log")
         .select("id", { count: "exact", head: true })
         .eq("user_id", userId)
+        .neq("kind", "upload")
         .gte("created_at", since);
       if ((count ?? 0) >= HOURLY_LIMIT) {
         return new Response(
@@ -690,11 +720,12 @@ Deno.serve(async (req) => {
 
     if (body.kind === "image") {
       if (!body.data) throw new Error("image data is required");
-      const url = body.data;
+      const url = await resolveFlyerData(body.data, false);
       candidates = await time("gemini", () =>
         extractFromImage(LOVABLE_API_KEY, url, body.sourceUrl));
     } else if (body.kind === "pdf") {
       if (!body.data) throw new Error("pdf data is required");
+      const pdfData = await resolveFlyerData(body.data, true);
       const messages = [
         { role: "system", content: systemPrompt() },
         {
@@ -707,7 +738,7 @@ Deno.serve(async (req) => {
                 (body.sourceUrl ? `Source: ${body.sourceUrl}\n` : "") +
                 "Return strict JSON via the tool call.",
             },
-            { type: "image_url", image_url: { url: body.data } },
+            { type: "image_url", image_url: { url: pdfData } },
           ],
         },
       ];
