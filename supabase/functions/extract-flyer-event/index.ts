@@ -527,14 +527,14 @@ const ALLOWED_FLYER_MIME = ["image/jpeg", "image/png", "image/webp", "applicatio
  * Accepts only (a) data URLs of an allowed type within the size cap, or
  * (b) files in this project's flyer-images bucket, fetched server-side.
  */
-async function resolveFlyerData(ref: string, expectPdf: boolean): Promise<string> {
+async function resolveFlyerData(ref: string, expectPdf: boolean, supabaseUrl: string): Promise<string> {
   if (ref.startsWith("data:")) {
     const m = /^data:([a-z/+.-]+);base64,/i.exec(ref);
     if (!m || !ALLOWED_FLYER_MIME.includes(m[1].toLowerCase())) throw new Error("Unsupported file type");
     if ((ref.length - m[0].length) * 0.75 > MAX_FLYER_BYTES) throw new Error("File too large (max 10 MB)");
     return ref;
   }
-  const prefix = `${SUPABASE_URL}/storage/v1/object/public/flyer-images/`;
+  const prefix = `${supabaseUrl}/storage/v1/object/public/flyer-images/`;
   if (!ref.startsWith(prefix)) throw new Error("Flyer must be uploaded through the app first");
   const res = await fetch(ref);
   if (!res.ok) throw new Error(`Could not read uploaded flyer (${res.status})`);
@@ -720,12 +720,12 @@ Deno.serve(async (req) => {
 
     if (body.kind === "image") {
       if (!body.data) throw new Error("image data is required");
-      const url = await resolveFlyerData(body.data, false);
+      const url = await resolveFlyerData(body.data, false, SUPABASE_URL);
       candidates = await time("gemini", () =>
         extractFromImage(LOVABLE_API_KEY, url, body.sourceUrl));
     } else if (body.kind === "pdf") {
       if (!body.data) throw new Error("pdf data is required");
-      const pdfData = await resolveFlyerData(body.data, true);
+      const pdfData = await resolveFlyerData(body.data, true, SUPABASE_URL);
       const messages = [
         { role: "system", content: systemPrompt() },
         {
