@@ -88,7 +88,7 @@ export function useFieldLayouts() {
 export function useSaveFieldLayout() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: SaveLayoutInput): Promise<{ id: string; delete_token: string }> => {
+    mutationFn: async (input: SaveLayoutInput): Promise<{ id: string; delete_token: string; tokenSaved: boolean }> => {
       const { obstacles: clean, rejected } = sanitizeObstacles(input.obstacles);
       if (clean.length === 0) throw new Error('Add at least one bunker before sharing.');
       if (rejected > 0 || input.obstacles.length > MAX_LAYOUT_OBSTACLES) {
