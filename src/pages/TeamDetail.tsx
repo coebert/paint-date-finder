@@ -3,7 +3,8 @@ import { useParams, Link } from 'react-router-dom';
 import { RouteHead } from '@/components/RouteHead';
 import { useTeamById, useTeamRoster } from '@/hooks/useTeamDetail';
 import { useEvents } from '@/hooks/useEvents';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
+import { isCppsRoundEvent } from '@/lib/cpps';
 import {
   ArrowLeft, Users, Trophy, Mail, Globe, Phone, MapPin,
   Facebook, Instagram, Calendar, ExternalLink, Shield, Star
