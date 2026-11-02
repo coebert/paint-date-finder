@@ -54,7 +54,7 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
   const onEventClickRef = useRef(onEventClick);
 
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
   const [selectedRegion, setSelectedRegion] = useState<UKRegion>('all');
   const { data: venueDetails } = useVenueDetails();
 
@@ -134,7 +134,7 @@ export function EventMap({ events, onEventClick }: EventMapProps) {
       .catch((err) => {
         if (cancelled) return;
         console.error('[EventMap] Google Maps failed to load', err);
-        setErrorMsg(err?.message ?? 'Failed to load map');
+
         setStatus('error');
       });
     return () => {
