@@ -37,7 +37,7 @@ export const adminEventSchema = z.object({
   /** Organiser/venue/event page that states this date — required to publish. */
   source_url: z.string().trim().regex(/^https?:\/\/\S+$/i, 'Add the organiser, venue or event page that shows this date'),
   source_quote: z.string().trim().max(500).optional().or(z.literal('')),
-  is_verified: z.boolean().default(true),
+  is_verified: z.boolean(), // default supplied by defaultAdminEventValues
 });
 
 export type AdminEventFormData = z.infer<typeof adminEventSchema>;
