@@ -37,7 +37,7 @@ export function ReplyToPlayerDialog({ postId, playerName, onClose }: ReplyToPlay
     if (!postId) return;
     const parsed = replySchema.safeParse(form);
     if (!parsed.success) {
-      toast.error(parsed.error.errors[0].message);
+      toast.error(parsed.error.issues[0]?.message ?? "Check the form");
       return;
     }
     const { data: sessionData } = await supabase.auth.getSession();
