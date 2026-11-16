@@ -9,3 +9,4 @@
 - `events.verification_status` describes source evidence (source_confirmed / human_reviewed / needs_evidence / stale / unavailable / contradicted / quarantined) and `is_verified` means moderator-listed; jobs may change only the former, and removal is via reversible, logged `quarantine_event`, never delete.
 - Every public event reader (calendar/detail hooks, OG image, alerts, sitemap) filters out `verification_status = 'quarantined'` explicitly — RLS alone doesn't hide them from signed-in admins browsing the public site.
 - 3D (react-three) views render inside `WebGLGuard` so missing/lost WebGL shows a fallback instead of blanking the app.
+- `ensure-admin` is read-only: admin status comes only from an existing `user_roles` grant for a verified auth user id; nothing is ever granted by email match — new admins are added manually by an existing admin.
