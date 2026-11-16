@@ -1197,6 +1197,22 @@ export type Database = {
         }
         Returns: string
       }
+      get_admin_event_flags: {
+        Args: never
+        Returns: {
+          created_at: string
+          details: string
+          event_date: string
+          event_id: string
+          event_title: string
+          event_venue_name: string
+          id: string
+          is_resolved: boolean
+          reason: Database["public"]["Enums"]["event_flag_reason"]
+          resolved_at: string
+          suggested_date: string
+        }[]
+      }
       get_admin_event_recaps: {
         Args: never
         Returns: {

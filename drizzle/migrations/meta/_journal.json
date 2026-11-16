@@ -57,6 +57,13 @@
       "when": 1793659473829,
       "tag": "0007_event_evidence_pipeline",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794838848896,
+      "tag": "0008_restrict_event_flag_details",
+      "breakpoints": true
     }
   ]
 }
