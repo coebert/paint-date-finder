@@ -1,113 +1,49 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+// Read-only admin status check.
+//
+// Previously this function promoted any signed-in account whose email matched
+// ADMIN_EMAIL. It no longer writes anything: admin status is read from the
+// existing server-managed `user_roles` grant for the caller's verified,
+// immutable auth user id. New admins are granted manually by an existing admin
+// (user_roles "Admins can manage roles" policy) or by trusted server-side
+// administration — never by email match.
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-const ADMIN_EMAIL = Deno.env.get('ADMIN_EMAIL');
+import { errors, json, preflight } from "../_shared/http.ts";
+import { readEnv, userClient } from "../_shared/supabase.ts";
+import { decideAccess } from "./decide.ts";
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const pre = preflight(req);
+  if (pre) return pre;
 
-  if (!ADMIN_EMAIL) {
-    return new Response(
-      JSON.stringify({ error: 'Server misconfigured' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+  const env = readEnv();
+  if (!env) return errors.missingEnv();
+
+  const authHeader = req.headers.get("Authorization") ?? "";
+  if (!authHeader.startsWith("Bearer ") || authHeader.length <= 7) {
+    return errors.unauthorized();
   }
 
   try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'No authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const client = userClient(env, authHeader);
+    const { data, error } = await client.auth.getUser();
+    const decision = decideAccess(error ? null : data?.user);
+    if (decision.status !== 200) {
+      return json(decision.body, { status: decision.status });
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-
-    // Create client with user's token to get their info
-    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
+    // has_role is SECURITY DEFINER; called with the user's own token so RLS
+    // and grants apply. Read-only.
+    const { data: isAdmin, error: roleError } = await client.rpc("has_role", {
+      _user_id: decision.userId,
+      _role: "admin",
     });
-
-    const { data: { user }, error: userError } = await userClient.auth.getUser();
-    
-    if (userError || !user) {
-      console.error('Error getting user:', userError);
-      return new Response(
-        JSON.stringify({ error: 'Authentication failed' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (roleError) {
+      console.error("ensure-admin: role lookup failed", roleError.code);
+      return json({ error: "Unable to process request" }, { status: 500 });
     }
-
-    console.log(`Checking admin status for user: ${user.id}`);
-
-    // Check if this is the admin email
-    if (user.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-      return new Response(
-        JSON.stringify({ isAdmin: false, message: 'Not an admin email' }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Use service role client to manage roles
-    const adminClient = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Check if admin role already exists
-    const { data: existingRole, error: checkError } = await adminClient
-      .from('user_roles')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .maybeSingle();
-
-    if (checkError) {
-      console.error('Error checking existing role:', checkError);
-      return new Response(
-        JSON.stringify({ error: 'Unable to process request' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (existingRole) {
-      console.log(`Admin role already exists for ${user.id}`);
-      return new Response(
-        JSON.stringify({ isAdmin: true, message: 'Admin role already exists' }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Insert admin role
-    const { error: insertError } = await adminClient
-      .from('user_roles')
-      .insert({ user_id: user.id, role: 'admin' });
-
-    if (insertError) {
-      console.error('Error inserting admin role:', insertError);
-      return new Response(
-        JSON.stringify({ error: 'Unable to process request' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log(`Admin role successfully assigned to ${user.id}`);
-    return new Response(
-      JSON.stringify({ isAdmin: true, message: 'Admin role assigned successfully' }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-
-  } catch (error) {
-    console.error('Unexpected error:', error);
-    return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return json({ isAdmin: isAdmin === true });
+  } catch (err) {
+    console.error("ensure-admin: unexpected error", (err as Error)?.name);
+    return json({ error: "Internal server error" }, { status: 500 });
   }
 });

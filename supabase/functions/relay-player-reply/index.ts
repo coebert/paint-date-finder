@@ -9,7 +9,7 @@
 
 import { adminClient, readEnv } from "../_shared/supabase.ts";
 import { errors, json, preflight } from "../_shared/http.ts";
-import { z } from "https://esm.sh/zod@3.23.8";
+import { z } from "npm:zod@4.6.7";
 
 const RESEND_GATEWAY = "https://connector-gateway.lovable.dev/resend";
 const SITE = "https://findawalkon.com";

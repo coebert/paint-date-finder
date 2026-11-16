@@ -1,6 +1,6 @@
 // Public: an iPhone registers (or updates / removes) its push token and alert preferences.
 // Stored server-side only; the table has no client access.
-import { z } from "https://esm.sh/zod@3.23.8";
+import { z } from "npm:zod@4.6.7";
 import { preflight, json, errors } from "../_shared/http.ts";
 import { readEnv, adminClient } from "../_shared/supabase.ts";
 
