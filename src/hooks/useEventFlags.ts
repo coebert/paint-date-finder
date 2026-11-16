@@ -91,18 +91,41 @@ export function useWithdrawFlag() {
   });
 }
 
+export interface AdminFlagRow {
+  id: string;
+  event_id: string;
+  reason: string;
+  details: string | null;
+  suggested_date: string | null;
+  created_at: string;
+  resolved_at: string | null;
+  is_resolved: boolean;
+  event_title: string | null;
+  event_venue_name: string | null;
+  event_date: string | null;
+}
+
+/** Shape admin RPC rows like the old nested select so the moderation UI is unchanged. */
+export function mapAdminFlagRows(rows: AdminFlagRow[]) {
+  return rows.map(({ event_title, event_venue_name, event_date, ...flag }) => ({
+    ...flag,
+    events: event_title == null && event_venue_name == null && event_date == null
+      ? null
+      : { title: event_title, venue_name: event_venue_name, event_date },
+  }));
+}
+
 /** Admin: fetch all flags with event details */
 export function useAdminEventFlags() {
   return useQuery({
     queryKey: ['admin-event-flags'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('event_flags' as any)
-        .select('id, event_id, reason, details, created_at, resolved_at, is_resolved, suggested_date, events(title, venue_name, event_date)')
-        .order('created_at', { ascending: false });
+      // Report text is private: read it through the role-checked admin RPC,
+      // never via a direct table select (public callers only see event IDs).
+      const { data, error } = await supabase.rpc('get_admin_event_flags' as any);
 
       if (error) throw error;
-      return data as any[];
+      return mapAdminFlagRows((data ?? []) as AdminFlagRow[]);
     },
   });
 }
