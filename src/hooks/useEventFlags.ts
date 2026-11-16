@@ -122,7 +122,7 @@ export function useAdminEventFlags() {
     queryFn: async () => {
       // Report text is private: read it through the role-checked admin RPC,
       // never via a direct table select (public callers only see event IDs).
-      const { data, error } = await supabase.rpc('get_admin_event_flags' as any);
+      const { data, error } = await supabase.rpc('get_admin_event_flags');
 
       if (error) throw error;
       return mapAdminFlagRows((data ?? []) as AdminFlagRow[]);
