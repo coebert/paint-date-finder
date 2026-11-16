@@ -10,3 +10,4 @@
 - Every public event reader (calendar/detail hooks, OG image, alerts, sitemap) filters out `verification_status = 'quarantined'` explicitly — RLS alone doesn't hide them from signed-in admins browsing the public site.
 - 3D (react-three) views render inside `WebGLGuard` so missing/lost WebGL shows a fallback instead of blanking the app.
 - `ensure-admin` is read-only: admin status comes only from an existing `user_roles` grant for a verified auth user id; nothing is ever granted by email match — new admins are added manually by an existing admin.
+- Public callers may read only `id, event_id, is_resolved` on `event_flags`; report text, reasons and suggested dates are read only through the admin-checked `get_admin_event_flags` RPC, so guests see markers but never report contents.
