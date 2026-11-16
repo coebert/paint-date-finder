@@ -116,5 +116,8 @@
     "vite": "^5.4.19",
     "vite-imagetools": "^10.0.0",
     "vitest": "^3.2.4"
+  },
+  "overrides": {
+    "fflate": "^0.6.11"
   }
 }
